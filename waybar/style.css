@@ -1,0 +1,96 @@
+* {
+    font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", "Symbols Nerd Font", sans-serif;
+    font-size: 13px;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+}
+
+window#waybar {
+    background: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* Workspaces */
+#workspaces button {
+    padding: 0 10px;
+    color: #ffffff;
+    background: transparent;
+}
+
+#workspaces button:hover {
+    background: #313244;
+    color: #cdd6f4;
+}
+
+#workspaces button.focused {
+    background: #b794f6;
+    color: #1e1e2e;
+}
+
+#workspaces button.urgent {
+    background: #f38ba8;
+    color: #1e1e2e;
+}
+
+/* Rechte Module */
+#clock,
+#tray,
+#battery,
+#pulseaudio,
+#network,
+#custom-power,
+#custom-lock,
+#custom-reboot,
+#custom-hibernate,
+#custom-poweroff {
+    padding: 0 10px;
+}
+
+#battery.warning:not(.charging) {
+    color: #f9e2af;
+}
+
+#battery.critical:not(.charging) {
+    color: #f38ba8;
+}
+
+#battery.charging {
+    color: #a6e3a1;
+}
+
+#pulseaudio.muted {
+    color: #6c7086;
+}
+
+#network.disconnected {
+    color: #f38ba8;
+}
+
+#custom-power {
+    color: #f38ba8;
+}
+
+#custom-lock:hover,
+#custom-reboot:hover,
+#custom-hibernate:hover {
+    background: #313244;
+}
+
+#custom-poweroff:hover {
+    background: #f38ba8;
+    color: #1e1e2e;
+}
+
+tooltip {
+    background: #1e1e2e;
+    border: 1px solid #45475a;
+}
+
+#custom-bluetooth { padding: 0 10px; color: #9e9beb; }
+#custom-bluetooth.low { color: #f38ba8; }
+
+#custom-power-profile { padding: 0 10px; }
+#custom-power-profile.performance { color: #f38ba8; }
+#custom-power-profile.balanced { color: #cdd6f4; }
+#custom-power-profile.power-saver { color: #a6e3a1; }

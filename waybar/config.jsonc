@@ -1,0 +1,132 @@
+{
+    "layer": "top",
+    "exclusive": true,
+    "position": "top",
+    "height": 30,
+    "spacing": 0,
+
+    "modules-left": ["sway/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": [
+        "tray",
+        "custom/bluetooth",
+        "custom/power-profile",
+        "battery#bat0",
+        "battery#bat1",
+        "pulseaudio",
+        "network",
+        "custom/lock",
+        "custom/reboot",
+        "custom/hibernate",
+        "custom/poweroff",
+        "custom/power"
+    ],
+
+    "sway/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "format": "{name}"
+    },
+
+    "clock": {
+        "format": "{:%a %d.%m.%Y  %H:%M}",
+        "tooltip-format": "<tt>{calendar}</tt>"
+    },
+
+    "tray": {
+        "spacing": 10
+    },
+
+    "custom/power-profile": {
+    "exec": "/home/purple/.config/waybar/power-profile.sh",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 9,
+    "on-click": "/home/purple/.config/waybar/power-profile.sh menu"
+    },
+
+    // Akkunamen pruefen mit: ls /sys/class/power_supply
+    "battery#bat0": {
+        "bat": "BAT0",
+        "states": { "warning": 30, "critical": 15 },
+        "format": "{icon} {capacity}%",
+        "format-charging": "\uf0e7 {capacity}%",
+        "format-plugged": "\uf1e6 {capacity}%",
+        "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
+        "tooltip-format": "Intern: {capacity}% ({timeTo})"
+    },
+
+    "battery#bat1": {
+        "bat": "BAT1",
+        "states": { "warning": 30, "critical": 15 },
+        "format": "{icon} {capacity}%",
+        "format-charging": "\uf0e7 {capacity}%",
+        "format-plugged": "\uf1e6 {capacity}%",
+        "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
+        "tooltip-format": "Extern: {capacity}% ({timeTo})"
+    },
+
+    "custom/bluetooth": {
+    "exec": "/home/purple/.config/waybar/bt-status.sh",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 8,
+    "on-click": "/home/purple/.config/waybar/bt-menu.sh"
+},
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "\uf026 stumm",
+        "format-icons": { "default": ["\uf027", "\uf028"] },
+        "scroll-step": 5,
+        "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+    },
+
+    "network": {
+        "format-wifi": "\uf1eb",
+        "format-ethernet": "\uf6ff",
+        "format-disconnected": "\uf127",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+        "tooltip-format-ethernet": "{ifname}",
+        "tooltip-format-disconnected": "Nicht verbunden",
+        "on-click": "/home/purple/.config/waybar/wifi-menu.sh"
+    },
+
+    // Power-Menue: Klick auf das Symbol ganz rechts klappt die Aktionen nach links aus.
+    // Das Symbol wird dabei zu "<" und schliesst das Menue beim naechsten Klick wieder.
+    "custom/power": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh status",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "/home/purple/.config/waybar/power-menu.sh toggle"
+    },
+    "custom/lock": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh item lock",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "/home/purple/.config/waybar/power-menu.sh run lock"
+    },
+    "custom/reboot": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh item reboot",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "/home/purple/.config/waybar/power-menu.sh run reboot"
+    },
+    "custom/hibernate": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh item hibernate",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "/home/purple/.config/waybar/power-menu.sh run hibernate"
+    },
+    "custom/poweroff": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh item poweroff",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "/home/purple/.config/waybar/power-menu.sh run poweroff"
+    }
+}
