@@ -37,6 +37,9 @@ format=<span color="#b794f6">󰂯  %a</span>\n<b>%s</b>\n%b
 [app-name=Powerprofil]
 format=<span color="#b794f6">󰓅  %a</span>\n<b>%s</b>\n%b
 
+[app-name=Audio]
+format=<span color="#b794f6">󰓃  %a</span>\n<b>%s</b>\n%b
+
 [urgency=low]
 border-color=#6c7086ff
 

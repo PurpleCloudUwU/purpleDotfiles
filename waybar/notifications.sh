@@ -56,6 +56,7 @@ glyph_for() {
         *wlan*)                      printf '\U000F05A9' ;;  # nf-md-wifi
         *bluetooth*)                 printf '\U000F00AF' ;;  # nf-md-bluetooth
         *powerprofil*)               printf '\U000F04C5' ;;  # nf-md-speedometer
+        *audio*)                     printf '\U000F04C3' ;;  # nf-md-speaker
         *mullvad*)                   printf '\U000F099D' ;;  # nf-md-shield_lock
         *claude*)                    printf '\U000F06A9' ;;  # nf-md-robot
         *vesktop*|*discord*)         printf '\U000F066F' ;;  # nf-md-discord

@@ -3,7 +3,7 @@
 ![Example Picture from my Desktop.](https://github.com/PurpleCloudUwU/purpleDotfiles/blob/main/pasted%20file.png)
 The Dotfiles include:
 - Sway
-- Waybar (incl. Bluetooth, WLAN, power profile and notification history menus)
+- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
 - Hyprlock
 - Fuzzel
 - Mako (notifications)

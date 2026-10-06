@@ -13,6 +13,10 @@ SIGNAL=8
 PAIR_ENTRY=$'\U000F0415  Neues Gerät koppeln'     # nf-md-plus
 OFF_ENTRY=$'\U000F00B2  Bluetooth ausschalten'    # nf-md-bluetooth_off
 ON_ENTRY=$'\U000F00AF  Bluetooth einschalten'     # nf-md-bluetooth
+AUDIO_ENTRY=$'\U000F04C3  Audioausgabe'           # nf-md-speaker
+
+# Untermenue fuer Ausgabegeraet und Qualitaet (liegt neben diesem Skript)
+AUDIO_MENU="${0%/*}/audio-menu.sh"
 
 # Jede Meldung ersetzt die vorherige ("Verbinde …" -> "verbunden"),
 # damit nicht beide im Benachrichtigungs-Verlauf landen.
@@ -189,25 +193,26 @@ toggle_power() {
 
 main() {
     local choice
+    local entries=()
 
-    # bluetoothctl wartet endlos, wenn bluetoothd nicht laeuft
+    # Die Audioausgabe ist immer waehlbar, auch ohne Bluetooth.
+    # bluetoothctl wartet endlos, wenn bluetoothd nicht laeuft -> timeout
     if ! timeout 2 bluetoothctl show >/dev/null 2>&1; then
         notify "Bluetooth nicht verfügbar (läuft bluetoothd?)"
-        exit 1
+        entries=("$AUDIO_ENTRY")
+    elif ! is_powered; then
+        entries=("$ON_ENTRY" "$AUDIO_ENTRY")
+    else
+        build_list
+        entries=("${LABELS[@]}" "$PAIR_ENTRY" "$AUDIO_ENTRY" "$OFF_ENTRY")
     fi
 
-    if ! is_powered; then
-        printf '%s\n' "$ON_ENTRY" | "${MENU[@]}" >/dev/null || exit 0
-        toggle_power
-        exit 0
-    fi
-
-    build_list
-    choice=$(printf '%s\n' "${LABELS[@]}" "$PAIR_ENTRY" "$OFF_ENTRY" | "${MENU[@]}") || exit 0
+    choice=$(printf '%s\n' "${entries[@]}" | "${MENU[@]}") || exit 0
 
     case $choice in
-        "$PAIR_ENTRY") pair_new ;;
-        "$OFF_ENTRY")  toggle_power ;;
+        "$AUDIO_ENTRY") exec "$AUDIO_MENU" ;;
+        "$PAIR_ENTRY")  pair_new ;;
+        "$ON_ENTRY"|"$OFF_ENTRY") toggle_power ;;
         *) [[ -n ${MAC_OF[$choice]} ]] && device_menu "${MAC_OF[$choice]}" ;;
     esac
 }
