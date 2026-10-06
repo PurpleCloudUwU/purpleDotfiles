@@ -10,6 +10,17 @@ The Dotfiles include:
 - qt6ct + KDE color scheme (purple theme for Qt apps like Dolphin)
 - Chatterino theme
 
+### Setup
+The configs are symlinked into place, so this repo is the live config
+(move existing folders out of the way first):
+```sh
+git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
+for d in sway waybar hypr fuzzel mako qt6ct; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
+ln -s ~/purpleDotfiles/dolphin/PurpleMocha.colors ~/.local/share/color-schemes/
+ln -s ~/purpleDotfiles/chatterino/PurpleMocha.json ~/.local/share/chatterino/Themes/
+hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
+```
+
 ### Where the files go
 Folders at the top level go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`). Exceptions:
 
