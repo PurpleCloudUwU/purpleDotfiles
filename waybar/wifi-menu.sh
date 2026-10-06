@@ -5,7 +5,13 @@
 # Menue-Programm: liest Zeilen von stdin, gibt die Auswahl aus.
 MENU=(fuzzel --dmenu --width 45 --lines 10)
 
-notify() { command -v notify-send >/dev/null && notify-send -a WLAN "$1"; }
+# Jede Meldung ersetzt die vorherige ("Verbinde …" -> "Verbunden"),
+# damit nicht beide im Benachrichtigungs-Verlauf landen.
+NID=""
+notify() {
+    command -v notify-send >/dev/null || return
+    NID=$(notify-send -a WLAN -p ${NID:+-r "$NID"} "$1")
+}
 
 # Freitext-Eingabe (nur fuzzel): ask "Prompt: " [--password]
 ask() { "${MENU[@]}" --prompt-only="$1" "${@:2}" </dev/null; }

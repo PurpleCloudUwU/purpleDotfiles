@@ -33,7 +33,7 @@ case $1 in
         case $2 in
             lock)      json $'\uf023' "Sperren" '' ;;
             reboot)    json $'\uf021' "Neustart" '' ;;
-            hibernate) json $'\uf186' "Ruhezustand" '' ;;
+            suspend)   json $'\uf186' "Bereitschaft" '' ;;
             poweroff)  json $'\uf011' "Herunterfahren" '' ;;
         esac
         ;;
@@ -42,9 +42,9 @@ case $1 in
         rm -f "$STATE"
         refresh
         case $2 in
-            lock)      hyprlock --immediate-render -q ;;
+            lock)      pidof hyprlock || hyprlock --immediate-render -q ;;
             reboot)    systemctl reboot ;;
-            hibernate) systemctl hibernate ;;
+            suspend)   systemctl suspend ;;
             poweroff)  systemctl poweroff ;;
         esac
         ;;

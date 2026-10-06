@@ -11,6 +11,16 @@ window#waybar {
     color: #cdd6f4;
 }
 
+tooltip {
+    background: #1e1e2e;
+    border: 1px solid #45475a;
+}
+
+/* Ohne diese Regel bestimmt das GTK-Theme die Tooltip-Schriftfarbe */
+tooltip label {
+    color: #cdd6f4;
+}
+
 /* Workspaces */
 #workspaces button {
     padding: 0 10px;
@@ -33,47 +43,56 @@ window#waybar {
     color: #1e1e2e;
 }
 
-/* Rechte Module */
+/* Gemeinsamer Abstand fuer alle Module */
 #clock,
 #tray,
+#custom-bluetooth,
+#custom-power-profile,
 #battery,
 #pulseaudio,
 #network,
-#custom-power,
+#custom-notifications,
 #custom-lock,
 #custom-reboot,
-#custom-hibernate,
-#custom-poweroff {
+#custom-suspend,
+#custom-poweroff,
+#custom-power {
     padding: 0 10px;
 }
 
-#battery.warning:not(.charging) {
-    color: #f9e2af;
-}
+/* Bluetooth */
+#custom-bluetooth { color: #9e9beb; }
+#custom-bluetooth.low { color: #f38ba8; }
 
-#battery.critical:not(.charging) {
-    color: #f38ba8;
-}
+/* Energieprofil */
+#custom-power-profile.performance { color: #f38ba8; }
+#custom-power-profile.balanced { color: #cdd6f4; }
+#custom-power-profile.power-saver { color: #a6e3a1; }
 
-#battery.charging {
-    color: #a6e3a1;
-}
+/* Akku */
+#battery.warning:not(.charging) { color: #f9e2af; }
+#battery.critical:not(.charging) { color: #f38ba8; }
+#battery.charging { color: #a6e3a1; }
 
-#pulseaudio.muted {
-    color: #6c7086;
-}
+/* Audio */
+#pulseaudio.muted { color: #6c7086; }
 
-#network.disconnected {
-    color: #f38ba8;
-}
+/* Netzwerk */
+#network.linked { color: #f9e2af; }
+#network.disconnected { color: #f38ba8; }
+#network.disabled { color: #6c7086; }
 
-#custom-power {
-    color: #f38ba8;
-}
+/* Benachrichtigungen: Material-Design-Glocke ist bei 13px kleiner als die
+   Font-Awesome-Icons der anderen Module, daher etwas groesser */
+#custom-notifications { color: #ffffff; font-size: 16px; }
+#custom-notifications.has-notifications { color: #b794f6; }
+
+/* Power-Menue */
+#custom-power { color: #f38ba8; }
 
 #custom-lock:hover,
 #custom-reboot:hover,
-#custom-hibernate:hover {
+#custom-suspend:hover {
     background: #313244;
 }
 
@@ -81,16 +100,3 @@ window#waybar {
     background: #f38ba8;
     color: #1e1e2e;
 }
-
-tooltip {
-    background: #1e1e2e;
-    border: 1px solid #45475a;
-}
-
-#custom-bluetooth { padding: 0 10px; color: #9e9beb; }
-#custom-bluetooth.low { color: #f38ba8; }
-
-#custom-power-profile { padding: 0 10px; }
-#custom-power-profile.performance { color: #f38ba8; }
-#custom-power-profile.balanced { color: #cdd6f4; }
-#custom-power-profile.power-saver { color: #a6e3a1; }

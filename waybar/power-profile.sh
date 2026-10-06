@@ -12,13 +12,12 @@ valid() { [[ $1 == performance || $1 == balanced || $1 == power-saver ]]; }
 
 get_profile() {
     local p
-    p=$(tlpctl get 2>/dev/null)
-    if ! valid "$p"; then
-        # Fallback: D-Bus-Schnittstelle von tlp-pd
-        p=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles \
-            /org/freedesktop/UPower/PowerProfiles \
-            org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | cut -d'"' -f2)
-    fi
+    # D-Bus-Schnittstelle von tlp-pd: schnell, startet kein Python wie tlpctl
+    p=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles \
+        /org/freedesktop/UPower/PowerProfiles \
+        org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | cut -d'"' -f2)
+    # Fallback: tlpctl
+    valid "$p" || p=$(tlpctl get 2>/dev/null)
     valid "$p" && echo "$p" || echo "unknown"
 }
 

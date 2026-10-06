@@ -9,18 +9,47 @@ MENU=(fuzzel --dmenu --width 60 --lines 10)
 # Muss zu "signal" im Waybar-Modul passen
 SIGNAL=8
 
-notify() { command -v notify-send >/dev/null && notify-send -a Bluetooth "$1"; }
+# Feste Menueeintraege mit Nerd-Font-Icon (zwei Leerzeichen wie bei den Geraetezeilen)
+PAIR_ENTRY=$'\U000F0415  Neues Gerät koppeln'     # nf-md-plus
+OFF_ENTRY=$'\U000F00B2  Bluetooth ausschalten'    # nf-md-bluetooth_off
+ON_ENTRY=$'\U000F00AF  Bluetooth einschalten'     # nf-md-bluetooth
+
+# Jede Meldung ersetzt die vorherige ("Verbinde …" -> "verbunden"),
+# damit nicht beide im Benachrichtigungs-Verlauf landen.
+NID=""
+notify() {
+    command -v notify-send >/dev/null || return
+    NID=$(notify-send -a Bluetooth -p ${NID:+-r "$NID"} "$1")
+}
 refresh() { sleep 1; pkill -RTMIN+"$SIGNAL" waybar; }
 is_connected() { bluetoothctl info "$1" 2>/dev/null | grep -q "Connected: yes"; }
+is_powered() { bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; }
+
+# Nerd-Font-Icon je Geraetetyp ("Icon:" aus bluetoothctl info), sonst Bluetooth-Symbol
+device_glyph() {
+    case $(sed -n 's/^[[:space:]]*Icon: //p' <<<"$1") in
+        audio-headphones)           printf '\U000F02CB' ;;  # nf-md-headphones
+        audio-headset)              printf '\U000F02CE' ;;  # nf-md-headset
+        audio-card|audio-speakers)  printf '\U000F04C3' ;;  # nf-md-speaker
+        input-mouse)                printf '\U000F037D' ;;  # nf-md-mouse
+        input-keyboard)             printf '\U000F030C' ;;  # nf-md-keyboard
+        input-gaming)               printf '\U000F0297' ;;  # nf-md-gamepad_variant
+        phone)                      printf '\U000F011C' ;;  # nf-md-cellphone
+        computer)                   printf '\U000F0322' ;;  # nf-md-laptop
+        *)                          printf '\U000F00AF' ;;  # nf-md-bluetooth
+    esac
+}
 
 declare -A MAC_OF
 LABELS=()
 
 build_list() {
-    local mac name label
+    local mac name label info mark
     LABELS=(); MAC_OF=()
     while read -r _ mac name; do
-        if is_connected "$mac"; then label="● $name"; else label="○ $name"; fi
+        info=$(bluetoothctl info "$mac" 2>/dev/null)
+        if grep -q "Connected: yes" <<<"$info"; then mark="●"; else mark="○"; fi
+        label="$(device_glyph "$info")  $mark $name"
         LABELS+=("$label")
         MAC_OF["$label"]=$mac
     done < <(bluetoothctl devices Paired 2>/dev/null || bluetoothctl paired-devices)
@@ -31,7 +60,8 @@ codec_menu() {
     local labels=()
     declare -A KEY_OF
 
-    active=$(pactl list cards | awk -v c="$card" '
+    # LC_ALL=C: pactl uebersetzt seine Ausgabe, das awk-Parsing braucht die englische
+    active=$(LC_ALL=C pactl list cards | awk -v c="$card" '
         /^Card #/ { on=0 }
         $1=="Name:" { on=($2==c) }
         on && /Active Profile:/ { print $3 }')
@@ -41,7 +71,7 @@ codec_menu() {
         if [[ $key == "$active" ]]; then label="● $desc"; else label="○ $desc"; fi
         KEY_OF["$label"]=$key
         labels+=("$label")
-    done < <(pactl list cards | awk -v c="$card" '
+    done < <(LC_ALL=C pactl list cards | awk -v c="$card" '
         /^Card #/ { on=0; prof=0 }
         $1=="Name:" { on=($2==c) }
         on && /^\tProfiles:/ { prof=1; next }
@@ -106,8 +136,8 @@ device_menu() {
 }
 
 pair_new() {
-    local labels=() mac name paired choice
-    declare -A NEW
+    local labels=() mac name paired choice label
+    declare -A NEW NAME_OF
 
     notify "Suche Geräte (10 s) – Gerät in den Kopplungsmodus versetzen"
     bluetoothctl --timeout 10 scan on >/dev/null 2>&1
@@ -116,8 +146,10 @@ pair_new() {
     while read -r _ mac name; do
         grep -q "$mac" <<<"$paired" && continue
         [[ $name == "${mac//:/-}" ]] && continue   # Geraete ohne Namen ausblenden
-        labels+=("$name  [$mac]")
-        NEW["$name  [$mac]"]=$mac
+        label="$(device_glyph "$(bluetoothctl info "$mac" 2>/dev/null)")  $name  [$mac]"
+        labels+=("$label")
+        NEW["$label"]=$mac
+        NAME_OF["$label"]=$name
     done < <(bluetoothctl devices)
 
     if [[ ${#labels[@]} -eq 0 ]]; then
@@ -129,7 +161,7 @@ pair_new() {
     mac=${NEW[$choice]}
     [[ -n $mac ]] || return
 
-    notify "Koppeln mit ${choice%  \[*} …"
+    notify "Koppeln mit ${NAME_OF[$choice]} …"
     if bluetoothctl pair "$mac" | grep -q "Pairing successful"; then
         bluetoothctl trust "$mac" >/dev/null
         bluetoothctl connect "$mac" >/dev/null
@@ -141,22 +173,41 @@ pair_new() {
 }
 
 toggle_power() {
-    if bluetoothctl show | grep -q "Powered: yes"; then
+    if is_powered; then
         bluetoothctl power off >/dev/null; notify "Bluetooth aus"
     else
-        bluetoothctl power on >/dev/null; notify "Bluetooth an"
+        # Ein rfkill-Block (z. B. Flugmodus) verhindert sonst "power on"
+        rfkill unblock bluetooth 2>/dev/null
+        if bluetoothctl power on >/dev/null; then
+            notify "Bluetooth an"
+        else
+            notify "Bluetooth einschalten fehlgeschlagen"
+        fi
     fi
     refresh
 }
 
 main() {
     local choice
+
+    # bluetoothctl wartet endlos, wenn bluetoothd nicht laeuft
+    if ! timeout 2 bluetoothctl show >/dev/null 2>&1; then
+        notify "Bluetooth nicht verfügbar (läuft bluetoothd?)"
+        exit 1
+    fi
+
+    if ! is_powered; then
+        printf '%s\n' "$ON_ENTRY" | "${MENU[@]}" >/dev/null || exit 0
+        toggle_power
+        exit 0
+    fi
+
     build_list
-    choice=$(printf '%s\n' "${LABELS[@]}" "+ Neues Gerät koppeln" "⏻ Bluetooth an/aus" | "${MENU[@]}") || exit 0
+    choice=$(printf '%s\n' "${LABELS[@]}" "$PAIR_ENTRY" "$OFF_ENTRY" | "${MENU[@]}") || exit 0
 
     case $choice in
-        "+ Neues Gerät koppeln") pair_new ;;
-        "⏻ Bluetooth an/aus")    toggle_power ;;
+        "$PAIR_ENTRY") pair_new ;;
+        "$OFF_ENTRY")  toggle_power ;;
         *) [[ -n ${MAC_OF[$choice]} ]] && device_menu "${MAC_OF[$choice]}" ;;
     esac
 }

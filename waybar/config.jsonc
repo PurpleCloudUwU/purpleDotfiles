@@ -15,9 +15,10 @@
         "battery#bat1",
         "pulseaudio",
         "network",
+        "custom/notifications",
         "custom/lock",
         "custom/reboot",
-        "custom/hibernate",
+        "custom/suspend",
         "custom/poweroff",
         "custom/power"
     ],
@@ -37,12 +38,14 @@
         "spacing": 10
     },
 
+    // Fragt das Profil per busctl ab (kein Python mehr); nach einem Wechsel
+    // ueber das Menue aktualisiert Signal 9 sofort.
     "custom/power-profile": {
-    "exec": "/home/purple/.config/waybar/power-profile.sh",
-    "return-type": "json",
-    "interval": 5,
-    "signal": 9,
-    "on-click": "/home/purple/.config/waybar/power-profile.sh menu"
+        "exec": "/home/purple/.config/waybar/power-profile.sh",
+        "return-type": "json",
+        "interval": 10,
+        "signal": 9,
+        "on-click": "/home/purple/.config/waybar/power-profile.sh menu"
     },
 
     // Akkunamen pruefen mit: ls /sys/class/power_supply
@@ -67,29 +70,47 @@
     },
 
     "custom/bluetooth": {
-    "exec": "/home/purple/.config/waybar/bt-status.sh",
-    "return-type": "json",
-    "interval": 5,
-    "signal": 8,
-    "on-click": "/home/purple/.config/waybar/bt-menu.sh"
-},
+        "exec": "/home/purple/.config/waybar/bt-status.sh",
+        "return-type": "json",
+        "interval": 5,
+        "signal": 8,
+        "on-click": "/home/purple/.config/waybar/bt-menu.sh"
+    },
 
     "pulseaudio": {
         "format": "{icon} {volume}%",
         "format-muted": "\uf026 stumm",
         "format-icons": { "default": ["\uf027", "\uf028"] },
         "scroll-step": 5,
-        "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+        "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "on-click-right": "pavucontrol"
     },
 
     "network": {
         "format-wifi": "\uf1eb",
         "format-ethernet": "\uf6ff",
+        // verbunden, aber (noch) keine IP-Adresse
+        "format-linked": "\uf1eb",
         "format-disconnected": "\uf127",
+        // WLAN ausgeschaltet (nf-md-wifi_off)
+        "format-disabled": "\udb81\uddaa",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)",
         "tooltip-format-ethernet": "{ifname}",
+        "tooltip-format-linked": "{ifname}: keine IP-Adresse",
         "tooltip-format-disconnected": "Nicht verbunden",
+        "tooltip-format-disabled": "WLAN aus",
         "on-click": "/home/purple/.config/waybar/wifi-menu.sh"
+    },
+
+    // Benachrichtigungs-Verlauf (mako). Das Signal 11 schickt mako per "on-notify",
+    // das Intervall ist nur ein Sicherheitsnetz.
+    "custom/notifications": {
+        "exec": "/home/purple/.config/waybar/notifications.sh",
+        "return-type": "json",
+        "interval": 30,
+        "signal": 11,
+        "on-click": "/home/purple/.config/waybar/notifications.sh menu",
+        "on-click-right": "/home/purple/.config/waybar/notifications.sh clear"
     },
 
     // Power-Menue: Klick auf das Symbol ganz rechts klappt die Aktionen nach links aus.
@@ -115,12 +136,12 @@
         "signal": 10,
         "on-click": "/home/purple/.config/waybar/power-menu.sh run reboot"
     },
-    "custom/hibernate": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh item hibernate",
+    "custom/suspend": {
+        "exec": "/home/purple/.config/waybar/power-menu.sh item suspend",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh run hibernate"
+        "on-click": "/home/purple/.config/waybar/power-menu.sh run suspend"
     },
     "custom/poweroff": {
         "exec": "/home/purple/.config/waybar/power-menu.sh item poweroff",

@@ -1,0 +1,45 @@
+# Mako-Benachrichtigungen, Stil an fuzzel angelehnt (Catppuccin Mocha, Akzent lila wie Waybar/Sway).
+# Farben im Format #RRGGBBAA, AA = Deckkraft
+# Nach Aenderungen: makoctl reload
+
+font=JetBrainsMono Nerd Font 12
+background-color=#1e1e2ef2
+text-color=#cdd6f4ff
+border-color=#b794f6ff
+progress-color=over #313244ff
+
+border-size=1
+border-radius=0
+padding=14,20
+margin=10
+width=360
+height=150
+
+# Programmname klein in der Akzentfarbe (wie der Prompt in fuzzel), darunter Titel und Text
+format=<span color="#b794f6">%a</span>\n<b>%s</b>\n%b
+
+# Standard von mako ist 0 = nie ausblenden
+default-timeout=5000
+
+# Verlauf fuer die Glocke in Waybar (Standard: 5)
+max-history=20
+# Glocke sofort aktualisieren; Signal muss zu waybar/notifications.sh passen
+on-notify=exec pkill -RTMIN+11 waybar
+
+# Nerd-Font-Icon vor dem Programmnamen fuer die eigenen Skripte
+# (gleiche Icons wie im Verlauf, siehe glyph_for in waybar/notifications.sh)
+[app-name=WLAN]
+format=<span color="#b794f6">󰖩  %a</span>\n<b>%s</b>\n%b
+
+[app-name=Bluetooth]
+format=<span color="#b794f6">󰂯  %a</span>\n<b>%s</b>\n%b
+
+[app-name=Powerprofil]
+format=<span color="#b794f6">󰓅  %a</span>\n<b>%s</b>\n%b
+
+[urgency=low]
+border-color=#6c7086ff
+
+[urgency=critical]
+border-color=#f38ba8ff
+default-timeout=0
