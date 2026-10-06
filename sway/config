@@ -33,6 +33,8 @@ input type:touchpad {
 input type:keyboard {
     xkb_layout de
     xkb_variant nodeadkeys
+    # Ziffernblock nach dem Login eingeschaltet
+    xkb_numlock enabled
 }
 
 input type:pointer {
