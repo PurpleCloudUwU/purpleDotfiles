@@ -16,7 +16,7 @@ tooltip {
     border: 1px solid #45475a;
 }
 
-/* Ohne diese Regel bestimmt das GTK-Theme die Tooltip-Schriftfarbe */
+/* Without this rule the GTK theme decides the tooltip text color */
 tooltip label {
     color: #cdd6f4;
 }
@@ -43,7 +43,7 @@ tooltip label {
     color: #1e1e2e;
 }
 
-/* Gemeinsamer Abstand fuer alle Module */
+/* Common padding for all modules */
 #clock,
 #tray,
 #custom-bluetooth,
@@ -64,12 +64,12 @@ tooltip label {
 #custom-bluetooth { color: #9e9beb; }
 #custom-bluetooth.low { color: #f38ba8; }
 
-/* Energieprofil */
+/* Power profile */
 #custom-power-profile.performance { color: #f38ba8; }
 #custom-power-profile.balanced { color: #cdd6f4; }
 #custom-power-profile.power-saver { color: #a6e3a1; }
 
-/* Akku */
+/* Battery */
 #battery.warning:not(.charging) { color: #f9e2af; }
 #battery.critical:not(.charging) { color: #f38ba8; }
 #battery.charging { color: #a6e3a1; }
@@ -77,17 +77,17 @@ tooltip label {
 /* Audio */
 #pulseaudio.muted { color: #6c7086; }
 
-/* Netzwerk */
+/* Network */
 #network.linked { color: #f9e2af; }
 #network.disconnected { color: #f38ba8; }
 #network.disabled { color: #6c7086; }
 
-/* Benachrichtigungen: Material-Design-Glocke ist bei 13px kleiner als die
-   Font-Awesome-Icons der anderen Module, daher etwas groesser */
+/* Notifications: at 13px the Material Design bell is smaller than the
+   Font Awesome icons of the other modules, so it's a bit larger */
 #custom-notifications { color: #ffffff; font-size: 16px; }
 #custom-notifications.has-notifications { color: #b794f6; }
 
-/* Power-Menue */
+/* Power menu */
 #custom-power { color: #f38ba8; }
 
 #custom-lock:hover,

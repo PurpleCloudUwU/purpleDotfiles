@@ -1,6 +1,6 @@
-# Mako-Benachrichtigungen, Stil an fuzzel angelehnt (Catppuccin Mocha, Akzent lila wie Waybar/Sway).
-# Farben im Format #RRGGBBAA, AA = Deckkraft
-# Nach Aenderungen: makoctl reload
+# Mako notifications, styled like fuzzel (Catppuccin Mocha, purple accent like Waybar/Sway).
+# Colors as #RRGGBBAA, AA = opacity
+# After changes: makoctl reload
 
 font=JetBrainsMono Nerd Font 12
 background-color=#1e1e2ef2
@@ -15,19 +15,19 @@ margin=10
 width=360
 height=150
 
-# Programmname klein in der Akzentfarbe (wie der Prompt in fuzzel), darunter Titel und Text
+# App name small in the accent color (like the fuzzel prompt), title and body below
 format=<span color="#b794f6">%a</span>\n<b>%s</b>\n%b
 
-# Standard von mako ist 0 = nie ausblenden
+# mako's default is 0 = never hide
 default-timeout=5000
 
-# Verlauf fuer die Glocke in Waybar (Standard: 5)
+# History for the Waybar bell (default: 5)
 max-history=20
-# Glocke sofort aktualisieren; Signal muss zu waybar/notifications.sh passen
+# Update the bell right away; the signal must match waybar/notifications.sh
 on-notify=exec pkill -RTMIN+11 waybar
 
-# Nerd-Font-Icon vor dem Programmnamen fuer die eigenen Skripte
-# (gleiche Icons wie im Verlauf, siehe glyph_for in waybar/notifications.sh)
+# Nerd Font icon before the app name for my own scripts
+# (same icons as in the history, see glyph_for in waybar/notifications.sh)
 [app-name=WLAN]
 format=<span color="#b794f6">󰖩  %a</span>\n<b>%s</b>\n%b
 

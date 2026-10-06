@@ -1,14 +1,14 @@
-# Sway-Konfiguration
-# Referenz: man 5 sway, man 5 sway-input, man 5 sway-bar
+# Sway configuration
+# Reference: man 5 sway, man 5 sway-input, man 5 sway-bar
 
-# Umgebung an systemd/D-Bus weitergeben. Steht oben, damit das vor allen
-# anderen exec-Zeilen passiert (wichtig fuer Portale und Autostart).
+# Pass the environment to systemd/D-Bus. Kept at the top so it runs before
+# all other exec lines (important for portals and autostart).
 include /etc/sway/config.d/*
 
-### Variablen
+### Variables
 
 set $mod Mod4
-# Richtungstasten wie in vim
+# Direction keys like vim
 set $left h
 set $down j
 set $up k
@@ -16,12 +16,12 @@ set $right l
 set $term kitty
 set $menu fuzzel
 
-### Ausgabe
+### Output
 
-# Monitornamen anzeigen: swaymsg -t get_outputs
+# List monitor names: swaymsg -t get_outputs
 output * bg /home/purple/Pictures/daaaaaa.png fill
 
-### Eingabe
+### Input
 
 input type:touchpad {
     dwt enabled
@@ -33,7 +33,7 @@ input type:touchpad {
 input type:keyboard {
     xkb_layout de
     xkb_variant nodeadkeys
-    # Ziffernblock nach dem Login eingeschaltet
+    # Numpad (NumLock) on after login
     xkb_numlock enabled
 }
 
@@ -42,9 +42,9 @@ input type:pointer {
     pointer_accel 0
 }
 
-### Aussehen
+### Appearance
 
-# Fensterrahmen:        border   background text     indicator child_border
+# Window borders:       border   background text     indicator child_border
 client.focused          #b794f6 #12101a #cdd6f4 #c989fa   #e089fa
 client.focused_inactive #45475a #1e1e2e #a6adc8 #45475a   #45475a
 client.unfocused        #313244 #1e1e2e #6c7086 #313244   #313244
@@ -53,28 +53,28 @@ client.urgent           #f38ba8 #f38ba8 #1e1e2e #f38ba8   #f38ba8
 default_orientation horizontal
 workspace_layout default
 
-### Tastenkuerzel
+### Key bindings
 
-# Programme
+# Applications
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+Shift+w exec brave-origin
 bindsym $mod+Shift+e exec dolphin
 bindsym $mod+Shift+b exec /home/purple/.config/waybar/bt-menu.sh
 
-# Sperren und Benachrichtigungen
+# Lock and notifications
 bindsym $mod+Escape exec pidof hyprlock || hyprlock --immediate-render -q
 bindsym $mod+n exec /home/purple/.config/waybar/notifications.sh menu
 bindsym $mod+Shift+n exec makoctl dismiss --all
 
-# Fenster schliessen, Config neu laden
+# Close window, reload config
 bindsym $mod+Shift+q kill
 bindsym $mod+Shift+c reload
 
-# $mod + linke Maustaste verschiebt, $mod + rechte Maustaste aendert die Groesse
+# $mod + left mouse button moves, $mod + right mouse button resizes
 floating_modifier $mod normal
 
-# Fokus bewegen
+# Move focus
 bindsym $mod+$left focus left
 bindsym $mod+$down focus down
 bindsym $mod+$up focus up
@@ -84,7 +84,7 @@ bindsym $mod+Down focus down
 bindsym $mod+Up focus up
 bindsym $mod+Right focus right
 
-# Fenster verschieben
+# Move windows
 bindsym $mod+Shift+$left move left
 bindsym $mod+Shift+$down move down
 bindsym $mod+Shift+$up move up
@@ -94,7 +94,7 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
-# Arbeitsflaechen wechseln
+# Switch workspace
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
 bindsym $mod+3 workspace number 3
@@ -106,7 +106,7 @@ bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
 bindsym $mod+0 workspace number 10
 
-# Fenster auf Arbeitsflaeche verschieben
+# Move window to workspace
 bindsym $mod+Shift+1 move container to workspace number 1
 bindsym $mod+Shift+2 move container to workspace number 2
 bindsym $mod+Shift+3 move container to workspace number 3
@@ -133,7 +133,7 @@ bindsym $mod+a focus parent
 bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+minus scratchpad show
 
-# Groesse aendern
+# Resize
 mode "resize" {
     bindsym $left resize shrink width 10px
     bindsym $down resize grow height 10px
@@ -150,37 +150,37 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# Lautstaerke (wpctl, -l 1.0 = maximal 100 %)
+# Volume (wpctl, -l 1.0 = at most 100 %)
 bindsym --locked XF86AudioMute exec wpctl set-mute \@DEFAULT_AUDIO_SINK@ toggle
 bindsym --locked XF86AudioLowerVolume exec wpctl set-volume \@DEFAULT_AUDIO_SINK@ 5%-
 bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 \@DEFAULT_AUDIO_SINK@ 5%+
 bindsym --locked XF86AudioMicMute exec wpctl set-mute \@DEFAULT_AUDIO_SOURCE@ toggle
 
-# Medien
+# Media
 bindsym --locked XF86AudioPlay exec playerctl play-pause
 bindsym --locked XF86AudioPause exec playerctl play-pause
 bindsym --locked XF86AudioPrev exec playerctl previous
 bindsym --locked XF86AudioNext exec playerctl next
 bindsym --locked XF86AudioStop exec playerctl stop
 
-# Helligkeit
+# Brightness
 bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
 bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
 
-# Screenshots: Fenster, Monitor, Bereich
+# Screenshots: window, monitor, region
 bindsym $mod+Print exec sway-screenshot -m window
 bindsym Print exec sway-screenshot -m output
 bindsym $mod+Shift+Print exec sway-screenshot -m region
 
-### Leiste
+### Bar
 
 bar {
     swaybar_command waybar
 }
 
-### Sperre und Energiesparen
+### Lock and power saving
 
-# hyprlock mit "&" starten: mit -w wartet swayidle sonst bis zum Entsperren
+# Start hyprlock with "&": with -w swayidle would otherwise wait until unlock
 exec swayidle -w \
     timeout 300  'pidof hyprlock || hyprlock --immediate-render -q &' \
     timeout 330  'swaymsg "output * power off"' \
@@ -189,13 +189,13 @@ exec swayidle -w \
     lock         'pidof hyprlock || hyprlock --immediate-render -q &' \
     before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1'
 
-# Kein Sperren/Bildschirm-aus, solange ein Fenster sichtbar im Vollbild ist (z. B. Videos)
+# No locking/screen-off while a window is visibly fullscreen (e.g. videos)
 for_window [all] inhibit_idle fullscreen
 
 ### Autostart
 
-# Passwortabfragen fuer Programme, die Admin-Rechte brauchen
+# Password prompts for programs that need admin rights
 exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
-# Benachrichtigungen (für notify-send in den Waybar-Skripten und sway-screenshot)
+# Notifications (for notify-send in the Waybar scripts and sway-screenshot)
 exec mako
 exec dex -a -s ~/.config/autostart

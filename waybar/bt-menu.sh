@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
-# Bluetooth-Menue fuer sway/Waybar.
-# Benoetigt: bluez-utils, fuzzel, pipewire-pulse (pactl), optional libnotify
+# Bluetooth menu for sway/Waybar.
+# Requires: bluez-utils, fuzzel, pipewire-pulse (pactl), optional libnotify
 
-# Menue-Programm (liest Zeilen von stdin, gibt die Auswahl aus).
-# Alternativen: (wofi --dmenu)  (rofi -dmenu)  (bemenu)
+# Menu program (reads lines from stdin, prints the selection).
+# Alternatives: (wofi --dmenu)  (rofi -dmenu)  (bemenu)
 MENU=(fuzzel --dmenu --width 60 --lines 10)
 
-# Muss zu "signal" im Waybar-Modul passen
+# Must match "signal" in the Waybar module
 SIGNAL=8
 
-# Feste Menueeintraege mit Nerd-Font-Icon (zwei Leerzeichen wie bei den Geraetezeilen)
+# Fixed menu entries with a Nerd Font icon (two spaces, like the device lines)
 PAIR_ENTRY=$'\U000F0415  Neues Gerät koppeln'     # nf-md-plus
 OFF_ENTRY=$'\U000F00B2  Bluetooth ausschalten'    # nf-md-bluetooth_off
 ON_ENTRY=$'\U000F00AF  Bluetooth einschalten'     # nf-md-bluetooth
 AUDIO_ENTRY=$'\U000F04C3  Audioausgabe'           # nf-md-speaker
 
-# Untermenue fuer Ausgabegeraet und Qualitaet (liegt neben diesem Skript)
+# Submenu for the audio output device (lives next to this script)
 AUDIO_MENU="${0%/*}/audio-menu.sh"
 
-# Jede Meldung ersetzt die vorherige ("Verbinde …" -> "verbunden"),
-# damit nicht beide im Benachrichtigungs-Verlauf landen.
+# Each notification replaces the previous one ("Verbinde …" -> "verbunden"),
+# so they don't both end up in the notification history.
 NID=""
 notify() {
     command -v notify-send >/dev/null || return
@@ -29,7 +29,7 @@ refresh() { sleep 1; pkill -RTMIN+"$SIGNAL" waybar; }
 is_connected() { bluetoothctl info "$1" 2>/dev/null | grep -q "Connected: yes"; }
 is_powered() { bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; }
 
-# Nerd-Font-Icon je Geraetetyp ("Icon:" aus bluetoothctl info), sonst Bluetooth-Symbol
+# Nerd Font icon per device type ("Icon:" from bluetoothctl info), else the Bluetooth icon
 device_glyph() {
     case $(sed -n 's/^[[:space:]]*Icon: //p' <<<"$1") in
         audio-headphones)           printf '\U000F02CB' ;;  # nf-md-headphones
@@ -64,7 +64,7 @@ codec_menu() {
     local labels=()
     declare -A KEY_OF
 
-    # LC_ALL=C: pactl uebersetzt seine Ausgabe, das awk-Parsing braucht die englische
+    # LC_ALL=C: pactl translates its output, the awk parsing needs the English one
     active=$(LC_ALL=C pactl list cards | awk -v c="$card" '
         /^Card #/ { on=0 }
         $1=="Name:" { on=($2==c) }
@@ -149,7 +149,7 @@ pair_new() {
     paired=$(bluetoothctl devices Paired 2>/dev/null)
     while read -r _ mac name; do
         grep -q "$mac" <<<"$paired" && continue
-        [[ $name == "${mac//:/-}" ]] && continue   # Geraete ohne Namen ausblenden
+        [[ $name == "${mac//:/-}" ]] && continue   # hide devices without a name
         label="$(device_glyph "$(bluetoothctl info "$mac" 2>/dev/null)")  $name  [$mac]"
         labels+=("$label")
         NEW["$label"]=$mac
@@ -180,7 +180,7 @@ toggle_power() {
     if is_powered; then
         bluetoothctl power off >/dev/null; notify "Bluetooth aus"
     else
-        # Ein rfkill-Block (z. B. Flugmodus) verhindert sonst "power on"
+        # An rfkill block (e.g. airplane mode) would otherwise prevent "power on"
         rfkill unblock bluetooth 2>/dev/null
         if bluetoothctl power on >/dev/null; then
             notify "Bluetooth an"
@@ -195,8 +195,8 @@ main() {
     local choice
     local entries=()
 
-    # Die Audioausgabe ist immer waehlbar, auch ohne Bluetooth.
-    # bluetoothctl wartet endlos, wenn bluetoothd nicht laeuft -> timeout
+    # The audio output can always be chosen, even without Bluetooth.
+    # bluetoothctl waits forever if bluetoothd isn't running -> timeout
     if ! timeout 2 bluetoothctl show >/dev/null 2>&1; then
         notify "Bluetooth nicht verfügbar (läuft bluetoothd?)"
         entries=("$AUDIO_ENTRY")

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# WLAN-Menue fuer sway/Waybar (NetworkManager).
-# Benoetigt: networkmanager (nmcli), fuzzel, optional libnotify
+# Wi-Fi menu for sway/Waybar (NetworkManager).
+# Requires: networkmanager (nmcli), fuzzel, optional libnotify
 
-# Menue-Programm: liest Zeilen von stdin, gibt die Auswahl aus.
+# Menu program: reads lines from stdin, prints the selection.
 MENU=(fuzzel --dmenu --width 45 --lines 10)
 
-# Jede Meldung ersetzt die vorherige ("Verbinde …" -> "Verbunden"),
-# damit nicht beide im Benachrichtigungs-Verlauf landen.
+# Each notification replaces the previous one ("Verbinde …" -> "Verbunden"),
+# so they don't both end up in the notification history.
 NID=""
 notify() {
     command -v notify-send >/dev/null || return
     NID=$(notify-send -a WLAN -p ${NID:+-r "$NID"} "$1")
 }
 
-# Freitext-Eingabe (nur fuzzel): ask "Prompt: " [--password]
+# Free text input (fuzzel only): ask "Prompt: " [--password]
 ask() { "${MENU[@]}" --prompt-only="$1" "${@:2}" </dev/null; }
 
 DEV=$(nmcli -t -f DEVICE,TYPE device | awk -F: '$2=="wifi"{print $1; exit}')
@@ -25,14 +25,14 @@ build_list() {
     local line type name inuse sig sec ssid mark lock saved label
     LABELS=(); SSID_OF=(); SAVED=(); SIG=(); SEC=(); USE=()
 
-    # Gespeicherte WLAN-Profile (Annahme: Profilname = SSID)
+    # Saved Wi-Fi profiles (assumption: profile name = SSID)
     while IFS= read -r line; do
         type=${line##*:}
         name=${line%:*}; name=${name//\\:/:}
         [[ $type == 802-11-wireless ]] && SAVED["$name"]=1
     done < <(nmcli -g NAME,TYPE connection show)
 
-    # Gefundene Netze; pro SSID das staerkste Signal behalten
+    # Networks found; keep the strongest signal per SSID
     while IFS=: read -r inuse sig sec ssid; do
         ssid=${ssid//\\:/:}
         [[ -z $ssid || -z $sig ]] && continue
@@ -43,7 +43,7 @@ build_list() {
         [[ $inuse == '*' ]] && USE[$ssid]=1
     done < <(nmcli -g IN-USE,SIGNAL,SECURITY,SSID device wifi list --rescan no)
 
-    # Nach Signal sortiert ausgeben
+    # Output sorted by signal
     while IFS=$'\t' read -r sig ssid; do
         mark="○"; [[ -n ${USE[$ssid]} ]] && mark="●"
         lock=""; [[ -n ${SEC[$ssid]} && ${SEC[$ssid]} != "--" ]] && lock=$' \uf023'
@@ -77,7 +77,7 @@ connect_to() {
     if [[ $? -eq 0 ]]; then
         notify "Verbunden mit $ssid"
     else
-        # Fehlgeschlagenes Profil (z. B. falsches Passwort) wieder entfernen
+        # Remove the failed profile again (e.g. wrong password)
         nmcli connection delete id "$ssid" >/dev/null 2>&1
         notify "Verbinden mit $ssid fehlgeschlagen (Passwort?)"
     fi
@@ -144,7 +144,7 @@ main() {
         exit 0
     fi
 
-    # Scan im Hintergrund anstossen, damit die Liste beim naechsten Oeffnen frisch ist
+    # Start a scan in the background so the list is fresh next time
     nmcli device wifi rescan >/dev/null 2>&1 &
 
     build_list

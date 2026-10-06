@@ -1,10 +1,10 @@
-# KDE-Farbschema passend zu Sway/Waybar/fuzzel/mako (Catppuccin Mocha, Akzent #b794f6).
-# Farben als R,G,B. Aktiv in Dolphin ueber ~/.config/dolphinrc -> [UiSettings] ColorScheme=PurpleMocha
+# KDE color scheme matching Sway/Waybar/fuzzel/mako (Catppuccin Mocha, accent #b794f6).
+# Colors as R,G,B. Enabled in Dolphin via ~/.config/dolphinrc -> [UiSettings] ColorScheme=PurpleMocha
 #
 # Palette:
 #   #11111b crust   #181825 mantle   #1e1e2e base   #313244 surface0   #45475a surface1
-#   #7f849c overlay1   #ffffff Schrift   #b794f6 Akzent   #cba6f7 mauve
-#   #f38ba8 rot   #f9e2af gelb   #a6e3a1 gruen
+#   #7f849c overlay1   #ffffff text   #b794f6 accent   #cba6f7 mauve
+#   #f38ba8 red   #f9e2af yellow   #a6e3a1 green
 
 [ColorEffects:Disabled]
 Color=56,56,56
@@ -26,7 +26,7 @@ Enable=false
 IntensityAmount=0
 IntensityEffect=0
 
-# Knoepfe
+# Buttons
 [Colors:Button]
 BackgroundAlternate=69,71,90
 BackgroundNormal=49,50,68
@@ -55,7 +55,7 @@ ForegroundNormal=255,255,255
 ForegroundPositive=166,227,161
 ForegroundVisited=203,166,247
 
-# Werkzeugleiste oben
+# Toolbar at the top
 [Colors:Header]
 BackgroundAlternate=30,30,46
 BackgroundNormal=24,24,37
@@ -84,7 +84,7 @@ ForegroundNormal=255,255,255
 ForegroundPositive=166,227,161
 ForegroundVisited=203,166,247
 
-# Auswahl: lila mit dunkler Schrift (wie der aktive Workspace in Waybar)
+# Selection: purple with dark text (like the active workspace in Waybar)
 [Colors:Selection]
 BackgroundAlternate=150,120,210
 BackgroundNormal=183,148,246
@@ -113,7 +113,7 @@ ForegroundNormal=255,255,255
 ForegroundPositive=166,227,161
 ForegroundVisited=203,166,247
 
-# Dateiansicht
+# File view
 [Colors:View]
 BackgroundAlternate=36,36,54
 BackgroundNormal=30,30,46
@@ -128,7 +128,7 @@ ForegroundNormal=255,255,255
 ForegroundPositive=166,227,161
 ForegroundVisited=203,166,247
 
-# Fensterhintergrund, Seitenleiste (Orte)
+# Window background, sidebar (Places)
 [Colors:Window]
 BackgroundAlternate=30,30,46
 BackgroundNormal=24,24,37

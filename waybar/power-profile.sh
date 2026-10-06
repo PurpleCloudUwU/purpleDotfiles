@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Power-Profile-Umschalter fuer TLP (tlp-pd / tlpctl).
-#   power-profile.sh        -> JSON fuer Waybar (Symbol + Tooltip)
-#   power-profile.sh menu   -> Fuzzel-Menue zum Umschalten
+# Power profile switcher for TLP (tlp-pd / tlpctl).
+#   power-profile.sh        -> JSON for Waybar (icon + tooltip)
+#   power-profile.sh menu   -> fuzzel menu to switch
 
 MENU=(fuzzel --dmenu --width 30 --lines 3)
-SIGNAL=9   # muss zu "signal" im Waybar-Modul passen
+SIGNAL=9   # must match "signal" in the Waybar module
 
 notify() { command -v notify-send >/dev/null && notify-send -a Powerprofil "$1"; }
 
@@ -12,7 +12,7 @@ valid() { [[ $1 == performance || $1 == balanced || $1 == power-saver ]]; }
 
 get_profile() {
     local p
-    # D-Bus-Schnittstelle von tlp-pd: schnell, startet kein Python wie tlpctl
+    # tlp-pd's D-Bus interface: fast, doesn't start Python like tlpctl
     p=$(busctl --system get-property org.freedesktop.UPower.PowerProfiles \
         /org/freedesktop/UPower/PowerProfiles \
         org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | cut -d'"' -f2)

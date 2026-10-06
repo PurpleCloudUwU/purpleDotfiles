@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Textquellen fuer hyprlock.
-# Aufruf: lock-info.sh date | sky | moon | status | sigil
+# Text sources for hyprlock.
+# Usage: lock-info.sh date | sky | moon | status | sigil
 
-# Beginn der "Planetenstunden" (ungefaehr Sonnenaufgang, im Herbst/Winter spaeter eintragen)
+# Start of the "planetary hours" (roughly sunrise; set it later in autumn/winter)
 SUNRISE="07:30"
 
 ordinal() {
@@ -23,9 +23,9 @@ case $1 in
         ;;
 
     sky)
-        # Tagesherrscher nach Wochentag (0 = Sonntag)
+        # Day ruler by weekday (0 = Sunday)
         day_ruler=(Sun Moon Mars Mercury Jupiter Venus Saturn)
-        # Chaldaeische Reihenfolge fuer die Stundenherrscher
+        # Chaldean order for the hour rulers
         chaldean=(Saturn Jupiter Mars Sun Venus Mercury Moon)
 
         wd=$(date +%w)
@@ -33,7 +33,7 @@ case $1 in
         sr=$(( 10#${SUNRISE%:*} * 60 + 10#${SUNRISE#*:} ))
 
         if (( now < sr )); then
-            wd=$(( (wd + 6) % 7 ))       # vor Sonnenaufgang zaehlt noch der Vortag
+            wd=$(( (wd + 6) % 7 ))       # before sunrise it still counts as the previous day
             since=$(( now + 1440 - sr ))
         else
             since=$(( now - sr ))

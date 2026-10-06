@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Benachrichtigungs-Verlauf fuer Waybar (mako).
-#   notifications.sh         -> JSON fuer Waybar (Glocke, mit Punkt wenn etwas da ist)
-#   notifications.sh menu    -> Fuzzel-Menue mit dem Verlauf, Nerd-Font-Icon je Programm (Auswahl kopiert den Text)
-#   notifications.sh clear   -> Verlauf leeren
-# Benoetigt: mako (makoctl), jq, fuzzel, optional wl-clipboard
+# Notification history for Waybar (mako).
+#   notifications.sh         -> JSON for Waybar (bell, with a dot when there is something)
+#   notifications.sh menu    -> fuzzel menu with the history, Nerd Font icon per app (selecting copies the text)
+#   notifications.sh clear   -> clear the history
+# Requires: mako (makoctl), jq, fuzzel, optional wl-clipboard
 
 MENU=(fuzzel --dmenu --width 70 --lines 10)
-SIGNAL=11   # muss zu "signal" im Waybar-Modul und "on-notify" in der mako-Config passen
+SIGNAL=11   # must match "signal" in the Waybar module and "on-notify" in the mako config
 
-# makoctl kann den Verlauf nicht loeschen. Stattdessen merken wir uns die hoechste
-# ID beim Leeren und zeigen nur neuere Benachrichtigungen an.
+# makoctl can't delete the history. Instead we remember the highest
+# ID when clearing and only show newer notifications.
 STATE="${XDG_RUNTIME_DIR:-/tmp}/waybar-notif-cleared"
 
 BELL=$'\U000F009A'         # nf-md-bell
@@ -17,8 +17,8 @@ BELL_BADGE=$'\U000F116B'   # nf-md-bell_badge
 
 refresh() { pkill -RTMIN+"$SIGNAL" waybar; }
 
-# Setzt ALL (alle Benachrichtigungen) und ITEMS (nur die nicht geleerten),
-# jeweils als JSON-Array, neueste zuerst.
+# Sets ALL (all notifications) and ITEMS (only those not cleared),
+# both as JSON arrays, newest first.
 load() {
     local list hist cleared=0 max
     list=$(makoctl list -j 2>/dev/null) && hist=$(makoctl history -j 2>/dev/null) || return 1
@@ -26,7 +26,7 @@ load() {
 
     max=$(jq '.[0].id // 0' <<<"$ALL")
     [[ -f $STATE ]] && cleared=$(<"$STATE")
-    # mako neu gestartet (IDs beginnen wieder bei 1) -> Grenze zuruecksetzen
+    # mako restarted (IDs start at 1 again) -> reset the threshold
     if (( max < cleared )); then cleared=0; rm -f "$STATE"; fi
 
     ITEMS=$(jq --argjson c "$cleared" 'map(select(.id > $c))' <<<"$ALL")
@@ -49,8 +49,8 @@ status() {
     fi
 }
 
-# Nerd-Font-Icon je Programm (Programmname oder .desktop-Eintrag), sonst Glocke.
-# Fuer die Popups stehen die eigenen drei (WLAN, Bluetooth, Powerprofil) in der mako-Config.
+# Nerd Font icon per app (app name or .desktop entry), else the bell.
+# For the popups, my own scripts (WLAN, Bluetooth, Powerprofil, Audio) are set in the mako config.
 glyph_for() {
     case "${1,,} ${2,,}" in
         *wlan*)                      printf '\U000F05A9' ;;  # nf-md-wifi
@@ -74,8 +74,8 @@ menu() {
     declare -A ID_OF
     load || exit 0
 
-    # Eine Zeile pro Benachrichtigung: "Icon  App · Titel — Text" (Markup und Umbrueche entfernt).
-    # Felder mit \x1f getrennt: anders als Tabs fasst read leere Felder dabei nicht zusammen.
+    # One line per notification: "Icon  App · Title — Body" (markup and line breaks removed).
+    # Fields separated by \x1f: unlike tabs, read doesn't merge empty fields.
     while IFS=$'\x1f' read -r id text desktop_entry app_name; do
         label="$(glyph_for "$app_name" "$desktop_entry")  $text"
         labels+=("$label")

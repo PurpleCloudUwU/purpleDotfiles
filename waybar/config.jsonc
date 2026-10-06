@@ -38,8 +38,8 @@
         "spacing": 10
     },
 
-    // Fragt das Profil per busctl ab (kein Python mehr); nach einem Wechsel
-    // ueber das Menue aktualisiert Signal 9 sofort.
+    // Reads the profile via busctl (no Python); after a switch
+    // from the menu, signal 9 updates it right away.
     "custom/power-profile": {
         "exec": "/home/purple/.config/waybar/power-profile.sh",
         "return-type": "json",
@@ -48,7 +48,7 @@
         "on-click": "/home/purple/.config/waybar/power-profile.sh menu"
     },
 
-    // Akkunamen pruefen mit: ls /sys/class/power_supply
+    // Check battery names with: ls /sys/class/power_supply
     "battery#bat0": {
         "bat": "BAT0",
         "states": { "warning": 30, "critical": 15 },
@@ -89,10 +89,10 @@
     "network": {
         "format-wifi": "\uf1eb",
         "format-ethernet": "\uf6ff",
-        // verbunden, aber (noch) keine IP-Adresse
+        // connected, but no IP address (yet)
         "format-linked": "\uf1eb",
         "format-disconnected": "\uf127",
-        // WLAN ausgeschaltet (nf-md-wifi_off)
+        // Wi-Fi turned off (nf-md-wifi_off)
         "format-disabled": "\udb81\uddaa",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)",
         "tooltip-format-ethernet": "{ifname}",
@@ -102,8 +102,8 @@
         "on-click": "/home/purple/.config/waybar/wifi-menu.sh"
     },
 
-    // Benachrichtigungs-Verlauf (mako). Das Signal 11 schickt mako per "on-notify",
-    // das Intervall ist nur ein Sicherheitsnetz.
+    // Notification history (mako). mako sends signal 11 via "on-notify",
+    // the interval is only a safety net.
     "custom/notifications": {
         "exec": "/home/purple/.config/waybar/notifications.sh",
         "return-type": "json",
@@ -113,8 +113,8 @@
         "on-click-right": "/home/purple/.config/waybar/notifications.sh clear"
     },
 
-    // Power-Menue: Klick auf das Symbol ganz rechts klappt die Aktionen nach links aus.
-    // Das Symbol wird dabei zu "<" und schliesst das Menue beim naechsten Klick wieder.
+    // Power menu: clicking the icon on the far right expands the actions to the left.
+    // The icon then turns into "<" and closes the menu again on the next click.
     "custom/power": {
         "exec": "/home/purple/.config/waybar/power-menu.sh status",
         "return-type": "json",

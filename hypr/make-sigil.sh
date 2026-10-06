@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Erzeugt ein symmetrisches 5x5-Pixel-Siegel aus der machine-id.
-# Einmal ausfuehren; das Ergebnis liegt in ~/.config/hypr/sigil.png
+# Creates a symmetric 5x5 pixel sigil from the machine-id.
+# Run once; the result is saved to ~/.config/hypr/sigil.png
 
 out="$HOME/.config/hypr/sigil.png"
-fg="#b794f6"     # Siegelfarbe (violett)
-bg="#12101a"     # Hintergrund
+fg="#b794f6"     # Sigil color (violet)
+bg="#12101a"     # Background
 
 mkdir -p "$(dirname "$out")"
 hash=$(sha256sum /etc/machine-id | cut -d' ' -f1)
@@ -19,6 +19,6 @@ for y in 0 1 2 3 4; do
     done
 done
 
-# 5x5 -> 120x120 ohne Glaettung (jedes Pixel 24x24)
+# 5x5 -> 120x120 without smoothing (each pixel 24x24)
 "${cmd[@]}" -scale 2400% "$out"
 echo "Siegel erstellt: $out"
