@@ -11,13 +11,14 @@ The Dotfiles include:
 - Chatterino theme
 - Kitty (terminal, same colors)
 - Starship (shell prompt as flat purple blocks)
+- WirePlumber (Bluetooth headphones stay in high quality during calls; the laptop mic is used)
 
 ### Setup
 The configs are symlinked into place, so this repo is the live config
 (move existing folders out of the way first):
 ```sh
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
-for d in sway waybar hypr fuzzel mako qt6ct kitty; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
+for d in sway waybar hypr fuzzel mako qt6ct kitty wireplumber; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
 ln -s ~/purpleDotfiles/dolphin/PurpleMocha.colors ~/.local/share/color-schemes/
 ln -s ~/purpleDotfiles/chatterino/PurpleMocha.json ~/.local/share/chatterino/Themes/
 ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
