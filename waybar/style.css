@@ -69,13 +69,11 @@ tooltip label {
 #custom-power-profile.balanced { color: #cdd6f4; }
 #custom-power-profile.power-saver { color: #a6e3a1; }
 
-/* Battery: green whenever the charger is plugged in (Waybar states charging,
-   plugged and full), warning colors only on battery power */
+/* Battery: with the charger plugged in (Waybar states charging, plugged, full)
+   only the icon is green, set via markup in config.jsonc.
+   Warning colors only on battery power. */
 #battery.warning:not(.charging):not(.plugged):not(.full) { color: #f9e2af; }
 #battery.critical:not(.charging):not(.plugged):not(.full) { color: #f38ba8; }
-#battery.charging,
-#battery.plugged,
-#battery.full { color: #a6e3a1; }
 
 /* Audio */
 #pulseaudio.muted { color: #6c7086; }
