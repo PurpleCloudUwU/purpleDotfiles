@@ -55,6 +55,7 @@
         "format": "{icon} {capacity}%",
         "format-charging": "\uf0e7 {capacity}%",
         "format-plugged": "\uf1e6 {capacity}%",
+        "format-full": "\uf1e6 {capacity}%",
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
         "tooltip-format": "Intern: {capacity}% ({timeTo})"
     },
@@ -65,6 +66,7 @@
         "format": "{icon} {capacity}%",
         "format-charging": "\uf0e7 {capacity}%",
         "format-plugged": "\uf1e6 {capacity}%",
+        "format-full": "\uf1e6 {capacity}%",
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
         "tooltip-format": "Extern: {capacity}% ({timeTo})"
     },
