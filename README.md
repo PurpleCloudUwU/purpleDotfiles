@@ -13,7 +13,7 @@ The Dotfiles include:
 - Starship (shell prompt as flat purple blocks)
 - swayimg (image viewer, same colors)
 - SwayOSD (small on-screen display with icon for volume and brightness)
-- Yazi (file manager: Enter goes into folders instead of opening them in $EDITOR)
+- Yazi (file manager: Enter goes into folders instead of opening them in $EDITOR, nvim when $EDITOR is unset)
 
 ### Setup
 The configs are symlinked into place, so this repo is the live config
