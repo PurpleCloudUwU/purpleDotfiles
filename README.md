@@ -13,13 +13,14 @@ The Dotfiles include:
 - Starship (shell prompt as flat purple blocks)
 - swayimg (image viewer, same colors)
 - SwayOSD (small on-screen display with icon for volume and brightness)
+- Yazi (file manager: Enter goes into folders instead of opening them in $EDITOR)
 
 ### Setup
 The configs are symlinked into place, so this repo is the live config
 (move existing folders out of the way first):
 ```sh
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
-for d in sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
+for d in sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd yazi; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
 ln -s ~/purpleDotfiles/dolphin/PurpleMocha.colors ~/.local/share/color-schemes/
 ln -s ~/purpleDotfiles/chatterino/PurpleMocha.json ~/.local/share/chatterino/Themes/
 ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
@@ -27,7 +28,7 @@ ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
 ```
 
 ### Where the files go
-The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
+The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
 
 | File | Destination |
 |---|---|
