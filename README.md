@@ -39,3 +39,8 @@ Additional settings:
 - Dolphin: in `~/.config/dolphinrc` set `ColorScheme=PurpleMocha` under `[UiSettings]`.
 - Chatterino: select `PurpleMocha` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
+
+### Terminal
+Kitty with the starship prompt:
+
+![Terminal: kitty with the starship prompt](screenshots/terminal.png)
