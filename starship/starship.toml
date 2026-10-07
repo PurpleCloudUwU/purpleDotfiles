@@ -1,0 +1,76 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Prompt as flat colored blocks, like the Waybar workspaces and the kitty tabs:
+#  [ arch user ][ folder path ][ branch status ]  duration
+#  ❯
+format = """
+$os$username$hostname\
+$directory\
+$git_branch$git_status\
+$cmd_duration\
+$line_break\
+$character"""
+
+# Same colors as Sway, Waybar, fuzzel, mako and kitty
+palette = "purple_mocha"
+
+[palettes.purple_mocha]
+accent   = "#b794f6"
+text     = "#cdd6f4"
+surface1 = "#45475a"
+surface0 = "#313244"
+base     = "#1e1e2e"
+err      = "#f38ba8"
+warn     = "#f9e2af"
+
+# Block 1: Arch logo + user in the accent color (hostname only over SSH)
+[os]
+disabled = false
+style = "bg:accent fg:base"
+format = "[ $symbol ]($style)"
+
+[os.symbols]
+Arch = "\U000F08C7"
+
+[username]
+show_always = true
+style_user = "bg:accent fg:base"
+style_root = "bg:err fg:base"
+format = "[$user ]($style)"
+
+[hostname]
+ssh_only = true
+style = "bg:accent fg:base"
+format = "[@$hostname ]($style)"
+
+# Block 2: current folder (last 3 levels)
+[directory]
+style = "bg:surface1 fg:text"
+format = "[ \U000F024B $path ]($style)[$read_only]($read_only_style)"
+truncation_length = 3
+truncation_symbol = "…/"
+truncate_to_repo = false
+read_only = "\U000F033E "
+read_only_style = "bg:surface1 fg:err"
+
+# Block 3: git branch and status (only inside a repository)
+[git_branch]
+symbol = "\uE725"
+style = "bg:surface0 fg:accent"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "bg:surface0 fg:warn"
+format = "([$all_status$ahead_behind ]($style))"
+
+# Duration of the last command, only if it took longer than 2 seconds
+[cmd_duration]
+min_time = 2000
+style = "fg:warn"
+format = "[ \U000F051B $duration]($style)"
+
+# Input line: purple arrow, red after an error
+[character]
+success_symbol = "[❯](bold fg:accent)"
+error_symbol = "[❯](bold fg:err)"
+vimcmd_symbol = "[❮](bold fg:accent)"
