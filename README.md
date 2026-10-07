@@ -2,7 +2,7 @@
 ## My T580 config.
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
-- Sway
+- Sway (incl. the wallpaper `sway/wallpaper.png`)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
 - Hyprlock
 - Fuzzel
@@ -29,9 +29,6 @@ from the AUR via paru), symlinks the configs into place (old ones are moved to
 NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and choose
 Sway in ly. Options: `--copy` (copy instead of symlink), `--no-packages`,
 `--no-services`, `--help`.
-
-The wallpaper isn't included: put one at `~/Pictures/daaaaaa.png` or change the
-`output * bg` line in `sway/config`.
 
 #### Manual setup
 The configs are symlinked into place, so this repo is the live config

@@ -19,7 +19,7 @@ set $menu fuzzel
 ### Output
 
 # List monitor names: swaymsg -t get_outputs
-output * bg ~/Pictures/daaaaaa.png fill
+output * bg ~/.config/sway/wallpaper.png fill
 
 ### Input
 

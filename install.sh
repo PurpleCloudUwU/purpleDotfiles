@@ -224,8 +224,4 @@ apply_settings
 
 info "Done"
 [[ -d $backup ]] && note "your old configs are in $backup"
-wallpaper=$(grep -oP '^output \* bg \K\S+' "$repo/sway/config" || true)
-if [[ -n $wallpaper && ! -e ${wallpaper/#\~/$HOME} ]]; then
-    note "no wallpaper at $wallpaper yet: put an image there or change the 'output * bg' line in sway/config"
-fi
 note "reboot, log in with ly and choose Sway"
