@@ -38,6 +38,7 @@ Folders at the top level go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar
 Additional settings:
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
 - Starship: add `eval "$(starship init bash)"` to the end of `~/.bashrc`.
+- swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
 - Dolphin: in `~/.config/dolphinrc` set `ColorScheme=PurpleMocha` under `[UiSettings]`.
 - Chatterino: select `PurpleMocha` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
