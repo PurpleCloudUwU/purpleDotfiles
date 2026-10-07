@@ -127,8 +127,9 @@ hidden_network() {
     fi
 }
 
+# LC_ALL=C: nmcli translates "enabled" in other languages (e.g. "aktiviert")
 toggle_power() {
-    if [[ $(nmcli radio wifi) == enabled ]]; then
+    if [[ $(LC_ALL=C nmcli radio wifi) == enabled ]]; then
         nmcli radio wifi off; notify "WLAN aus"
     else
         nmcli radio wifi on; notify "WLAN an"
@@ -138,7 +139,7 @@ toggle_power() {
 main() {
     local choice
 
-    if [[ $(nmcli radio wifi) != enabled ]]; then
+    if [[ $(LC_ALL=C nmcli radio wifi) != enabled ]]; then
         printf '%s\n' "⏻ WLAN einschalten" | "${MENU[@]}" >/dev/null || exit 0
         toggle_power
         exit 0

@@ -150,10 +150,10 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# Volume (wpctl, -l 1.0 = at most 100 %)
+# Volume (wpctl, at most 100 %; "up" is a script so it never lowers a volume above 100 %)
 bindsym --locked XF86AudioMute exec wpctl set-mute \@DEFAULT_AUDIO_SINK@ toggle
 bindsym --locked XF86AudioLowerVolume exec wpctl set-volume \@DEFAULT_AUDIO_SINK@ 5%-
-bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 \@DEFAULT_AUDIO_SINK@ 5%+
+bindsym --locked XF86AudioRaiseVolume exec /home/purple/.config/sway/volume-up.sh
 bindsym --locked XF86AudioMicMute exec wpctl set-mute \@DEFAULT_AUDIO_SOURCE@ toggle
 
 # Media

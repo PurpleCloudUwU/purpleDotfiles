@@ -1,6 +1,6 @@
 # purpleDotfiles
 ## My T580 config.
-![Example Picture from my Desktop.](https://github.com/PurpleCloudUwU/purpleDotfiles/blob/main/2026-10-07-084556_sway-screenshot.png)
+![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
 - Sway
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
@@ -22,11 +22,11 @@ for d in sway waybar hypr fuzzel mako qt6ct kitty swayimg; do ln -s ~/purpleDotf
 ln -s ~/purpleDotfiles/dolphin/PurpleMocha.colors ~/.local/share/color-schemes/
 ln -s ~/purpleDotfiles/chatterino/PurpleMocha.json ~/.local/share/chatterino/Themes/
 ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
-hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
+~/purpleDotfiles/hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
 ```
 
 ### Where the files go
-Folders at the top level go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`). Exceptions:
+The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`, `swayimg`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
 
 | File | Destination |
 |---|---|
