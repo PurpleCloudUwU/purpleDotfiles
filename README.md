@@ -13,7 +13,7 @@ The Dotfiles include:
 - Starship (shell prompt as flat purple blocks)
 - swayimg (image viewer, same colors)
 - SwayOSD (small on-screen display with icon for volume and brightness)
-- Yazi (file manager: Enter goes into folders instead of opening them in $EDITOR, nvim when $EDITOR is unset)
+- Yazi (file manager in the same colors; Enter goes into folders instead of opening them in $EDITOR, nvim when $EDITOR is unset)
 - Neovim (LazyVim with Catppuccin Mocha, purple accent, transparent background like kitty)
 
 ### Setup
@@ -57,3 +57,8 @@ Additional settings:
 Kitty with the starship prompt:
 
 ![Terminal: kitty with the starship prompt](screenshots/terminal.png)
+
+### Yazi and Neovim
+Yazi (left) and Neovim with LazyVim (right) in the same colors:
+
+![Yazi and Neovim side by side](screenshots/yazi-nvim.png)
