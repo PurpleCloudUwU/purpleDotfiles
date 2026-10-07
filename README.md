@@ -1,6 +1,6 @@
 # purpleDotfiles
 ## My T580 config.
-![Example Picture from my Desktop.](https://github.com/PurpleCloudUwU/purpleDotfiles/blob/main/pasted%20file.png)
+![Example Picture from my Desktop.](https://github.com/PurpleCloudUwU/purpleDotfiles/blob/main/2026-10-07-084556_sway-screenshot.png)
 The Dotfiles include:
 - Sway
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
