@@ -167,10 +167,12 @@ bindsym --locked XF86AudioStop exec playerctl stop
 bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
 bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
 
-# Screenshots: window, monitor, region
-bindsym $mod+Print exec sway-screenshot -m window
-bindsym Print exec sway-screenshot -m output
-bindsym $mod+Shift+Print exec sway-screenshot -m region
+# Screenshots: window, monitor, region. Saved to ~/Pictures/Screenshots,
+# sway-screenshot creates the folder if it doesn't exist yet.
+set $screenshots ~/Pictures/Screenshots
+bindsym $mod+Print exec sway-screenshot -m window -o $screenshots
+bindsym Print exec sway-screenshot -m output -o $screenshots
+bindsym $mod+Shift+Print exec sway-screenshot -m region -o $screenshots
 
 ### Bar
 
