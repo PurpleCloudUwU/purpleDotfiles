@@ -183,12 +183,12 @@ bar {
 ### Lock and power saving
 
 # Start hyprlock with "&": with -w swayidle would otherwise wait until unlock.
-# Screen off/on is logged (journalctl -t swayidle) to debug a screen that
-# sometimes stays black after waking up.
+# screen.sh logs screen off/on (journalctl -t swayidle) and works around a
+# swayidle bug that could leave the screen black, see the script.
 exec swayidle -w \
     timeout 300  'pidof hyprlock || hyprlock --immediate-render -q &' \
-    timeout 330  'logger -t swayidle "screen off"; swaymsg "output * power off" || logger -t swayidle "screen off failed"' \
-        resume   'logger -t swayidle "screen on"; swaymsg "output * power on" || logger -t swayidle "screen on failed"' \
+    timeout 330  '~/.config/sway/screen.sh off' \
+        resume   '~/.config/sway/screen.sh on' \
     timeout 1800 'systemctl suspend' \
     lock         'pidof hyprlock || hyprlock --immediate-render -q &' \
     before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1'
