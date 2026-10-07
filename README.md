@@ -41,6 +41,14 @@ Additional settings:
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
 - Starship: add `eval "$(starship init bash)"` to the end of `~/.bashrc`.
 - swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
+- kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
+  ```sh
+  sed -e 's|^Exec=kew play %F$|Exec=kitty --class kew -e kew play %F|' -e 's|^Terminal=true$|Terminal=false|' \
+      -e 's|^MimeType=.*|&audio/x-vorbis+ogg;audio/x-opus+ogg;|' \
+      /usr/share/applications/kew.desktop > ~/.local/share/applications/kew.desktop
+  xdg-mime default kew.desktop audio/mpeg audio/flac audio/x-flac audio/wav audio/x-wav audio/mp4 audio/x-m4a audio/ogg audio/opus audio/webm audio/x-vorbis+ogg audio/x-opus+ogg
+  ```
+- Dolphin as default for folders (kew also claims folders and would otherwise be picked): `xdg-mime default org.kde.dolphin.desktop inode/directory`
 - Dolphin: in `~/.config/dolphinrc` set `ColorScheme=PurpleMocha` under `[UiSettings]`.
 - Chatterino: select `PurpleMocha` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
