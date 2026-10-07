@@ -19,7 +19,7 @@ set $menu fuzzel
 ### Output
 
 # List monitor names: swaymsg -t get_outputs
-output * bg /home/purple/Pictures/daaaaaa.png fill
+output * bg ~/Pictures/daaaaaa.png fill
 
 ### Input
 
@@ -60,11 +60,11 @@ bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+Shift+w exec brave-origin
 bindsym $mod+Shift+e exec dolphin
-bindsym $mod+Shift+b exec /home/purple/.config/waybar/bt-menu.sh
+bindsym $mod+Shift+b exec ~/.config/waybar/bt-menu.sh
 
 # Lock and notifications
 bindsym $mod+Escape exec pidof hyprlock || hyprlock --immediate-render -q
-bindsym $mod+n exec /home/purple/.config/waybar/notifications.sh menu
+bindsym $mod+n exec ~/.config/waybar/notifications.sh menu
 bindsym $mod+Shift+n exec makoctl dismiss --all
 
 # Close window, reload config
@@ -151,9 +151,9 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 # Volume (at most 100 %) with the on-screen display, see osd.sh
-bindsym --locked XF86AudioMute exec /home/purple/.config/sway/osd.sh volume mute
-bindsym --locked XF86AudioLowerVolume exec /home/purple/.config/sway/osd.sh volume down
-bindsym --locked XF86AudioRaiseVolume exec /home/purple/.config/sway/osd.sh volume up
+bindsym --locked XF86AudioMute exec ~/.config/sway/osd.sh volume mute
+bindsym --locked XF86AudioLowerVolume exec ~/.config/sway/osd.sh volume down
+bindsym --locked XF86AudioRaiseVolume exec ~/.config/sway/osd.sh volume up
 bindsym --locked XF86AudioMicMute exec wpctl set-mute \@DEFAULT_AUDIO_SOURCE@ toggle
 
 # Media
@@ -164,8 +164,8 @@ bindsym --locked XF86AudioNext exec playerctl next
 bindsym --locked XF86AudioStop exec playerctl stop
 
 # Brightness with the on-screen display, see osd.sh
-bindsym --locked XF86MonBrightnessDown exec /home/purple/.config/sway/osd.sh brightness down
-bindsym --locked XF86MonBrightnessUp exec /home/purple/.config/sway/osd.sh brightness up
+bindsym --locked XF86MonBrightnessDown exec ~/.config/sway/osd.sh brightness down
+bindsym --locked XF86MonBrightnessUp exec ~/.config/sway/osd.sh brightness up
 
 # Screenshots: window, monitor, region. Saved to ~/Pictures/Screenshots,
 # sway-screenshot creates the folder if it doesn't exist yet.

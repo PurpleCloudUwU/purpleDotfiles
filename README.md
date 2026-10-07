@@ -17,6 +17,23 @@ The Dotfiles include:
 - Neovim (LazyVim with Catppuccin Mocha, purple accent, transparent background like kitty)
 
 ### Setup
+On a fresh, minimal Arch Linux, as your normal user with sudo:
+```sh
+sudo pacman -S --needed git
+git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
+~/purpleDotfiles/install.sh
+```
+The script installs the needed packages (official repos, plus `sway-screenshot`
+from the AUR via paru), symlinks the configs into place (old ones are moved to
+`~/dotfiles-backup-<date>/`), applies the additional settings below and enables
+NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and choose
+Sway in ly. Options: `--copy` (copy instead of symlink), `--no-packages`,
+`--no-services`, `--help`.
+
+The wallpaper isn't included: put one at `~/Pictures/daaaaaa.png` or change the
+`output * bg` line in `sway/config`.
+
+#### Manual setup
 The configs are symlinked into place, so this repo is the live config
 (move existing folders out of the way first):
 ```sh
@@ -37,9 +54,10 @@ The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`
 | `chatterino/PurpleMocha.json` | `~/.local/share/chatterino/Themes/` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
 
-Additional settings:
+Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
-- Starship: add `eval "$(starship init bash)"` to the end of `~/.bashrc`.
+- Editor for yazi, git etc.: add `export EDITOR=nvim` and `export VISUAL=nvim` to `~/.bash_profile`.
+- Starship and `ls` with icons: add `alias ls='eza --icons=auto'` and, at the end, `eval "$(starship init bash)"` to `~/.bashrc`.
 - swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
 - kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
   ```sh

@@ -41,11 +41,11 @@
     // Reads the profile via busctl (no Python); after a switch
     // from the menu, signal 9 updates it right away.
     "custom/power-profile": {
-        "exec": "/home/purple/.config/waybar/power-profile.sh",
+        "exec": "~/.config/waybar/power-profile.sh",
         "return-type": "json",
         "interval": 10,
         "signal": 9,
-        "on-click": "/home/purple/.config/waybar/power-profile.sh menu"
+        "on-click": "~/.config/waybar/power-profile.sh menu"
     },
 
     // Check battery names with: ls /sys/class/power_supply
@@ -72,11 +72,11 @@
     },
 
     "custom/bluetooth": {
-        "exec": "/home/purple/.config/waybar/bt-status.sh",
+        "exec": "~/.config/waybar/bt-status.sh",
         "return-type": "json",
         "interval": 5,
         "signal": 8,
-        "on-click": "/home/purple/.config/waybar/bt-menu.sh"
+        "on-click": "~/.config/waybar/bt-menu.sh"
     },
 
     "pulseaudio": {
@@ -101,55 +101,55 @@
         "tooltip-format-linked": "{ifname}: keine IP-Adresse",
         "tooltip-format-disconnected": "Nicht verbunden",
         "tooltip-format-disabled": "WLAN aus",
-        "on-click": "/home/purple/.config/waybar/wifi-menu.sh"
+        "on-click": "~/.config/waybar/wifi-menu.sh"
     },
 
     // Notification history (mako). mako sends signal 11 via "on-notify",
     // the interval is only a safety net.
     "custom/notifications": {
-        "exec": "/home/purple/.config/waybar/notifications.sh",
+        "exec": "~/.config/waybar/notifications.sh",
         "return-type": "json",
         "interval": 30,
         "signal": 11,
-        "on-click": "/home/purple/.config/waybar/notifications.sh menu",
-        "on-click-right": "/home/purple/.config/waybar/notifications.sh clear"
+        "on-click": "~/.config/waybar/notifications.sh menu",
+        "on-click-right": "~/.config/waybar/notifications.sh clear"
     },
 
     // Power menu: clicking the icon on the far right expands the actions to the left.
     // The icon then turns into "<" and closes the menu again on the next click.
     "custom/power": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh status",
+        "exec": "~/.config/waybar/power-menu.sh status",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh toggle"
+        "on-click": "~/.config/waybar/power-menu.sh toggle"
     },
     "custom/lock": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh item lock",
+        "exec": "~/.config/waybar/power-menu.sh item lock",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh run lock"
+        "on-click": "~/.config/waybar/power-menu.sh run lock"
     },
     "custom/reboot": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh item reboot",
+        "exec": "~/.config/waybar/power-menu.sh item reboot",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh run reboot"
+        "on-click": "~/.config/waybar/power-menu.sh run reboot"
     },
     "custom/suspend": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh item suspend",
+        "exec": "~/.config/waybar/power-menu.sh item suspend",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh run suspend"
+        "on-click": "~/.config/waybar/power-menu.sh run suspend"
     },
     "custom/poweroff": {
-        "exec": "/home/purple/.config/waybar/power-menu.sh item poweroff",
+        "exec": "~/.config/waybar/power-menu.sh item poweroff",
         "return-type": "json",
         "interval": "once",
         "signal": 10,
-        "on-click": "/home/purple/.config/waybar/power-menu.sh run poweroff"
+        "on-click": "~/.config/waybar/power-menu.sh run poweroff"
     }
 }
