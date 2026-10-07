@@ -182,14 +182,20 @@ bar {
 
 ### Lock and power saving
 
-# Start hyprlock with "&": with -w swayidle would otherwise wait until unlock
+# Start hyprlock with "&": with -w swayidle would otherwise wait until unlock.
+# Screen off/on is logged (journalctl -t swayidle) to debug a screen that
+# sometimes stays black after waking up.
 exec swayidle -w \
     timeout 300  'pidof hyprlock || hyprlock --immediate-render -q &' \
-    timeout 330  'swaymsg "output * power off"' \
-        resume   'swaymsg "output * power on"' \
+    timeout 330  'logger -t swayidle "screen off"; swaymsg "output * power off" || logger -t swayidle "screen off failed"' \
+        resume   'logger -t swayidle "screen on"; swaymsg "output * power on" || logger -t swayidle "screen on failed"' \
     timeout 1800 'systemctl suspend' \
     lock         'pidof hyprlock || hyprlock --immediate-render -q &' \
     before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1'
+
+# Emergency key, also on the lock screen: turn the screen back on if it
+# stays black after waking up (logged as "sway-wake")
+bindsym --locked $mod+o output * power on; exec logger -t sway-wake "Super+O: screen forced on"
 
 # No locking/screen-off while a window is visibly fullscreen (e.g. videos)
 for_window [all] inhibit_idle fullscreen
