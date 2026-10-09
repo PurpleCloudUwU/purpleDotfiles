@@ -185,17 +185,19 @@ bar {
 # Start hyprlock with "&": with -w swayidle would otherwise wait until unlock.
 # screen.sh logs screen off/on (journalctl -t swayidle) and works around a
 # swayidle bug that could leave the screen black, see the script.
+# kbd-light.sh sets the keyboard backlight to 100% (also run by screen.sh on).
 exec swayidle -w \
     timeout 300  'pidof hyprlock || hyprlock --immediate-render -q &' \
     timeout 330  '~/.config/sway/screen.sh off' \
         resume   '~/.config/sway/screen.sh on' \
     timeout 1800 'systemctl suspend' \
     lock         'pidof hyprlock || hyprlock --immediate-render -q &' \
-    before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1'
+    before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1' \
+    after-resume '~/.config/sway/kbd-light.sh'
 
 # Emergency key, also on the lock screen: turn the screen back on if it
 # stays black after waking up (logged as "sway-wake")
-bindsym --locked $mod+o output * power on; exec logger -t sway-wake "Super+O: screen forced on"
+bindsym --locked $mod+o output * power on; exec ~/.config/sway/kbd-light.sh; exec logger -t sway-wake "Super+O: screen forced on"
 
 # No locking/screen-off while a window is visibly fullscreen (e.g. videos)
 for_window [all] inhibit_idle fullscreen
@@ -209,3 +211,5 @@ exec mako
 # On-screen display for volume and brightness (SwayOSD, used by osd.sh)
 exec swayosd-server
 exec dex -a -s ~/.config/autostart
+# Keyboard backlight to 100% at login
+exec ~/.config/sway/kbd-light.sh

@@ -24,6 +24,7 @@ case $1 in
                 if idle_inhibited; then
                     log "idle inhibitor while the screen is off: screen on"
                     swaymsg "output * power on" >/dev/null
+                    ~/.config/sway/kbd-light.sh
                     exit
                 fi
             done
@@ -32,5 +33,6 @@ case $1 in
     on)
         log "screen on"
         swaymsg "output * power on" >/dev/null || log "screen on failed"
+        ~/.config/sway/kbd-light.sh
         ;;
 esac
