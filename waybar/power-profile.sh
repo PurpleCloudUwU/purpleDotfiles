@@ -34,7 +34,7 @@ status() {
 }
 
 menu() {
-    local cur entry id name mark label choice
+    local cur entry id name mark label choice now
     local labels=()
     declare -A ID_OF
 
@@ -52,12 +52,27 @@ menu() {
     id=${ID_OF[$choice]}
     [[ -n $id ]] || exit 0
 
-    if tlpctl "$id" >/dev/null 2>&1; then
+    if ! tlpctl "$id" >/dev/null 2>&1; then
+        notify "Wechsel fehlgeschlagen (läuft tlp-pd?)"
+        exit 1
+    fi
+
+    # tlpctl returns before TLP has applied the profile, and tlp-pd only
+    # reports the new one afterwards. Wait for it, otherwise Waybar reads
+    # the old profile and shows it until the next interval. Max. 30 s:
+    # a hanging device (e.g. Thunderbolt resume) can block TLP for ~20 s.
+    for _ in {1..300}; do
+        now=$(get_profile)
+        [[ $now == "$id" ]] && break
+        sleep 0.1
+    done
+    pkill -RTMIN+"$SIGNAL" waybar
+
+    if [[ $now == "$id" ]]; then
         notify "Profil: ${choice#??}"
     else
-        notify "Wechsel fehlgeschlagen (läuft tlp-pd?)"
+        notify "Wechsel nicht bestätigt (aktiv: $now)"
     fi
-    pkill -RTMIN+"$SIGNAL" waybar
 }
 
 case $1 in

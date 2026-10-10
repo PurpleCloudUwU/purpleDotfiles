@@ -71,12 +71,16 @@
         "tooltip-format": "Extern: {capacity}% ({timeTo})"
     },
 
+    // Right/middle click open the menu too: on the touchpad (button areas)
+    // a press in the lower right/middle counts as a right/middle click.
     "custom/bluetooth": {
         "exec": "~/.config/waybar/bt-status.sh",
         "return-type": "json",
         "interval": 5,
         "signal": 8,
-        "on-click": "~/.config/waybar/bt-menu.sh"
+        "on-click": "~/.config/waybar/bt-menu.sh",
+        "on-click-right": "~/.config/waybar/bt-menu.sh",
+        "on-click-middle": "~/.config/waybar/bt-menu.sh"
     },
 
     "pulseaudio": {
@@ -101,7 +105,10 @@
         "tooltip-format-linked": "{ifname}: keine IP-Adresse",
         "tooltip-format-disconnected": "Nicht verbunden",
         "tooltip-format-disabled": "WLAN aus",
-        "on-click": "~/.config/waybar/wifi-menu.sh"
+        // Right/middle click like Bluetooth (touchpad button areas)
+        "on-click": "~/.config/waybar/wifi-menu.sh",
+        "on-click-right": "~/.config/waybar/wifi-menu.sh",
+        "on-click-middle": "~/.config/waybar/wifi-menu.sh"
     },
 
     // Notification history (mako). mako sends signal 11 via "on-notify",
