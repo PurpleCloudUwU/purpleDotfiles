@@ -173,6 +173,16 @@ apply_settings() {
         ~/.config/hypr/make-sigil.sh >/dev/null
         note "lock screen sigil created"
     fi
+
+    # The Waybar clock uses the German locale and is hidden without it
+    if ! locale -a 2>/dev/null | grep -qx 'de_DE.utf8'; then
+        if command -v sudo >/dev/null; then
+            sudo sed -i 's/^#\(de_DE\.UTF-8 UTF-8\)/\1/' /etc/locale.gen && sudo locale-gen >/dev/null
+            note "locale de_DE.UTF-8 generated (Waybar clock)"
+        else
+            note "generate de_DE.UTF-8 (/etc/locale.gen, locale-gen), otherwise Waybar hides the clock"
+        fi
+    fi
 }
 
 install_nvim_plugins() {

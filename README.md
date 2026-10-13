@@ -67,6 +67,7 @@ Additional settings (`install.sh` does all of these):
 - Dolphin: in `~/.config/dolphinrc` set `ColorScheme=PurpleMocha` under `[UiSettings]`.
 - Chatterino: select `PurpleMocha` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
+- The Waybar clock is German (weekdays, week starts on Monday): remove the `#` before `de_DE.UTF-8 UTF-8` in `/etc/locale.gen` and run `sudo locale-gen`. Without this locale Waybar hides the clock.
 
 ### Terminal
 Kitty with the starship prompt:

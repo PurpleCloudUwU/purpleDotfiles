@@ -30,8 +30,32 @@
     },
 
     "clock": {
-        "format": "{:%a %d.%m.%Y  %H:%M}",
-        "tooltip-format": "<tt>{calendar}</tt>"
+        "format": "{:L%a %d.%m.%Y  %H:%M}",
+        // German weekdays, week starts on Monday (needs locale-gen, see README).
+        // The "L" in the format applies the locale.
+        "locale": "de_DE.UTF-8",
+        "tooltip-format": "<tt>{calendar}</tt>",
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "weeks-pos": "left",
+            "on-scroll": 1,
+            "format": {
+                "months":   "<span color='#b794f6'><b>{}</b></span>",
+                "weekdays": "<span color='#a6adc8'><b>{}</b></span>",
+                "weeks":    "<span color='#6c7086'>{}</span>",
+                "days":     "<span color='#cdd6f4'>{}</span>",
+                "today":    "<span color='#1e1e2e' background='#b794f6'><b>{}</b></span>"
+            }
+        },
+        // Scroll: change month, middle click: back to today,
+        // right click: month/year view
+        "actions": {
+            "on-click-right": "mode",
+            "on-click-middle": "shift_reset",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+        }
     },
 
     "tray": {
