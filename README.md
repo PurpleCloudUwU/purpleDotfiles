@@ -3,8 +3,8 @@
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
 - Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in Fuzzel for monitors, size, colors etc.; the old still image is `sway/wallpaper.png`)
-- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
-- Hyprlock
+- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole)
+- Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness in the "Black Hole" app). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - Fuzzel
 - Mako (notifications)
 - qt6ct + KDE color scheme (purple theme for Qt apps like Dolphin)
@@ -53,12 +53,14 @@ The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`
 | `blackhole/blackhole-wallpaper` | `~/.local/bin/` |
 | `blackhole/index.html` | `~/.local/share/blackhole/` |
 | `blackhole/blackhole-settings` | `~/.local/bin/` |
+| `blackhole/blackhole-lock` | `~/.local/bin/` |
 | `blackhole/blackhole-settings.desktop` | `~/.local/share/applications/` (with `Exec=` set to the full path) |
 
 Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
 - Editor for yazi, git etc.: add `export EDITOR=nvim` and `export VISUAL=nvim` to `~/.bash_profile`.
 - Starship and `ls` with icons: add `alias ls='eza --icons=auto'` and, at the end, `eval "$(starship init bash)"` to `~/.bashrc`.
+- Waybar colors: run `~/.local/bin/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` and `colors.jsonc` (afterwards the running wallpaper keeps them up to date).
 - swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
 - kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
   ```sh

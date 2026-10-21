@@ -60,6 +60,7 @@ config_files=(
     "blackhole/blackhole-wallpaper:$HOME/.local/bin/blackhole-wallpaper"
     "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
     "blackhole/blackhole-settings:$HOME/.local/bin/blackhole-settings"
+    "blackhole/blackhole-lock:$HOME/.local/bin/blackhole-lock"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -172,6 +173,10 @@ apply_settings() {
     sed "s|^Exec=.*|Exec=$HOME/.local/bin/blackhole-settings|" "$repo/blackhole/blackhole-settings.desktop" \
         > ~/.local/share/applications/blackhole-settings.desktop
     note "launcher entry: Black Hole (wallpaper settings)"
+
+    # Waybar imports the black hole colors; the wallpaper keeps them up to date
+    "$HOME/.local/bin/blackhole-wallpaper" --colors-only || true
+    note "Waybar: black hole colors (waybar/colors.css, colors.jsonc)"
 
     # Dolphin uses the KDE color scheme from this repo
     if command -v kwriteconfig6 >/dev/null; then

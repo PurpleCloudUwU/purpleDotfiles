@@ -50,6 +50,8 @@
     diskcolor: "#be8cff",   // helles Lila für die Akkretionsscheibe
     hotcolor: "#f0d7ff",    // fast weiß für die heißesten Stellen
     accentcolor: "#ff50dc", // pinke Funken
+    blur: 0,              // Unschärfe in px (Sperrbildschirm)
+    dim: 100,             // Helligkeit in % (Sperrbildschirm)
   };
   const DEFAULTS = { ...cfg };
   let fpsLimit = 0;
@@ -127,6 +129,8 @@
       cfg[key] = type === "boolean" ? bool(v) : type === "number" ? Number(v) : String(v);
     }
     KIND_COL = [cfg.starcolor, cfg.diskcolor, cfg.hotcolor, cfg.accentcolor].map(rgb);
+    const filter = [cfg.blur > 0 && `blur(${cfg.blur}px)`, cfg.dim !== 100 && `brightness(${cfg.dim}%)`];
+    cvs.style.filter = filter.filter(Boolean).join(" ");
     if (W !== undefined && RELAYOUT.map(k => cfg[k]).join() !== before) layout();
   }
 

@@ -65,7 +65,7 @@ bindsym $mod+Shift+e exec dolphin
 bindsym $mod+Shift+b exec ~/.config/waybar/bt-menu.sh
 
 # Lock and notifications
-bindsym $mod+Escape exec pidof hyprlock || hyprlock --immediate-render -q
+bindsym $mod+Escape exec ~/.config/sway/lock.sh
 bindsym $mod+n exec ~/.config/waybar/notifications.sh menu
 bindsym $mod+Shift+n exec makoctl dismiss --all
 
@@ -184,17 +184,18 @@ bar {
 
 ### Lock and power saving
 
-# Start hyprlock with "&": with -w swayidle would otherwise wait until unlock.
+# lock.sh locks with blackhole-lock (hyprlock if that fails). Start it with "&":
+# with -w swayidle would otherwise wait until unlock.
 # screen.sh logs screen off/on (journalctl -t swayidle) and works around a
 # swayidle bug that could leave the screen black, see the script.
 # kbd-light.sh sets the keyboard backlight to 100% (also run by screen.sh on).
 exec swayidle -w \
-    timeout 300  'pidof hyprlock || hyprlock --immediate-render -q &' \
+    timeout 300  '~/.config/sway/lock.sh &' \
     timeout 330  '~/.config/sway/screen.sh off' \
         resume   '~/.config/sway/screen.sh on' \
     timeout 1800 'systemctl suspend' \
-    lock         'pidof hyprlock || hyprlock --immediate-render -q &' \
-    before-sleep 'pidof hyprlock || hyprlock --immediate-render -q & sleep 1' \
+    lock         '~/.config/sway/lock.sh &' \
+    before-sleep '~/.config/sway/lock.sh & sleep 1' \
     after-resume '~/.config/sway/kbd-light.sh'
 
 # Emergency key, also on the lock screen: turn the screen back on if it

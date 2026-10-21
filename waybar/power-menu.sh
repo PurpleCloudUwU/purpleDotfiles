@@ -42,7 +42,7 @@ case $1 in
         rm -f "$STATE"
         refresh
         case $2 in
-            lock)      pidof hyprlock || hyprlock --immediate-render -q ;;
+            lock)      ~/.config/sway/lock.sh ;;
             reboot)    systemctl reboot ;;
             suspend)   systemctl suspend ;;
             poweroff)  systemctl poweroff ;;

@@ -1,3 +1,12 @@
+/* Colors of the black hole wallpaper (@hole_disk, @hole_hot, @hole_accent,
+   @hole_star), written by blackhole-wallpaper when they change in the
+   "Black Hole" settings app */
+@import "colors.css";
+
+@define-color bar_bg mix(#000000, @hole_disk, 0.08);
+@define-color bar_fg @hole_hot;
+@define-color bar_dim mix(@hole_star, @bar_bg, 0.55);
+
 * {
     font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", "Symbols Nerd Font", sans-serif;
     font-size: 13px;
@@ -7,40 +16,40 @@
 }
 
 window#waybar {
-    background: #1e1e2e;
-    color: #cdd6f4;
+    background: @bar_bg;
+    color: @bar_fg;
 }
 
 tooltip {
-    background: #1e1e2e;
-    border: 1px solid #45475a;
+    background: @bar_bg;
+    border: 1px solid alpha(@hole_disk, 0.4);
 }
 
 /* Without this rule the GTK theme decides the tooltip text color */
 tooltip label {
-    color: #cdd6f4;
+    color: @bar_fg;
 }
 
 /* Workspaces */
 #workspaces button {
     padding: 0 10px;
-    color: #ffffff;
+    color: @bar_fg;
     background: transparent;
 }
 
 #workspaces button:hover {
-    background: #313244;
-    color: #cdd6f4;
+    background: alpha(@hole_disk, 0.2);
+    color: @bar_fg;
 }
 
 #workspaces button.focused {
-    background: #b794f6;
-    color: #1e1e2e;
+    background: @hole_disk;
+    color: @bar_bg;
 }
 
 #workspaces button.urgent {
-    background: #f38ba8;
-    color: #1e1e2e;
+    background: @hole_accent;
+    color: @bar_bg;
 }
 
 /* Common padding for all modules */
@@ -61,12 +70,12 @@ tooltip label {
 }
 
 /* Bluetooth */
-#custom-bluetooth { color: #9e9beb; }
+#custom-bluetooth { color: @hole_star; }
 #custom-bluetooth.low { color: #f38ba8; }
 
 /* Power profile */
 #custom-power-profile.performance { color: #f38ba8; }
-#custom-power-profile.balanced { color: #cdd6f4; }
+#custom-power-profile.balanced { color: @bar_fg; }
 #custom-power-profile.power-saver { color: #a6e3a1; }
 
 /* Battery: with the charger plugged in (Waybar states charging, plugged, full)
@@ -76,28 +85,28 @@ tooltip label {
 #battery.critical:not(.charging):not(.plugged):not(.full) { color: #f38ba8; }
 
 /* Audio */
-#pulseaudio.muted { color: #6c7086; }
+#pulseaudio.muted { color: @bar_dim; }
 
 /* Network */
 #network.linked { color: #f9e2af; }
 #network.disconnected { color: #f38ba8; }
-#network.disabled { color: #6c7086; }
+#network.disabled { color: @bar_dim; }
 
 /* Notifications: at 13px the Material Design bell is smaller than the
    Font Awesome icons of the other modules, so it's a bit larger */
-#custom-notifications { color: #ffffff; font-size: 16px; }
-#custom-notifications.has-notifications { color: #b794f6; }
+#custom-notifications { color: @bar_fg; font-size: 16px; }
+#custom-notifications.has-notifications { color: @hole_disk; }
 
 /* Power menu */
-#custom-power { color: #f38ba8; }
+#custom-power { color: @hole_accent; }
 
 #custom-lock:hover,
 #custom-reboot:hover,
 #custom-suspend:hover {
-    background: #313244;
+    background: alpha(@hole_disk, 0.2);
 }
 
 #custom-poweroff:hover {
-    background: #f38ba8;
-    color: #1e1e2e;
+    background: @hole_accent;
+    color: @bar_bg;
 }

@@ -1,0 +1,398 @@
+#!/usr/bin/env python3
+"""Sperrbildschirm mit dem animierten Schwarzen Loch (statt hyprlock).
+
+Sperrt über ext-session-lock (gtk4-layer-shell), wie hyprlock: Stürzt das Programm
+ab, bleibt der Bildschirm gesperrt; ~/.config/sway/lock.sh startet dann hyprlock,
+das die Sperre übernimmt. Das Passwort prüft PAM (Dienst "login", wie hyprlock).
+
+Links läuft das Loch verschwommen (Unschärfe und Helligkeit in der Black-Hole-App),
+rechts das Layout von hypr/hyprlock.conf: Siegel, Uhr, Datum, Mond, Passwort, Status.
+
+  blackhole-lock              # sperren
+  blackhole-lock --preview    # nur ansehen, ohne zu sperren (Esc schließt)
+"""
+import ctypes
+import ctypes.util
+import hashlib
+import json
+import os
+import sys
+import threading
+import time
+import traceback
+import urllib.parse
+from pathlib import Path
+
+# gtk4-layer-shell muss vor libwayland-client geladen sein, sonst funktioniert es nicht
+LAYER_LIB = "libgtk4-layer-shell.so"
+if LAYER_LIB not in os.environ.get("LD_PRELOAD", ""):
+    os.environ["LD_PRELOAD"] = f"{LAYER_LIB} {os.environ.get('LD_PRELOAD', '')}".strip()
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+import gi
+
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4SessionLock", "1.0")
+gi.require_version("WebKit", "6.0")
+from gi.repository import Gdk, Gio, GLib, Gtk, WebKit
+from gi.repository import Gtk4SessionLock as SessionLock
+
+HTML = Path(os.environ.get("BLACKHOLE_HTML", "~/.local/share/blackhole/index.html")).expanduser()
+SETTINGS = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser() / "blackhole" / "settings.json"
+LOCK_INFO = Path("~/.config/hypr/lock-info.sh").expanduser()
+PREVIEW = "--preview" in sys.argv
+
+# Standardwerte wie in index.html bzw. der Black-Hole-App
+COLORS = {"disk": "#be8cff", "hot": "#f0d7ff", "accent": "#ff50dc", "star": "#c8b9ff"}
+LOCK = {"blur": 6, "dim": 75}
+
+
+def crash(*exc):
+    """Unerwarteter Fehler: beenden statt hängen. Die Sperre bleibt, lock.sh startet hyprlock."""
+    traceback.print_exception(*exc)
+    os._exit(1)
+
+
+sys.excepthook = crash                                # gilt auch für Fehler in GTK-Callbacks
+threading.excepthook = lambda args: crash(args.exc_type, args.exc_value, args.exc_traceback)
+
+
+# --- PAM ---
+PAM_PROMPT_ECHO_OFF, PAM_PROMPT_ECHO_ON = 1, 2
+PAM_REFRESH_CRED = 0x0010
+
+
+class PamMessage(ctypes.Structure):
+    _fields_ = [("msg_style", ctypes.c_int), ("msg", ctypes.c_char_p)]
+
+
+class PamResponse(ctypes.Structure):
+    _fields_ = [("resp", ctypes.c_void_p), ("resp_retcode", ctypes.c_int)]
+
+
+PAM_CONV_FUNC = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.POINTER(PamMessage)),
+                                 ctypes.POINTER(ctypes.POINTER(PamResponse)), ctypes.c_void_p)
+
+
+class PamConv(ctypes.Structure):
+    _fields_ = [("conv", PAM_CONV_FUNC), ("appdata_ptr", ctypes.c_void_p)]
+
+
+libpam = ctypes.CDLL(ctypes.util.find_library("pam"))
+libpam.pam_start.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.POINTER(PamConv), ctypes.POINTER(ctypes.c_void_p)]
+libpam.pam_authenticate.argtypes = [ctypes.c_void_p, ctypes.c_int]
+libpam.pam_setcred.argtypes = [ctypes.c_void_p, ctypes.c_int]
+libpam.pam_end.argtypes = [ctypes.c_void_p, ctypes.c_int]
+libc = ctypes.CDLL(ctypes.util.find_library("c"))
+libc.calloc.restype = ctypes.c_void_p
+libc.calloc.argtypes = [ctypes.c_size_t, ctypes.c_size_t]
+libc.strdup.restype = ctypes.c_void_p
+libc.strdup.argtypes = [ctypes.c_char_p]
+
+
+def authenticate(user, password):
+    """Passwort mit PAM prüfen. Blockiert (bei falschem Passwort ~2 s), daher im Thread aufrufen."""
+    secret = password.encode()
+
+    @PAM_CONV_FUNC
+    def conversation(count, messages, responses, _data):
+        # PAM gibt die Antworten selbst frei, daher mit calloc/strdup anlegen
+        array = libc.calloc(count, ctypes.sizeof(PamResponse))
+        if not array:
+            return 5                                  # PAM_BUF_ERR
+        answers = ctypes.cast(array, ctypes.POINTER(PamResponse))
+        for i in range(count):
+            if messages[i].contents.msg_style in (PAM_PROMPT_ECHO_OFF, PAM_PROMPT_ECHO_ON):
+                answers[i].resp = libc.strdup(secret)
+        responses[0] = answers
+        return 0
+
+    conv = PamConv(conversation, None)
+    handle = ctypes.c_void_p()
+    if libpam.pam_start(b"login", user.encode(), ctypes.byref(conv), ctypes.byref(handle)) != 0:
+        return False
+    result = libpam.pam_authenticate(handle, 0)
+    if result == 0:
+        libpam.pam_setcred(handle, PAM_REFRESH_CRED)  # z. B. Kerberos-Tickets erneuern
+    libpam.pam_end(handle, result)
+    return result == 0
+
+
+# --- Einstellungen ---
+def load_settings():
+    try:
+        data = json.loads(SETTINGS.read_text())
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def mix(a, b, f):
+    """Wie mix() in GTK-CSS: a * (1 - f) + b * f"""
+    ca, cb = (bytes.fromhex(c.lstrip("#")[:6]) for c in (a, b))
+    return "#" + "".join(f"{round(x * (1 - f) + y * f):02x}" for x, y in zip(ca, cb))
+
+
+def css_for(settings):
+    chosen = settings.get("all", {})
+    c = {n: chosen.get(n + "color", d) for n, d in COLORS.items()}
+    bg = mix("#000000", c["disk"], 0.08)
+    dim = mix(c["star"], bg, 0.45)
+    return f"""
+    window {{ background: #000; }}
+    .lock label {{ font-family: "JetBrainsMono Nerd Font", monospace; color: {c["hot"]}; font-size: 15pt; }}
+    .lock .dim {{ color: {dim}; font-size: 13pt; }}
+    .lock .accent {{ color: {c["disk"]}; }}
+    .lock .clock {{ font-size: 128pt; font-weight: normal; }}
+    .lock .divider {{ background: {dim}; min-width: 2px; }}
+    .lock .sigil {{ border: 4px solid {c["disk"]}; background: {bg}; }}
+    .lock .sigil .on {{ background: {c["disk"]}; }}
+    .lock entry {{
+      min-height: 48px; padding: 0 12px; border-radius: 0; border: 2px solid {c["disk"]};
+      background: {bg}; color: {c["hot"]}; box-shadow: none; outline: none;
+      font-family: "JetBrainsMono Nerd Font", monospace; font-size: 15pt;
+    }}
+    .lock entry.checking {{ border-color: {c["hot"]}; }}
+    .lock entry.failed {{ border-color: {c["accent"]}; }}
+    .lock entry.capslock {{ border-color: #f9e2af; }}
+    .lock entry > text > placeholder {{ color: {c["accent"]}; }}
+    """
+
+
+def page_url(settings, connector):
+    """Das Loch wie auf dem Hintergrund, aber halb so groß in der linken Hälfte und verschwommen."""
+    out = settings.get("outputs", {}).get(connector, {})
+    params = dict(settings.get("all", {}))
+    if out.get("own"):
+        params.update(out.get("settings", {}))
+    lock = {**LOCK, **settings.get("lock", {})}
+    params.update(area="false", spawn="false", offsetx=-25, offsety=0,
+                  size=params.get("size", 100) / 2, blur=lock["blur"], dim=lock["dim"],
+                  fps=settings.get("fps", 30))
+    query = {k: str(v).lower() if isinstance(v, bool) else v for k, v in params.items()}
+    return f"{HTML.as_uri()}?{urllib.parse.urlencode(query)}"
+
+
+def sigil_cells():
+    """Wie hypr/make-sigil.sh: symmetrisches 5×5-Muster aus der machine-id."""
+    try:
+        digest = hashlib.sha256(Path("/etc/machine-id").read_bytes()).hexdigest()
+    except OSError:
+        return set()
+    cells = set()
+    for y in range(5):
+        for x in range(3):
+            if int(digest[y * 3 + x], 16) % 2 == 0:
+                cells |= {(x, y), (4 - x, y)}
+    return cells
+
+
+# --- Oberfläche ---
+class LockScreen(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="de.purplecloud.blackhole.lock")
+        self.settings = load_settings()
+        self.user = os.environ.get("USER") or os.getlogin()
+        self.windows = {}                             # Anschluss -> Fenster
+        self.labels = {"clock": [], "date": [], "sky": [], "moon": [], "status": [], "sigil": []}
+        self.entries = []
+        self.attempts = 0
+        self.checking = False
+        self.lock = None
+
+    def do_activate(self):
+        if self.lock or self.windows:                 # schon gesperrt (zweiter Aufruf)
+            return
+        self.hold()
+        css = Gtk.CssProvider()
+        css.load_from_string(css_for(self.settings))
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        if PREVIEW:
+            monitor = Gdk.Display.get_default().get_monitors().get_item(0)
+            win = self.make_window(monitor)
+            win.set_application(self)
+            key = Gtk.EventControllerKey()
+            key.connect("key-pressed", lambda _c, keyval, *_: keyval == Gdk.KEY_Escape and self.quit())
+            win.add_controller(key)
+            win.fullscreen()
+            win.present()
+        else:
+            if not SessionLock.is_supported():
+                print("ext-session-lock wird nicht unterstützt", file=sys.stderr)
+                sys.exit(1)
+            self.lock = SessionLock.Instance.new()
+            self.lock.connect("failed", lambda *_: (print("Sperren fehlgeschlagen", file=sys.stderr), os._exit(1)))
+            self.lock.connect("unlocked", lambda *_: self.quit())
+            if not self.lock.lock():
+                sys.exit(1)
+            monitors = Gdk.Display.get_default().get_monitors()
+            monitors.connect("items-changed", lambda *_: self.add_monitors())
+            self.add_monitors()
+
+        self.caps_lock()
+        keyboard = Gdk.Display.get_default().get_default_seat().get_keyboard()
+        if keyboard:
+            keyboard.connect("notify::caps-lock-state", lambda *_: self.caps_lock())
+        self.update_clock()
+        self.update_info("date", "sky", "moon", "sigil", "status")
+        GLib.timeout_add_seconds(1, self.update_clock)
+        GLib.timeout_add_seconds(60, self.update_info, "date", "sky", "moon")
+        GLib.timeout_add_seconds(5, self.update_info, "status")
+
+    def add_monitors(self):
+        """Jeder Monitor braucht ein eigenes Sperrfenster, auch später angeschlossene."""
+        monitors = Gdk.Display.get_default().get_monitors()
+        for i in range(monitors.get_n_items()):
+            monitor = monitors.get_item(i)
+            if monitor.get_connector() in self.windows:
+                continue
+            win = self.make_window(monitor)
+            self.lock.assign_window_to_monitor(win, monitor)
+            win.present()
+
+    def make_window(self, monitor):
+        connector = monitor.get_connector()
+        win = Gtk.Window()
+        win.set_cursor_from_name("none")
+        self.windows[connector] = win
+
+        view = WebKit.WebView()
+        view.get_settings().set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.ALWAYS)
+        black = Gdk.RGBA()
+        black.parse("black")
+        view.set_background_color(black)
+        view.set_can_target(False)                    # keine Maus/Tastatur fürs Loch
+        view.set_focusable(False)
+        view.load_uri(page_url(self.settings, connector))
+
+        overlay = Gtk.Overlay(child=view)
+        overlay.add_overlay(self.make_layout())
+        win.set_child(overlay)
+        return win
+
+    def make_layout(self):
+        # links frei fürs Loch, Trennlinie in der Mitte, rechts die Spalte
+        layout = Gtk.CenterBox(css_classes=["lock"])
+        layout.set_start_widget(Gtk.Box(hexpand=True))
+        divider = Gtk.Box(css_classes=["divider"], margin_top=20, margin_bottom=20)
+        layout.set_center_widget(divider)
+
+        column = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL, hexpand=True,
+                               halign=Gtk.Align.START, margin_start=110)
+        # Siegel mit Beschriftung
+        top = Gtk.Box(spacing=30, margin_top=107)
+        grid = Gtk.Grid(css_classes=["sigil"], valign=Gtk.Align.CENTER)
+        on = sigil_cells()
+        for y in range(5):
+            for x in range(5):
+                cell = Gtk.Box(css_classes=["on"] if (x, y) in on else [])
+                cell.set_size_request(24, 24)
+                grid.attach(cell, x, y, 1, 1)
+        top.append(grid)
+        captions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER, spacing=4)
+        captions.append(self.label(os.uname().nodename, "dim"))
+        captions.append(self.label("host sigil, from", "dim"))
+        captions.append(self.label("", "dim", key="sigil"))
+        top.append(captions)
+        column.set_start_widget(top)
+
+        # Uhr, Datum, Planetenstunde, Mond
+        middle = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_bottom=90)
+        middle.append(self.label("", "clock", key="clock"))
+        middle.append(self.label("", key="date"))
+        middle.append(self.label("", "accent", key="sky"))
+        middle.append(self.label("", "dim", key="moon"))
+        column.set_center_widget(middle)
+
+        # Passwort und Status
+        bottom = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_bottom=90)
+        bottom.append(self.label(f"@{self.user}"))
+        entry = Gtk.Entry(visibility=False, invisible_char=ord("*"), width_request=470)
+        entry.connect("activate", self.on_submit)
+        entry.connect("changed", self.on_typing)
+        self.entries.append(entry)
+        bottom.append(entry)
+        bottom.append(self.label("", "dim", key="status"))
+        column.set_end_widget(bottom)
+
+        layout.set_end_widget(column)
+        GLib.idle_add(lambda: entry.grab_focus() and GLib.SOURCE_REMOVE)
+        return layout
+
+    def label(self, text, *classes, key=None):
+        label = Gtk.Label(label=text, xalign=0, css_classes=list(classes))
+        if key:
+            self.labels[key].append(label)
+        return label
+
+    # --- Inhalte ---
+    def update_clock(self):
+        now = time.strftime("%-H:%M")
+        for label in self.labels["clock"]:
+            label.set_label(now)
+        return GLib.SOURCE_CONTINUE
+
+    def update_info(self, *keys):
+        if not LOCK_INFO.exists():
+            return GLib.SOURCE_CONTINUE
+        for key in keys:
+            proc = Gio.Subprocess.new([str(LOCK_INFO), key], Gio.SubprocessFlags.STDOUT_PIPE)
+            proc.communicate_utf8_async(None, None, self.on_info, key)
+        return GLib.SOURCE_CONTINUE
+
+    def on_info(self, proc, result, key):
+        _ok, out, _err = proc.communicate_utf8_finish(result)
+        for label in self.labels[key]:
+            label.set_label((out or "").strip())
+
+    def caps_lock(self):
+        keyboard = Gdk.Display.get_default().get_default_seat().get_keyboard()
+        on = bool(keyboard and keyboard.get_caps_lock_state())
+        for entry in self.entries:
+            (entry.add_css_class if on else entry.remove_css_class)("capslock")
+
+    # --- Passwort ---
+    def on_typing(self, entry):
+        if entry.get_text():
+            entry.remove_css_class("failed")
+
+    def on_submit(self, entry):
+        password = entry.get_text()
+        if self.checking or not password:             # leere Eingabe ignorieren
+            return
+        self.checking = True
+        for e in self.entries:
+            e.set_sensitive(False)
+            e.add_css_class("checking")
+
+        def check():
+            ok = authenticate(self.user, password)
+            GLib.idle_add(self.on_result, ok)
+
+        threading.Thread(target=check, daemon=True).start()
+
+    def on_result(self, ok):
+        self.checking = False
+        if ok:
+            if self.lock:
+                self.lock.unlock()                    # "unlocked" beendet das Programm
+            else:
+                self.quit()
+            return GLib.SOURCE_REMOVE
+        self.attempts += 1
+        for e in self.entries:
+            e.remove_css_class("checking")
+            e.add_css_class("failed")
+            e.set_text("")
+            e.set_placeholder_text(f"the word is wrong ({self.attempts})")
+            e.set_sensitive(True)
+        focused = next((e for e in self.entries if e.get_root().is_active()), self.entries[0])
+        focused.grab_focus()
+        return GLib.SOURCE_REMOVE
+
+
+if __name__ == "__main__":
+    sys.exit(LockScreen().run([sys.argv[0]]))
