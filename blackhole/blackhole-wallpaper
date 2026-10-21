@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Animiertes ASCII-Schwarzes-Loch als Sway-Hintergrund.
+
+Legt auf jedem Monitor ein GTK4-Fenster auf die Hintergrund-Ebene (gtk4-layer-shell)
+und zeigt darin index.html mit WebKitGTK an. Einstellungen gehen als URL-Parameter
+an die Seite (gleiche Namen wie in Wallpaper Engine).
+
+  blackhole-wallpaper                                 # alle Monitore, Standardwerte
+  blackhole-wallpaper --fps 24 --params "speed=60"    # für alle Monitore
+  blackhole-wallpaper --output eDP-1 "blackhole=false"   # nur für einen Monitor
+"""
+import argparse
+import os
+import signal
+import sys
+import urllib.parse
+from pathlib import Path
+
+# gtk4-layer-shell muss vor libwayland-client geladen sein, sonst funktioniert es nicht
+LAYER_LIB = "libgtk4-layer-shell.so"
+if LAYER_LIB not in os.environ.get("LD_PRELOAD", ""):
+    os.environ["LD_PRELOAD"] = f"{LAYER_LIB} {os.environ.get('LD_PRELOAD', '')}".strip()
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+import gi
+
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+gi.require_version("WebKit", "6.0")
+from gi.repository import Gdk, Gio, GLib, Gtk, WebKit
+from gi.repository import Gtk4LayerShell as LayerShell
+
+HTML = Path(os.environ.get("BLACKHOLE_HTML", "~/.local/share/blackhole/index.html")).expanduser()
+PIDFILE = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "blackhole-wallpaper.pid"
+
+
+def replace_running_instance():
+    """Eine bereits laufende Instanz beenden (für exec_always beim Sway-Reload)."""
+    try:
+        old = int(PIDFILE.read_text())
+        if old != os.getpid():
+            os.kill(old, signal.SIGTERM)
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        pass
+    PIDFILE.write_text(str(os.getpid()))
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--fps", type=int, default=30, help="Bildrate begrenzen (Standard: 30, 0 = unbegrenzt)")
+    p.add_argument("--params", default="", help='Parameter für alle Monitore, z. B. "speed=60&starsize=14"')
+    p.add_argument("--output", nargs=2, action="append", default=[], metavar=("NAME", "PARAMS"),
+                   help="Parameter nur für diesen Monitor (mehrfach möglich)")
+    return p.parse_args()
+
+
+class Wallpaper(Gtk.Application):
+    def __init__(self, args):
+        super().__init__(application_id="de.purplecloud.blackhole", flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.args = args
+        self.per_output = dict(args.output)
+        self.windows = []
+
+    def do_activate(self):
+        self.hold()                                   # weiterlaufen, auch wenn kurz kein Monitor da ist
+        monitors = Gdk.Display.get_default().get_monitors()
+        monitors.connect("items-changed", lambda *_: GLib.idle_add(self.rebuild))
+        self.rebuild()
+
+    def url_for(self, connector):
+        # area=false: jeder Monitor hat seine eigene Instanz, das Loch sitzt mittig
+        query = urllib.parse.parse_qsl(f"area=false&fps={self.args.fps}")
+        query += urllib.parse.parse_qsl(self.args.params)
+        query += urllib.parse.parse_qsl(self.per_output.get(connector, ""))
+        return f"{HTML.as_uri()}?{urllib.parse.urlencode(dict(query))}"
+
+    def rebuild(self):
+        for win in self.windows:
+            win.destroy()
+        self.windows = []
+        monitors = Gdk.Display.get_default().get_monitors()
+        for i in range(monitors.get_n_items()):
+            self.windows.append(self.make_window(monitors.get_item(i)))
+        return GLib.SOURCE_REMOVE
+
+    def make_window(self, monitor):
+        win = Gtk.ApplicationWindow(application=self)
+        LayerShell.init_for_window(win)
+        LayerShell.set_namespace(win, "blackhole-wallpaper")
+        LayerShell.set_layer(win, LayerShell.Layer.BACKGROUND)
+        LayerShell.set_monitor(win, monitor)
+        for edge in (LayerShell.Edge.TOP, LayerShell.Edge.BOTTOM, LayerShell.Edge.LEFT, LayerShell.Edge.RIGHT):
+            LayerShell.set_anchor(win, edge, True)
+        LayerShell.set_exclusive_zone(win, -1)
+        LayerShell.set_keyboard_mode(win, LayerShell.KeyboardMode.NONE)
+
+        view = WebKit.WebView()
+        settings = view.get_settings()
+        settings.set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.ALWAYS)
+        settings.set_enable_developer_extras(False)
+        black = Gdk.RGBA()
+        black.parse("black")
+        view.set_background_color(black)
+        view.load_uri(self.url_for(monitor.get_connector()))
+
+        win.set_child(view)
+        win.present()
+        return win
+
+
+def main():
+    args = parse_args()
+    if not HTML.exists():
+        sys.exit(f"index.html nicht gefunden: {HTML}")
+    replace_running_instance()
+    app = Wallpaper(args)
+    try:
+        gi.require_version("GLibUnix", "2.0")
+        from gi.repository import GLibUnix
+        signal_add = GLibUnix.signal_add
+    except (ValueError, ImportError):                 # ältere PyGObject-Versionen
+        signal_add = GLib.unix_signal_add
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal_add(GLib.PRIORITY_DEFAULT, sig, app.quit)
+    sys.exit(app.run([sys.argv[0]]))
+
+
+if __name__ == "__main__":
+    main()

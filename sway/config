@@ -19,7 +19,9 @@ set $menu fuzzel
 ### Output
 
 # List monitor names: swaymsg -t get_outputs
-output * bg ~/.config/sway/wallpaper.png fill
+# Animated black hole (blackhole/ in the repo); the old still image:
+# output * bg ~/.config/sway/wallpaper.png fill
+exec_always ~/.local/bin/blackhole-wallpaper
 
 ### Input
 

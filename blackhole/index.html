@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Black Hole</title>
+<style>
+  :root {
+    --bg: #000;
+    --star: 200, 185, 255;     /* blasses Lila-Weiß für die Sterne */
+    --disk: 190, 140, 255;     /* helles Lila für die Akkretionsscheibe */
+    --hot: 240, 215, 255;      /* fast weiß für die heißesten Stellen */
+    --accent: 255, 80, 220;    /* pinke Funken */
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+  canvas { position: fixed; inset: 0; display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const RAMP = " .,:;i1tfLCG08@";
+  const RAMP_HOT = "#%&@$WM";
+  const STAR_CHARS = "..·:+*";
+  const FONT = 'Consolas, "JetBrains Mono", monospace';
+  const ALPHA_STEPS = 12;
+  const SPAWN = 2.6;                                 // Dauer der Spawn-Animation (s)
+
+  // Standardwerte – werden von Wallpaper Engine über die Eigenschaften überschrieben
+  const cfg = {
+    blackhole: true,
+    // Monitor, auf dem das Loch sitzt, in Pixeln relativ zur linken oberen Ecke
+    // des gesamten Desktops (bei „Span“). Standard: vertikaler 1080×1920 links,
+    // horizontaler 1920×1080 rechts daneben, 360 px tiefer als dessen Oberkante.
+    area: true,
+    areax: 1080,
+    areay: 360,
+    areaw: 1920,
+    areah: 1080,
+    offsetx: 0,           // Verschiebung in % der Monitorbreite
+    offsety: 0,           // Verschiebung in % der Höhe
+    size: 100,            // % der größtmöglichen Größe
+    tilt: 26,             // Neigung der Scheibe in %
+    diskchar: 12,         // Zeichengröße der Scheibe (px)
+    stars: true,
+    stardensity: 6,       // Sterne pro 1000 Zellen
+    starsize: 12,         // Zeichengröße der Sterne (px)
+    starbrightness: 100,  // %
+    speed: 100,           // Animationsgeschwindigkeit in %
+    spawn: true,          // Spawn-Animation beim Start
+    flicker: true,        // flackernde Zeichen und pinke Funken
+    twinkle: true,        // funkelnde Sterne
+  };
+  let fpsLimit = 0;
+
+  const cvs = document.getElementById("c");
+  const ctx = cvs.getContext("2d");
+  const css = getComputedStyle(document.documentElement);
+  const rgb = n => css.getPropertyValue(n).trim();
+  const COL = { bg: css.getPropertyValue("--bg").trim(), star: rgb("--star"), disk: rgb("--disk"), hot: rgb("--hot"), accent: rgb("--accent") };
+
+  let W, H, dpr, fs, cw, lh, cols, rows, sfs, stars = [];
+
+  const hash = (x, y, z) => {
+    const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
+  const smooth = (a, b, x) => {
+    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+  const easeOutBack = p => 1 + 2.2 * Math.pow(p - 1, 3) + 1.2 * Math.pow(p - 1, 2);
+
+  function layout() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cvs.width = W * dpr; cvs.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Raster der Scheibe
+    fs = cfg.diskchar;
+    ctx.font = `${fs}px ${FONT}`;
+    cw = ctx.measureText("M").width;
+    lh = Math.round(fs * 1.22);
+    cols = Math.ceil(W / cw);
+    rows = Math.ceil(H / lh);
+
+    // eigenes Raster für die Sterne, damit ihre Größe unabhängig ist;
+    // aus der Position abgeleitet, damit sie bei Änderungen an ihrem Platz bleiben
+    sfs = cfg.starsize;
+    ctx.font = `${sfs}px ${FONT}`;
+    const scw = ctx.measureText("M").width, slh = Math.round(sfs * 1.22);
+    const density = cfg.stardensity / 1000;
+    stars = [];
+    for (let j = 0; j < Math.ceil(H / slh); j++) {
+      for (let i = 0; i < Math.ceil(W / scw); i++) {
+        if (hash(i, j, 1) >= density) continue;
+        const big = hash(i, j, 2);
+        stars.push({
+          x: (i + 0.5) * scw, y: (j + 0.5) * slh,
+          s: 0.12 + hash(i, j, 3) * 0.28,
+          ch: STAR_CHARS[big > 0.97 ? 5 : big > 0.9 ? 4 : (hash(i, j, 4) * 4) | 0],
+          ph: i * 1.7 + j,
+        });
+      }
+    }
+  }
+
+  // --- Wallpaper-Engine-Eigenschaften ---
+  const bool = v => v === true || v === "true";
+  const RELAYOUT = new Set(["diskchar", "stardensity", "starsize"]);
+  window.wallpaperPropertyListener = {
+    applyUserProperties(p) {
+      let relayout = false;
+      for (const key in cfg) {
+        if (!p[key]) continue;
+        const v = p[key].value;
+        cfg[key] = typeof cfg[key] === "boolean" ? bool(v) : Number(v);
+        if (RELAYOUT.has(key)) relayout = true;
+      }
+      if (relayout) layout();
+    },
+    applyGeneralProperties(p) {
+      if (p.fps) fpsLimit = p.fps;
+    },
+  };
+
+  addEventListener("resize", layout);
+
+  const makeBuckets = () => Array.from({ length: 4 }, () => Array.from({ length: ALPHA_STEPS }, () => []));
+  const buckets = makeBuckets(), starBuckets = makeBuckets();
+  const KIND = { star: 0, disk: 1, hot: 2, accent: 3 };
+  const KIND_COL = [COL.star, COL.disk, COL.hot, COL.accent];
+  let t0 = null, lastT = null, lastDraw = -1, at = 0;  // at = Animationszeit, skaliert mit der Geschwindigkeit
+
+  function frame(ms) {
+    requestAnimationFrame(frame);
+    const now = ms / 1000;
+    if (fpsLimit > 0 && now - lastDraw < 1 / fpsLimit - 0.002) return;
+    lastDraw = now;
+    if (t0 === null) t0 = now;
+    const dt = Math.min(0.1, now - (lastT ?? now));
+    lastT = now;
+    at += dt * cfg.speed / 100;
+
+    const p = cfg.spawn ? Math.min(1, (now - t0) / SPAWN) : 1;
+    const grow = easeOutBack(p);                    // wächst mit leichtem Überschwingen
+    const spin = Math.pow(1 - p, 3) * 9;            // Scheibe dreht sich beim Spawn ein
+    const fade = smooth(0, 0.35, p);
+    const t = at;
+    const tick = cfg.flicker ? Math.floor(t * 9) : 0;
+
+    // Position: Mitte des gewählten Monitorbereichs; passt der Bereich nicht ins
+    // Bild (z. B. Wallpaper pro Monitor statt Span), einfach das ganze Bild nehmen
+    let ax = 0, ay = 0, aw = W, ah = H;
+    if (cfg.area && cfg.areaw > 0 && cfg.areah > 0 &&
+        cfg.areax + cfg.areaw <= W + 1 && cfg.areay + cfg.areah <= H + 1) {
+      ax = cfg.areax; ay = cfg.areay; aw = cfg.areaw; ah = cfg.areah;
+    }
+    const cx = ax + aw / 2 + cfg.offsetx / 100 * aw;
+    const cy = ay + ah / 2 + cfg.offsety / 100 * ah;
+
+    const q = Math.max(0.03, cfg.tilt / 100);       // Neigung der Scheibe
+    // größtmöglicher Schattenradius, sodass die Scheibe auf den Monitor passt
+    const rsMax = Math.min(aw * 0.48 / 4.6, ah * 0.46 / 1.9) * cfg.size / 100;
+    const rs = Math.max(1, rsMax * grow);
+    const rin = rs * 1.25, rout = rs * 4.6;
+
+    // Helligkeit von Scheibe und Ring an einem Punkt
+    function brightness(px, py, i, j) {
+      const dx = px - cx, dy = py - cy;
+      const r = Math.sqrt(dx * dx + dy * dy) || 1e-3;
+
+      // --- Akkretionsscheibe (vordere Seite, geneigt) ---
+      const u = dx, v = dy / q;
+      const rd = Math.sqrt(u * u + v * v);
+      let bDisk = 0;
+      if (rd > rin * 0.9 && rd < rout) {
+        const prof = smooth(rin * 0.9, rin * 1.25, rd) * (1 - smooth(rout * 0.45, rout, rd)) * Math.pow(rin / rd, 0.7);
+        const omega = 1.6 * Math.pow(rs / rd, 1.5);
+        const ph = Math.atan2(v, u) - omega * t - spin * (rs / rd);
+        const streak = 0.55 + 0.45 * Math.sin(ph * 6 + rd / rs * 3.1) * Math.sin(ph * 3 - rd / rs * 1.7 + 1.3);
+        const doppler = 1 + 0.65 * (-u / rd);       // linke Seite kommt auf uns zu
+        bDisk = prof * streak * doppler * (0.75 + 0.25 * hash(i, j, tick));
+        if (r < rs && dy < 0) bDisk = 0;            // hinterer Teil vom Schatten verdeckt
+      }
+
+      // --- gelinste Rückseite der Scheibe + Photonenring ---
+      let bRing = 0;
+      if (r > rs * 0.97 && r < rs * 2.6) {
+        const a = Math.atan2(dy, dx);
+        const vert = Math.abs(dy) / r;              // über/unter dem Loch am stärksten
+        const ring = Math.exp(-Math.pow((r - rs * 1.22) / (rs * 0.32), 2)) * (0.35 + 0.65 * vert);
+        const photon = Math.exp(-Math.pow((r - rs * 1.03) / (rs * 0.06), 2));
+        const swirl = 0.6 + 0.4 * Math.sin(a * 9 - t * 2.2 - spin * 2 + r / rs * 4);
+        bRing = (ring * swirl * (1 + 0.4 * (-dx / r)) + photon * 0.9) * (0.8 + 0.2 * hash(i, j, tick + 7));
+      }
+
+      return { b: Math.min(1, Math.max(bDisk, bRing) * 1.55 * fade), r };
+    }
+
+    for (const b of buckets) for (const a of b) a.length = 0;
+    for (const b of starBuckets) for (const a of b) a.length = 0;
+
+    // nur das Rechteck um das Loch abtasten statt des ganzen Bildschirms
+    if (cfg.blackhole) {
+      const rx = rout, ry = Math.max(rs * 2.6, rout * q);
+      const i0 = Math.max(0, Math.floor((cx - rx) / cw)), i1 = Math.min(cols - 1, Math.ceil((cx + rx) / cw));
+      const j0 = Math.max(0, Math.floor((cy - ry) / lh)), j1 = Math.min(rows - 1, Math.ceil((cy + ry) / lh));
+      for (let j = j0; j <= j1; j++) {
+        const py = (j + 0.5) * lh;
+        for (let i = i0; i <= i1; i++) {
+          const px = (i + 0.5) * cw;
+          const { b } = brightness(px, py, i, j);
+          if (b <= 0.07) continue;
+          const bk = Math.min(ALPHA_STEPS - 1, Math.floor(b * ALPHA_STEPS));
+          let ch, kind;
+          if (b > 0.82) { ch = RAMP_HOT[(hash(i, j, tick) * RAMP_HOT.length) | 0]; kind = KIND.hot; }
+          else { ch = RAMP[Math.max(1, Math.round(b * (RAMP.length - 1)))]; kind = KIND.disk; }
+          if (cfg.flicker && hash(i, j, (tick * 0.37) | 0) > 0.992) kind = KIND.accent;
+          buckets[kind][bk].push(ch, px, py);
+        }
+      }
+    }
+
+    // Sterne, sanft funkelnd, nicht im Schatten und nicht hinter der Scheibe
+    if (cfg.stars) {
+      const bright = cfg.starbrightness / 100;
+      const near = rout + sfs;
+      for (const s of stars) {
+        if (cfg.blackhole && Math.abs(s.x - cx) < near && Math.abs(s.y - cy) < near) {
+          const { b, r } = brightness(s.x, s.y, 0, 0);
+          if (r <= rs * 1.05 || b > 0.07) continue;
+        }
+        const tw = s.s * bright * (cfg.twinkle ? 0.7 + 0.3 * Math.sin(t * (0.6 + s.s * 3) + s.ph) : 0.85);
+        const sk = Math.min(ALPHA_STEPS - 1, Math.floor(tw * ALPHA_STEPS));
+        starBuckets[KIND.star][sk].push(s.ch, s.x, s.y);
+      }
+    }
+
+    ctx.fillStyle = COL.bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    draw(starBuckets, sfs);
+    draw(buckets, fs);
+  }
+
+  function draw(bk, size) {
+    for (let k = 0; k < 4; k++) {
+      for (let s = 0; s < ALPHA_STEPS; s++) {
+        const arr = bk[k][s];
+        if (!arr.length) continue;
+        const alpha = k === KIND.star ? (s + 1) / ALPHA_STEPS : 0.35 + 0.65 * (s + 1) / ALPHA_STEPS;
+        ctx.fillStyle = `rgba(${KIND_COL[k]}, ${alpha.toFixed(3)})`;
+        ctx.font = `${k >= 2 ? 700 : 400} ${size}px ${FONT}`;
+        for (let n = 0; n < arr.length; n += 3) ctx.fillText(arr[n], arr[n + 1], arr[n + 2]);
+      }
+    }
+  }
+
+  // Einstellungen auch als URL-Parameter, z. B. für Linux/Sway: index.html?speed=50&fps=30
+  const params = new URLSearchParams(location.search);
+  const fromUrl = {};
+  for (const [k, v] of params) if (k in cfg) fromUrl[k] = { value: v };
+  if (params.has("fps")) fpsLimit = Number(params.get("fps"));
+  window.wallpaperPropertyListener.applyUserProperties(fromUrl);
+
+  layout();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

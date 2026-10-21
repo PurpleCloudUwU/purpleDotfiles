@@ -38,6 +38,8 @@ pacman_pkgs=(
     jq libnotify wl-clipboard grim slurp imagemagick xdg-utils
     # Qt colors and Dolphin
     qt6ct dolphin breeze-icons
+    # Animated wallpaper (blackhole-wallpaper)
+    python-gobject gtk4-layer-shell webkitgtk-6.0
     # Fonts
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     # Neovim (LazyVim) needs these; base-devel and git also build AUR packages
@@ -55,6 +57,8 @@ config_files=(
     "dolphin/PurpleMocha.colors:$HOME/.local/share/color-schemes/PurpleMocha.colors"
     "chatterino/PurpleMocha.json:$HOME/.local/share/chatterino/Themes/PurpleMocha.json"
     "starship/starship.toml:$HOME/.config/starship.toml"
+    "blackhole/blackhole-wallpaper:$HOME/.local/bin/blackhole-wallpaper"
+    "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }

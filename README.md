@@ -2,7 +2,7 @@
 ## My T580 config.
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
-- Sway (incl. the wallpaper `sway/wallpaper.png`)
+- Sway (incl. the animated black hole wallpaper `blackhole/`, the old still image is `sway/wallpaper.png`)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus)
 - Hyprlock
 - Fuzzel
@@ -50,6 +50,8 @@ The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`
 | `dolphin/PurpleMocha.colors` | `~/.local/share/color-schemes/` |
 | `chatterino/PurpleMocha.json` | `~/.local/share/chatterino/Themes/` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
+| `blackhole/blackhole-wallpaper` | `~/.local/bin/` |
+| `blackhole/index.html` | `~/.local/share/blackhole/` |
 
 Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
