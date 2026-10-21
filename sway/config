@@ -204,6 +204,9 @@ bindsym --locked $mod+o output * power on; exec ~/.config/sway/kbd-light.sh; exe
 # No locking/screen-off while a window is visibly fullscreen (e.g. videos)
 for_window [all] inhibit_idle fullscreen
 
+# Black hole settings float on the right, so the wallpaper stays visible while changing it
+for_window [app_id="de.purplecloud.blackhole.settings"] floating enable, resize set 560 px 90 ppt, move position 69 ppt 5 ppt
+
 ### Autostart
 
 # Password prompts for programs that need admin rights

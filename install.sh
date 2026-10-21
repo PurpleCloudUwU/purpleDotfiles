@@ -38,8 +38,8 @@ pacman_pkgs=(
     jq libnotify wl-clipboard grim slurp imagemagick xdg-utils
     # Qt colors and Dolphin
     qt6ct dolphin breeze-icons
-    # Animated wallpaper (blackhole-wallpaper)
-    python-gobject gtk4-layer-shell webkitgtk-6.0
+    # Animated wallpaper (blackhole-wallpaper) and its settings app
+    python-gobject gtk4-layer-shell webkitgtk-6.0 libadwaita
     # Fonts
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     # Neovim (LazyVim) needs these; base-devel and git also build AUR packages
@@ -59,6 +59,7 @@ config_files=(
     "starship/starship.toml:$HOME/.config/starship.toml"
     "blackhole/blackhole-wallpaper:$HOME/.local/bin/blackhole-wallpaper"
     "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
+    "blackhole/blackhole-settings:$HOME/.local/bin/blackhole-settings"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -165,6 +166,12 @@ apply_settings() {
         [[ -f $apps/org.kde.dolphin.desktop ]] && xdg-mime default org.kde.dolphin.desktop inode/directory
         note "default apps: swayimg (images), kew (music), Dolphin (folders)"
     fi
+
+    # Black hole settings in the launcher; Sway's PATH has no ~/.local/bin, so the full path
+    mkdir -p ~/.local/share/applications
+    sed "s|^Exec=.*|Exec=$HOME/.local/bin/blackhole-settings|" "$repo/blackhole/blackhole-settings.desktop" \
+        > ~/.local/share/applications/blackhole-settings.desktop
+    note "launcher entry: Black Hole (wallpaper settings)"
 
     # Dolphin uses the KDE color scheme from this repo
     if command -v kwriteconfig6 >/dev/null; then

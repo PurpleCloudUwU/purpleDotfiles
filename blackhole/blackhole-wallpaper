@@ -5,11 +5,17 @@ Legt auf jedem Monitor ein GTK4-Fenster auf die Hintergrund-Ebene (gtk4-layer-sh
 und zeigt darin index.html mit WebKitGTK an. Einstellungen gehen als URL-Parameter
 an die Seite (gleiche Namen wie in Wallpaper Engine).
 
-  blackhole-wallpaper                                 # alle Monitore, Standardwerte
+Die Einstellungen kommen aus ~/.config/blackhole/settings.json (geschrieben von
+blackhole-settings); Änderungen daran werden sofort übernommen. Ist das Loch für
+einen Monitor ausgeschaltet, zeigt er stattdessen ~/.config/sway/wallpaper.png.
+Die Optionen unten gelten zusätzlich und haben Vorrang vor der Datei.
+
+  blackhole-wallpaper                                 # alle Monitore, laut settings.json
   blackhole-wallpaper --fps 24 --params "speed=60"    # für alle Monitore
   blackhole-wallpaper --output eDP-1 "blackhole=false"   # nur für einen Monitor
 """
 import argparse
+import json
 import os
 import signal
 import sys
@@ -33,6 +39,18 @@ from gi.repository import Gtk4LayerShell as LayerShell
 
 HTML = Path(os.environ.get("BLACKHOLE_HTML", "~/.local/share/blackhole/index.html")).expanduser()
 PIDFILE = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "blackhole-wallpaper.pid"
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser() / "blackhole"
+SETTINGS = CONFIG_DIR / "settings.json"
+STILL_IMAGE = Path("~/.config/sway/wallpaper.png").expanduser()
+
+
+def load_settings():
+    """settings.json lesen; fehlt sie oder ist sie kaputt, gelten die Standardwerte."""
+    try:
+        data = json.loads(SETTINGS.read_text())
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, ValueError):
+        return {}
 
 
 def replace_running_instance():
@@ -48,7 +66,7 @@ def replace_running_instance():
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--fps", type=int, default=30, help="Bildrate begrenzen (Standard: 30, 0 = unbegrenzt)")
+    p.add_argument("--fps", type=int, help="Bildrate begrenzen (Standard: 30, 0 = unbegrenzt)")
     p.add_argument("--params", default="", help='Parameter für alle Monitore, z. B. "speed=60&starsize=14"')
     p.add_argument("--output", nargs=2, action="append", default=[], metavar=("NAME", "PARAMS"),
                    help="Parameter nur für diesen Monitor (mehrfach möglich)")
@@ -60,28 +78,78 @@ class Wallpaper(Gtk.Application):
         super().__init__(application_id="de.purplecloud.blackhole", flags=Gio.ApplicationFlags.NON_UNIQUE)
         self.args = args
         self.per_output = dict(args.output)
-        self.windows = []
+        self.settings = load_settings()
+        self.windows = {}                             # Anschluss -> (Fenster, WebView oder None)
+        self.reload_id = 0
 
     def do_activate(self):
         self.hold()                                   # weiterlaufen, auch wenn kurz kein Monitor da ist
         monitors = Gdk.Display.get_default().get_monitors()
         monitors.connect("items-changed", lambda *_: GLib.idle_add(self.rebuild))
+        # den Ordner beobachten: Programme ersetzen die Datei beim Speichern meist
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        self.monitor = Gio.File.new_for_path(str(CONFIG_DIR)).monitor_directory(Gio.FileMonitorFlags.WATCH_MOVES, None)
+        self.monitor.connect("changed", self.on_config_changed)
         self.rebuild()
 
-    def url_for(self, connector):
+    def fps(self):
+        if self.args.fps is not None:
+            return self.args.fps
+        return self.settings.get("fps", 30)
+
+    def output_settings(self, connector):
+        return self.settings.get("outputs", {}).get(connector, {})
+
+    def enabled(self, connector):
+        return self.output_settings(connector).get("enabled", True)
+
+    def params_for(self, connector):
+        """Alle Parameter für einen Monitor: Datei (alle, dann eigene), dann Kommandozeile."""
+        out = self.output_settings(connector)
+        params = dict(self.settings.get("all", {}))
+        if out.get("own"):
+            params.update(out.get("settings", {}))
+        params.update(urllib.parse.parse_qsl(self.args.params))
+        params.update(urllib.parse.parse_qsl(self.per_output.get(connector, "")))
         # area=false: jeder Monitor hat seine eigene Instanz, das Loch sitzt mittig
-        query = urllib.parse.parse_qsl(f"area=false&fps={self.args.fps}")
-        query += urllib.parse.parse_qsl(self.args.params)
-        query += urllib.parse.parse_qsl(self.per_output.get(connector, ""))
-        return f"{HTML.as_uri()}?{urllib.parse.urlencode(dict(query))}"
+        params["area"] = False
+        return params
+
+    def url_for(self, connector):
+        query = {k: str(v).lower() if isinstance(v, bool) else v for k, v in self.params_for(connector).items()}
+        query["fps"] = self.fps()
+        return f"{HTML.as_uri()}?{urllib.parse.urlencode(query)}"
+
+    def on_config_changed(self, _monitor, file, other, _event):
+        names = {f.get_basename() for f in (file, other) if f}
+        if SETTINGS.name not in names:
+            return
+        # mehrere Ereignisse pro Speichern zusammenfassen
+        if self.reload_id:
+            GLib.source_remove(self.reload_id)
+        self.reload_id = GLib.timeout_add(50, self.reload)
+
+    def reload(self):
+        self.reload_id = 0
+        old = {c: self.enabled(c) for c in self.windows}
+        self.settings = load_settings()
+        if any(self.enabled(c) != was for c, was in old.items()):
+            self.rebuild()                            # Loch an/aus: Fenster neu aufbauen
+            return GLib.SOURCE_REMOVE
+        for connector, (_win, view) in self.windows.items():
+            if view:                                  # live übernehmen, ohne neu zu laden
+                script = f"blackholeSet({json.dumps(self.params_for(connector))}, {json.dumps(self.fps())})"
+                view.evaluate_javascript(script, -1, None, None, None, None, None)
+        return GLib.SOURCE_REMOVE
 
     def rebuild(self):
-        for win in self.windows:
+        for win, _view in self.windows.values():
             win.destroy()
-        self.windows = []
+        self.windows = {}
         monitors = Gdk.Display.get_default().get_monitors()
         for i in range(monitors.get_n_items()):
-            self.windows.append(self.make_window(monitors.get_item(i)))
+            monitor = monitors.get_item(i)
+            self.windows[monitor.get_connector()] = self.make_window(monitor)
         return GLib.SOURCE_REMOVE
 
     def make_window(self, monitor):
@@ -95,18 +163,25 @@ class Wallpaper(Gtk.Application):
         LayerShell.set_exclusive_zone(win, -1)
         LayerShell.set_keyboard_mode(win, LayerShell.KeyboardMode.NONE)
 
-        view = WebKit.WebView()
-        settings = view.get_settings()
-        settings.set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.ALWAYS)
-        settings.set_enable_developer_extras(False)
-        black = Gdk.RGBA()
-        black.parse("black")
-        view.set_background_color(black)
-        view.load_uri(self.url_for(monitor.get_connector()))
+        connector = monitor.get_connector()
+        view = None
+        if self.enabled(connector):
+            view = WebKit.WebView()
+            settings = view.get_settings()
+            settings.set_hardware_acceleration_policy(WebKit.HardwareAccelerationPolicy.ALWAYS)
+            settings.set_enable_developer_extras(False)
+            black = Gdk.RGBA()
+            black.parse("black")
+            view.set_background_color(black)
+            view.load_uri(self.url_for(connector))
+            win.set_child(view)
+        else:                                         # Loch aus: Standbild statt Animation
+            picture = Gtk.Picture.new_for_filename(str(STILL_IMAGE))
+            picture.set_content_fit(Gtk.ContentFit.COVER)
+            win.set_child(picture)
 
-        win.set_child(view)
         win.present()
-        return win
+        return win, view
 
 
 def main():

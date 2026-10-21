@@ -6,10 +6,6 @@
 <style>
   :root {
     --bg: #000;
-    --star: 200, 185, 255;     /* blasses Lila-Weiß für die Sterne */
-    --disk: 190, 140, 255;     /* helles Lila für die Akkretionsscheibe */
-    --hot: 240, 215, 255;      /* fast weiß für die heißesten Stellen */
-    --accent: 255, 80, 220;    /* pinke Funken */
   }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
   canvas { position: fixed; inset: 0; display: block; width: 100vw; height: 100vh; }
@@ -50,14 +46,17 @@
     spawn: true,          // Spawn-Animation beim Start
     flicker: true,        // flackernde Zeichen und pinke Funken
     twinkle: true,        // funkelnde Sterne
+    starcolor: "#c8b9ff",   // blasses Lila-Weiß für die Sterne
+    diskcolor: "#be8cff",   // helles Lila für die Akkretionsscheibe
+    hotcolor: "#f0d7ff",    // fast weiß für die heißesten Stellen
+    accentcolor: "#ff50dc", // pinke Funken
   };
+  const DEFAULTS = { ...cfg };
   let fpsLimit = 0;
 
   const cvs = document.getElementById("c");
   const ctx = cvs.getContext("2d");
-  const css = getComputedStyle(document.documentElement);
-  const rgb = n => css.getPropertyValue(n).trim();
-  const COL = { bg: css.getPropertyValue("--bg").trim(), star: rgb("--star"), disk: rgb("--disk"), hot: rgb("--hot"), accent: rgb("--accent") };
+  const BG = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
 
   let W, H, dpr, fs, cw, lh, cols, rows, sfs, stars = [];
 
@@ -106,19 +105,43 @@
     }
   }
 
-  // --- Wallpaper-Engine-Eigenschaften ---
+  // --- Einstellungen übernehmen ---
   const bool = v => v === true || v === "true";
-  const RELAYOUT = new Set(["diskchar", "stardensity", "starsize"]);
+  // Farbe als "#rrggbb" oder wie in Wallpaper Engine als "r g b" (0–1) -> "r, g, b"
+  const rgb = v => {
+    v = String(v).trim();
+    if (v.startsWith("#")) return [1, 3, 5].map(i => parseInt(v.slice(i, i + 2), 16)).join(", ");
+    return v.split(/\s+/).map(c => Math.round(Number(c) * 255)).join(", ");
+  };
+  const RELAYOUT = ["diskchar", "stardensity", "starsize"];
+  const KIND = { star: 0, disk: 1, hot: 2, accent: 3 };
+  let KIND_COL = [];
+
+  // values: { key: Wert }, unbekannte Schlüssel werden ignoriert
+  function applyValues(values) {
+    const before = RELAYOUT.map(k => cfg[k]).join();
+    for (const key in cfg) {
+      if (!(key in values)) continue;
+      const v = values[key];
+      const type = typeof DEFAULTS[key];
+      cfg[key] = type === "boolean" ? bool(v) : type === "number" ? Number(v) : String(v);
+    }
+    KIND_COL = [cfg.starcolor, cfg.diskcolor, cfg.hotcolor, cfg.accentcolor].map(rgb);
+    if (W !== undefined && RELAYOUT.map(k => cfg[k]).join() !== before) layout();
+  }
+
+  // Für blackhole-wallpaper: alle Einstellungen live ersetzen (fehlende -> Standard)
+  window.blackholeSet = (values, fps) => {
+    applyValues({ ...DEFAULTS, ...values });
+    if (fps !== undefined) fpsLimit = Number(fps);
+  };
+
+  // Wallpaper-Engine-Eigenschaften
   window.wallpaperPropertyListener = {
     applyUserProperties(p) {
-      let relayout = false;
-      for (const key in cfg) {
-        if (!p[key]) continue;
-        const v = p[key].value;
-        cfg[key] = typeof cfg[key] === "boolean" ? bool(v) : Number(v);
-        if (RELAYOUT.has(key)) relayout = true;
-      }
-      if (relayout) layout();
+      const values = {};
+      for (const key in p) values[key] = p[key].value;
+      applyValues(values);
     },
     applyGeneralProperties(p) {
       if (p.fps) fpsLimit = p.fps;
@@ -129,8 +152,6 @@
 
   const makeBuckets = () => Array.from({ length: 4 }, () => Array.from({ length: ALPHA_STEPS }, () => []));
   const buckets = makeBuckets(), starBuckets = makeBuckets();
-  const KIND = { star: 0, disk: 1, hot: 2, accent: 3 };
-  const KIND_COL = [COL.star, COL.disk, COL.hot, COL.accent];
   let t0 = null, lastT = null, lastDraw = -1, at = 0;  // at = Animationszeit, skaliert mit der Geschwindigkeit
 
   function frame(ms) {
@@ -238,7 +259,7 @@
       }
     }
 
-    ctx.fillStyle = COL.bg;
+    ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.textBaseline = "middle";
     ctx.textAlign = "center";
@@ -261,10 +282,8 @@
 
   // Einstellungen auch als URL-Parameter, z. B. für Linux/Sway: index.html?speed=50&fps=30
   const params = new URLSearchParams(location.search);
-  const fromUrl = {};
-  for (const [k, v] of params) if (k in cfg) fromUrl[k] = { value: v };
   if (params.has("fps")) fpsLimit = Number(params.get("fps"));
-  window.wallpaperPropertyListener.applyUserProperties(fromUrl);
+  applyValues(Object.fromEntries(params));
 
   layout();
   requestAnimationFrame(frame);

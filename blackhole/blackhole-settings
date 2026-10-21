@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""Einstellungen für blackhole-wallpaper.
+
+Schreibt ~/.config/blackhole/settings.json; das laufende Wallpaper übernimmt
+jede Änderung sofort. Pro Monitor lässt sich das Loch ausschalten (dann gibt es
+das Standbild) oder mit eigenen Einstellungen statt denen für alle Monitore zeigen.
+"""
+import json
+import os
+import sys
+from pathlib import Path
+
+import gi
+
+gi.require_version("Adw", "1")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk", "4.0")
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser() / "blackhole"
+SETTINGS = CONFIG_DIR / "settings.json"
+ALL = ""                                              # Auswahl "Alle Monitore"
+
+# Standardwerte wie in index.html
+DEFAULTS = {
+    "blackhole": True, "size": 100, "tilt": 26, "offsetx": 0, "offsety": 0, "diskchar": 12,
+    "stars": True, "stardensity": 6, "starsize": 12, "starbrightness": 100, "twinkle": True,
+    "speed": 100, "spawn": True, "flicker": True,
+    "starcolor": "#c8b9ff", "diskcolor": "#be8cff", "hotcolor": "#f0d7ff", "accentcolor": "#ff50dc",
+}
+
+# (Gruppe, [(Schlüssel, Titel, Untertitel, Bereich)]); Bereich None = Schalter, "color" = Farbe
+GROUPS = [
+    ("Schwarzes Loch", [
+        ("blackhole", "Anzeigen", "Aus: nur Sterne", None),
+        ("size", "Größe", "% der größtmöglichen Größe", (10, 200)),
+        ("tilt", "Neigung", "Neigung der Scheibe in %", (3, 100)),
+        ("offsetx", "Verschiebung waagerecht", "% der Monitorbreite", (-50, 50)),
+        ("offsety", "Verschiebung senkrecht", "% der Monitorhöhe", (-50, 50)),
+        ("diskchar", "Zeichengröße", "Pixel", (6, 40)),
+    ]),
+    ("Sterne", [
+        ("stars", "Anzeigen", None, None),
+        ("stardensity", "Dichte", "Sterne pro 1000 Zellen", (0, 100)),
+        ("starsize", "Zeichengröße", "Pixel", (6, 40)),
+        ("starbrightness", "Helligkeit", "%", (0, 200)),
+        ("twinkle", "Funkeln", None, None),
+    ]),
+    ("Animation", [
+        ("speed", "Geschwindigkeit", "%", (0, 400)),
+        ("spawn", "Spawn-Animation", "beim Start", None),
+        ("flicker", "Flackern", "flackernde Zeichen und pinke Funken", None),
+    ]),
+    ("Farben", [
+        ("diskcolor", "Scheibe", None, "color"),
+        ("hotcolor", "Heißeste Stellen", None, "color"),
+        ("accentcolor", "Funken", None, "color"),
+        ("starcolor", "Sterne", None, "color"),
+    ]),
+]
+
+# PurpleMocha wie Fuzzel, Mako und qt6ct
+CSS = """
+:root {
+  --accent-color: #b794f6; --accent-bg-color: #b794f6; --accent-fg-color: #1e1e2e;
+  --window-bg-color: #1e1e2e; --window-fg-color: #cdd6f4;
+  --view-bg-color: #181825; --view-fg-color: #cdd6f4;
+  --headerbar-bg-color: #181825; --headerbar-fg-color: #cdd6f4;
+  --card-bg-color: #232334; --card-fg-color: #cdd6f4;
+  --popover-bg-color: #232334; --popover-fg-color: #cdd6f4;
+  --dialog-bg-color: #1e1e2e; --dialog-fg-color: #cdd6f4;
+}
+"""
+
+
+def load():
+    try:
+        data = json.loads(SETTINGS.read_text())
+        if isinstance(data, dict):
+            return data
+    except (FileNotFoundError, ValueError):
+        pass
+    return {}
+
+
+def to_hex(rgba):
+    return "#{:02x}{:02x}{:02x}".format(*(round(c * 255) for c in (rgba.red, rgba.green, rgba.blue)))
+
+
+def monitors():
+    """Angeschlossene Monitore: [(Anschluss, Beschreibung)]"""
+    result = []
+    items = Gdk.Display.get_default().get_monitors()
+    for i in range(items.get_n_items()):
+        m = items.get_item(i)
+        geo = m.get_geometry()
+        name = m.get_description() or " ".join(filter(None, (m.get_manufacturer(), m.get_model())))
+        result.append((m.get_connector(), f"{name} · {geo.width}×{geo.height}"))
+    return result
+
+
+class SettingsWindow(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Black Hole", default_width=560, default_height=760)
+        self.data = load()
+        self.data.setdefault("all", {})
+        self.data.setdefault("outputs", {})
+        self.save_id = 0
+        self.loading = False                          # Widgets füllen, ohne zu speichern
+        self.rows = {}                                # Schlüssel -> (Zeile, Widget)
+
+        header = Adw.HeaderBar()
+        reset = Gtk.Button(icon_name="edit-undo-symbolic", tooltip_text="Auf Standardwerte zurücksetzen")
+        reset.connect("clicked", self.on_reset)
+        header.pack_start(reset)
+
+        page = Adw.PreferencesPage()
+
+        # --- Monitor ---
+        group = Adw.PreferencesGroup(title="Monitor")
+        self.outputs = [(ALL, "Alle Monitore", "Standard für jeden Monitor")]
+        connected = monitors()
+        self.outputs += [(c, c, d) for c, d in connected]
+        known = {c for c, _ in connected}
+        self.outputs += [(c, c, "nicht angeschlossen") for c in self.data["outputs"] if c not in known]
+        self.monitor_row = Adw.ComboRow(title="Einstellungen für",
+                                        model=Gtk.StringList.new([t for _, t, _s in self.outputs]))
+        self.monitor_row.connect("notify::selected", lambda *_: self.show_scope())
+        group.add(self.monitor_row)
+
+        self.enabled_row = Adw.SwitchRow(title="Schwarzes Loch auf diesem Monitor",
+                                         subtitle="Aus: Standbild ~/.config/sway/wallpaper.png")
+        self.enabled_row.connect("notify::active", self.on_enabled)
+        group.add(self.enabled_row)
+        self.own_row = Adw.SwitchRow(title="Eigene Einstellungen",
+                                     subtitle="Aus: wie „Alle Monitore“")
+        self.own_row.connect("notify::active", self.on_own)
+        group.add(self.own_row)
+
+        self.fps_row = self.scale_row("Bildrate", "Bilder pro Sekunde für alle Monitore, 0 = unbegrenzt", (0, 144))
+        self.fps_row[1].connect("value-changed", self.on_fps)
+        group.add(self.fps_row[0])
+        page.add(group)
+
+        # --- Einstellungen ---
+        self.setting_groups = []
+        for title, entries in GROUPS:
+            group = Adw.PreferencesGroup(title=title)
+            for key, name, subtitle, kind in entries:
+                if kind is None:
+                    row = widget = Adw.SwitchRow(title=name, subtitle=subtitle or "")
+                    widget.connect("notify::active", self.on_value, key)
+                elif kind == "color":
+                    row = Adw.ActionRow(title=name)
+                    widget = Gtk.ColorDialogButton(dialog=Gtk.ColorDialog(with_alpha=False), valign=Gtk.Align.CENTER)
+                    widget.connect("notify::rgba", self.on_value, key)
+                    row.add_suffix(widget)
+                else:
+                    row, widget = self.scale_row(name, subtitle, kind)
+                    widget.connect("value-changed", self.on_value, None, key)
+                group.add(row)
+                self.rows[key] = (row, widget)
+            page.add(group)
+            self.setting_groups.append(group)
+
+        view = Adw.ToolbarView(content=page)
+        view.add_top_bar(header)
+        self.set_content(view)
+
+        self.loading = True
+        self.fps_row[1].set_value(self.data.get("fps", 30))
+        self.loading = False
+        self.show_scope()
+
+    def scale_row(self, title, subtitle, bounds):
+        row = Adw.ActionRow(title=title, subtitle=subtitle or "")
+        scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, bounds[0], bounds[1], 1)
+        scale.set_digits(0)
+        scale.set_draw_value(True)
+        scale.set_value_pos(Gtk.PositionType.LEFT)
+        scale.set_size_request(240, -1)
+        scale.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(scale)
+        return row, scale
+
+    # --- Auswahl ---
+    def scope(self):
+        return self.outputs[self.monitor_row.get_selected()][0]
+
+    def output(self):
+        return self.data["outputs"].setdefault(self.scope(), {})
+
+    def editing(self):
+        """Die Werte, die gerade bearbeitet werden (alle Monitore oder eigene)."""
+        if self.scope() == ALL:
+            return self.data["all"]
+        out = self.output()
+        return out.setdefault("settings", {}) if out.get("own") else None
+
+    def show_scope(self):
+        """Widgets für den gewählten Monitor füllen."""
+        self.loading = True
+        is_all = self.scope() == ALL
+        self.monitor_row.set_subtitle(self.outputs[self.monitor_row.get_selected()][2])
+        self.enabled_row.set_visible(not is_all)
+        self.own_row.set_visible(not is_all)
+        if not is_all:
+            out = self.data["outputs"].get(self.scope(), {})
+            self.enabled_row.set_active(out.get("enabled", True))
+            self.own_row.set_active(out.get("own", False))
+        self.fill()
+        self.loading = False
+
+    def fill(self):
+        values = {**DEFAULTS, **self.data["all"]}
+        out = self.data["outputs"].get(self.scope(), {})
+        if self.scope() != ALL and out.get("own"):
+            values.update(out.get("settings", {}))
+        editable = self.scope() == ALL or (out.get("enabled", True) and out.get("own", False))
+        for group in self.setting_groups:
+            group.set_sensitive(editable)
+        was_loading, self.loading = self.loading, True
+        for key, (_row, widget) in self.rows.items():
+            value = values[key]
+            if isinstance(widget, Adw.SwitchRow):
+                widget.set_active(bool(value))
+            elif isinstance(widget, Gtk.ColorDialogButton):
+                rgba = Gdk.RGBA()
+                rgba.parse(value)
+                widget.set_rgba(rgba)
+            else:
+                widget.set_value(float(value))
+        self.loading = was_loading
+
+    # --- Änderungen ---
+    def on_value(self, widget, _pspec, key):
+        if self.loading:
+            return
+        target = self.editing()
+        if target is None:
+            return
+        if isinstance(widget, Adw.SwitchRow):
+            target[key] = widget.get_active()
+        elif isinstance(widget, Gtk.ColorDialogButton):
+            target[key] = to_hex(widget.get_rgba())
+        else:
+            target[key] = round(widget.get_value())
+        self.save()
+
+    def on_enabled(self, row, _pspec):
+        if self.loading:
+            return
+        self.output()["enabled"] = row.get_active()
+        self.fill()
+        self.save()
+
+    def on_own(self, row, _pspec):
+        if self.loading:
+            return
+        out = self.output()
+        out["own"] = row.get_active()
+        if out["own"] and not out.get("settings"):
+            out["settings"] = dict(self.data["all"])  # mit den Werten für alle Monitore beginnen
+        self.fill()
+        self.save()
+
+    def on_fps(self, scale):
+        if self.loading:
+            return
+        self.data["fps"] = round(scale.get_value())
+        self.save()
+
+    def on_reset(self, _button):
+        target = self.editing()
+        if target is None:
+            return
+        target.clear()
+        if self.scope() != ALL:                       # eigene Einstellungen: echte Standardwerte
+            target.update(DEFAULTS)
+        self.fill()
+        self.save()
+
+    def save(self):
+        # beim Ziehen eines Schiebereglers nicht bei jedem Pixel schreiben
+        if self.save_id:
+            GLib.source_remove(self.save_id)
+        self.save_id = GLib.timeout_add(80, self.write)
+
+    def write(self):
+        self.save_id = 0
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = SETTINGS.with_suffix(".tmp")
+        tmp.write_text(json.dumps(self.data, indent=2) + "\n")
+        tmp.replace(SETTINGS)                         # atomar, das Wallpaper liest nie eine halbe Datei
+        return GLib.SOURCE_REMOVE
+
+    def do_close_request(self):
+        if self.save_id:                              # ausstehende Änderung noch speichern
+            GLib.source_remove(self.save_id)
+            self.write()
+        return False
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id="de.purplecloud.blackhole.settings")
+
+    def do_startup(self):
+        Adw.Application.do_startup(self)
+        self.get_style_manager().set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+        css = Gtk.CssProvider()
+        css.load_from_string(CSS)
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    def do_activate(self):
+        win = self.get_active_window() or SettingsWindow(self)
+        win.present()
+
+
+if __name__ == "__main__":
+    sys.exit(App().run(sys.argv))
