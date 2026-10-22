@@ -1,0 +1,119 @@
+# otter-launcher (Super+D), runs in a floating kitty window (app_id otter-launcher)
+# All options: https://github.com/kuokuo123/otter-launcher#configuration
+
+[general]
+height = 12
+empty_module = "app"      # Enter with an empty prompt -> app list
+default_module = "gg"     # no matching prefix -> web search
+exec_cmd = "bash -c"
+vi_mode = false
+cheatsheet_entry = "?"
+cheatsheet_viewer = "less -R; clear"
+external_editor = "nvim"
+
+[interface]
+padding = [0, 1, 0, 1]
+header = """
+$(printf '\u001B[38;2;190;140;255;1m  \u001B[0m%s@%s   \u001B[38;2;98;89;126m%s\u001B[0m' "$USER" "$HOSTNAME" "$(LC_ALL=C date '+%a %d %b %H:%M')")"""
+prompt_sign = "> "
+prompt_sign_color = "#be8cff"
+placeholder = "search apps · ? for modules"
+suggestion_mode = "list"
+suggestion_position = "bottom"
+prefix_color = "#be8cff"
+prefix_padding = 4
+description_color = "#f0d7ff"
+selection_prefix = "▌ "
+selection_prefix_color = "#be8cff"
+inverse_selection = false
+list_prefix = "  "
+list_prefix_color = "reset"
+indicator_args = "^ "
+indicator_bare = "$ "
+indicator_color = "#62597e"
+scrollbar = false
+separator = true
+separator_label = " otter "
+
+# fzf colors shared by the modules below (same as tui-menu)
+# --color 'fg:#f0d7ff,bg:-1,hl:#be8cff,fg+:#f0d7ff,bg+:#22192e,hl+:#be8cff,prompt:#be8cff,pointer:#be8cff,info:#62597e'
+
+[[modules]]
+description = "apps"
+prefix = "app"
+# apps.sh prints "<desktop id><TAB><icon>  <Name>"; fzf shows only the second part
+cmd = """
+selected="$(~/.config/otter-launcher/apps.sh | fzf --ansi -d '\t' --with-nth 2 --cycle --layout=reverse --info=hidden --no-scrollbar --pointer='▌' --gutter ' ' --prompt '> ' --color 'fg:#f0d7ff,bg:-1,hl:#be8cff,fg+:#f0d7ff,bg+:#22192e,hl+:#be8cff,prompt:#be8cff,pointer:#be8cff,info:#62597e' -m)"
+[ -z "$selected" ] && exit
+printf '%s\n' "$selected" | cut -f1 | while read -r id; do setsid -f gtk-launch "$id" >/dev/null 2>&1; done
+"""
+
+[[modules]]
+description = "run in terminal"
+prefix = "sh"
+cmd = "kitty -e bash -c '{}; exec bash'"
+with_argument = true
+unbind_proc = true
+
+[[modules]]
+description = "wifi"
+prefix = "wf"
+cmd = "~/.config/waybar/wifi-menu.sh"
+
+[[modules]]
+description = "bluetooth"
+prefix = "bt"
+cmd = "~/.config/waybar/bt-menu.sh"
+
+[[modules]]
+description = "audio output"
+prefix = "au"
+cmd = "~/.config/waybar/audio-menu.sh"
+
+[[modules]]
+description = "notifications"
+prefix = "no"
+cmd = "~/.config/waybar/notifications.sh menu"
+
+[[modules]]
+description = "power profile"
+prefix = "pp"
+cmd = "~/.config/waybar/power-profile.sh menu"
+
+[[modules]]
+description = "open files"
+prefix = "fo"
+cmd = """
+find $HOME -type f -not -path '*/.cache/*' -not -path '*/.git/*' 2>/dev/null | fzf --cycle --layout=reverse --info=hidden --gutter ' ' --color 'fg:#f0d7ff,bg:-1,hl:#be8cff,fg+:#f0d7ff,bg+:#22192e,hl+:#be8cff,prompt:#be8cff,pointer:#be8cff,info:#62597e' | setsid -f xargs -r -I [] xdg-open '[]'
+"""
+
+[[modules]]
+description = "open folder in yazi"
+prefix = "yz"
+cmd = """
+find $HOME -type d -not -path '*/.cache/*' -not -path '*/.git/*' 2>/dev/null | fzf --cycle --layout=reverse --info=hidden --gutter ' ' --color 'fg:#f0d7ff,bg:-1,hl:#be8cff,fg+:#f0d7ff,bg+:#22192e,hl+:#be8cff,prompt:#be8cff,pointer:#be8cff,info:#62597e' | xargs -r -I [] setsid -f kitty -e yazi '[]'
+"""
+
+[[modules]]
+description = "google search"
+prefix = "gg"
+cmd = "xdg-open 'https://www.google.com/search?q={}'"
+with_argument = true
+url_encode = true
+unbind_proc = true
+
+[[modules]]
+description = "arch wiki"
+prefix = "aw"
+cmd = "xdg-open 'https://wiki.archlinux.org/index.php?search={}'"
+with_argument = true
+url_encode = true
+unbind_proc = true
+
+[[modules]]
+description = "search the AUR"
+prefix = "aur"
+cmd = "xdg-open 'https://aur.archlinux.org/packages?K={}'"
+with_argument = true
+url_encode = true
+unbind_proc = true

@@ -14,7 +14,8 @@ set $down j
 set $up k
 set $right l
 set $term kitty
-set $menu fuzzel
+# App launcher: otter-launcher (TUI) in a floating kitty window, see otter-launcher/config.toml
+set $menu kitty --class otter-launcher --title otter-launcher -o remember_window_size=no -o initial_window_width=72c -o initial_window_height=15c -o background_opacity=0.95 -e otter-launcher
 
 ### Output
 
@@ -204,6 +205,9 @@ bindsym --locked $mod+o output * power on; exec ~/.config/sway/kbd-light.sh; exe
 
 # No locking/screen-off while a window is visibly fullscreen (e.g. videos)
 for_window [all] inhibit_idle fullscreen
+
+# Launcher and the Waybar menus (waybar/tui-menu) float in the middle, like the old fuzzel
+for_window [app_id="^(otter-launcher|tui-menu)$"] floating enable, border pixel 1
 
 # Black hole settings float on the right, so the wallpaper stays visible while changing it
 for_window [app_id="de.purplecloud.blackhole.settings"] floating enable, resize set 560 px 90 ppt, move position 69 ppt 5 ppt

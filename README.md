@@ -2,10 +2,10 @@
 ## My T580 config.
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
-- Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in Fuzzel for monitors, size, colors etc.; the old still image is `sway/wallpaper.png`)
+- Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in the launcher for monitors, size, colors etc.; the old still image is `sway/wallpaper.png`)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole)
 - Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness in the "Black Hole" app). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
-- Fuzzel
+- otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
 - Mako (notifications)
 - qt6ct + KDE color scheme (purple theme for Qt apps like Dolphin)
 - Chatterino theme
@@ -23,8 +23,8 @@ sudo pacman -S --needed git
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 ~/purpleDotfiles/install.sh
 ```
-The script installs the needed packages (official repos, plus `sway-screenshot`
-from the AUR via paru), symlinks the configs into place (old ones are moved to
+The script installs the needed packages (official repos, plus `sway-screenshot` and
+`otter-launcher` from the AUR via paru), symlinks the configs into place (old ones are moved to
 `~/dotfiles-backup-<date>/`), applies the additional settings below and enables
 NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and choose
 Sway in ly. Options: `--copy` (copy instead of symlink), `--no-packages`,
@@ -35,7 +35,7 @@ The configs are symlinked into place, so this repo is the live config
 (move existing folders out of the way first):
 ```sh
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
-for d in sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd yazi nvim; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
+for d in sway waybar hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
 ln -s ~/purpleDotfiles/dolphin/blackhole.colors ~/.local/share/color-schemes/
 ln -s ~/purpleDotfiles/chatterino/blackhole.json ~/.local/share/chatterino/Themes/
 ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
@@ -43,7 +43,7 @@ ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
 ```
 
 ### Where the files go
-The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
+The config folders (`sway`, `waybar`, `hypr`, `otter-launcher`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
 
 | File | Destination |
 |---|---|
