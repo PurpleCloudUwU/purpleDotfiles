@@ -21,9 +21,9 @@ case $1 in
 
     status)
         if is_open; then
-            json $'\uf104' "Schließen" ',"class":"open"'
+            json $'\uf104' "Close" ',"class":"open"'
         else
-            json $'\uf011' "Power-Menü" ''
+            json $'\uf011' "Power menu" ''
         fi
         ;;
 
@@ -31,10 +31,10 @@ case $1 in
         # Closed: empty text = module is hidden
         is_open || { printf '{"text":""}\n'; exit 0; }
         case $2 in
-            lock)      json $'\uf023' "Sperren" '' ;;
-            reboot)    json $'\uf021' "Neustart" '' ;;
-            suspend)   json $'\uf186' "Bereitschaft" '' ;;
-            poweroff)  json $'\uf011' "Herunterfahren" '' ;;
+            lock)      json $'\uf023' "Lock" '' ;;
+            reboot)    json $'\uf021' "Reboot" '' ;;
+            suspend)   json $'\uf186' "Suspend" '' ;;
+            poweroff)  json $'\uf011' "Shut down" '' ;;
         esac
         ;;
 

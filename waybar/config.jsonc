@@ -77,7 +77,7 @@
         "format-plugged": "<span color='#a6e3a1'>\uf1e6</span> {capacity}%",
         "format-full": "<span color='#a6e3a1'>\uf1e6</span> {capacity}%",
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
-        "tooltip-format": "Intern: {capacity}% ({timeTo})"
+        "tooltip-format": "Internal: {capacity}% ({timeTo})"
     },
 
     "battery#bat1": {
@@ -88,7 +88,7 @@
         "format-plugged": "<span color='#a6e3a1'>\uf1e6</span> {capacity}%",
         "format-full": "<span color='#a6e3a1'>\uf1e6</span> {capacity}%",
         "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
-        "tooltip-format": "Extern: {capacity}% ({timeTo})"
+        "tooltip-format": "External: {capacity}% ({timeTo})"
     },
 
     // Right/middle click open the menu too: on the touchpad (button areas)
@@ -105,7 +105,7 @@
 
     "pulseaudio": {
         "format": "{icon} {volume}%",
-        "format-muted": "\uf026 stumm",
+        "format-muted": "\uf026 muted",
         "format-icons": { "default": ["\uf027", "\uf028"] },
         "scroll-step": 5,
         "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
@@ -122,9 +122,9 @@
         "format-disabled": "\udb81\uddaa",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)",
         "tooltip-format-ethernet": "{ifname}",
-        "tooltip-format-linked": "{ifname}: keine IP-Adresse",
-        "tooltip-format-disconnected": "Nicht verbunden",
-        "tooltip-format-disabled": "WLAN aus",
+        "tooltip-format-linked": "{ifname}: no IP address",
+        "tooltip-format-disconnected": "Not connected",
+        "tooltip-format-disabled": "Wi-Fi off",
         // Right/middle click like Bluetooth (touchpad button areas)
         "on-click": "~/.config/waybar/wifi-menu.sh",
         "on-click-right": "~/.config/waybar/wifi-menu.sh",

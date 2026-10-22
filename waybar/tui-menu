@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# dmenu-like menu with fzf (replaces fuzzel --dmenu in the Waybar scripts):
+# reads lines from stdin, prints the selection, exits 1 when cancelled.
+# Inside a terminal (e.g. started from otter-launcher) fzf runs right there,
+# otherwise it opens in a floating kitty window (app_id tui-menu, see sway config).
+#
+# Options: --width N (columns)  --lines N  --prompt=TEXT
+#          --prompt-only=TEXT (free text input instead of a list)  --password
+
+width=50 lines=10 prompt="> " ask="" password=""
+args=("$@")
+while (($#)); do
+    case $1 in
+        --width)         width=$2; shift ;;
+        --lines)         lines=$2; shift ;;
+        --prompt=*)      prompt=${1#*=} ;;
+        --prompt-only=*) ask=${1#*=} ;;
+        --password)      password=1 ;;
+    esac
+    shift
+done
+
+# Not in a terminal: run this script again in a floating kitty window and
+# pass input/output through files
+if [[ -z $TUI_MENU_OUT ]] && ! { : </dev/tty; } 2>/dev/null; then
+    dir=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/tui-menu.XXXXXX") || exit 1
+    trap 'rm -rf "$dir"' EXIT
+    [[ -z $ask ]] && cat >"$dir/in"
+    TUI_MENU_IN="$dir/in" TUI_MENU_OUT="$dir/out" \
+        kitty --class tui-menu --title tui-menu \
+            -o remember_window_size=no \
+            -o initial_window_width="$((width + 2))c" \
+            -o initial_window_height="$((lines + 2))c" \
+            -o background_opacity=0.95 \
+            "$0" "${args[@]}"
+    [[ -e $dir/ok ]] || exit 1
+    cat "$dir/out"
+    exit 0
+fi
+
+# Colors from the old fuzzel.ini
+COLORS='fg:#f0d7ff,bg:-1,hl:#be8cff,fg+:#f0d7ff,bg+:#22192e,hl+:#be8cff,prompt:#be8cff,pointer:#be8cff,info:#62597e,query:#f0d7ff,gutter:-1,border:#be8cff'
+
+if [[ -n $ask ]]; then
+    # Free text input
+    if [[ -n $password ]]; then
+        IFS= read -rsp "$ask" result </dev/tty >/dev/tty || exit 1
+    else
+        IFS= read -rp "$ask" result </dev/tty >/dev/tty || exit 1
+    fi
+else
+    result=$(fzf --layout=reverse --cycle --tiebreak=index --no-scrollbar \
+        --info=hidden --pointer='▌' --gutter=' ' --prompt="$prompt" \
+        --color="$COLORS" <"${TUI_MENU_IN:-/dev/stdin}") || exit 1
+fi
+
+if [[ -n $TUI_MENU_OUT ]]; then
+    printf '%s\n' "$result" >"$TUI_MENU_OUT"
+    : >"${TUI_MENU_OUT%/*}/ok"
+else
+    printf '%s\n' "$result"
+fi

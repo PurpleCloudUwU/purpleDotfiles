@@ -24,7 +24,7 @@ copy=0 packages=1 services=1
 # Programs from the official repos, grouped by what needs them
 pacman_pkgs=(
     # Desktop: Sway with bar, lock screen, launcher, notifications, OSD
-    sway swaybg swayidle waybar hyprlock fuzzel mako swayosd
+    sway swaybg swayidle waybar hyprlock mako swayosd
     xdg-desktop-portal-wlr xorg-xwayland polkit-gnome dex
     # Login manager (starts Sway and unlocks GNOME Keyring)
     ly gnome-keyring
@@ -46,12 +46,12 @@ pacman_pkgs=(
     base-devel git fd ripgrep fzf curl unzip tree-sitter-cli
 )
 # From the AUR (paru is installed first if there is no AUR helper)
-aur_pkgs=(sway-screenshot)
+aur_pkgs=(sway-screenshot otter-launcher)
 # Optional AUR apps with a keybinding or theme in this repo
 aur_optional=(brave-origin-bin chatterino2-bin)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd yazi nvim)
+config_dirs=(sway waybar hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
 # Single files: <path in repo>:<destination>
 config_files=(
     "dolphin/blackhole.colors:$HOME/.local/share/color-schemes/blackhole.colors"
@@ -168,7 +168,7 @@ apply_settings() {
         note "default apps: swayimg (images), kew (music), Dolphin (folders)"
     fi
 
-    # Black hole settings in the launcher; Sway's PATH has no ~/.local/bin, so the full path
+    # Black hole settings in the launcher (app list); Sway's PATH has no ~/.local/bin, so the full path
     mkdir -p ~/.local/share/applications
     sed "s|^Exec=.*|Exec=$HOME/.local/bin/blackhole-settings|" "$repo/blackhole/blackhole-settings.desktop" \
         > ~/.local/share/applications/blackhole-settings.desktop

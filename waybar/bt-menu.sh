@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 # Bluetooth menu for sway/Waybar.
-# Requires: bluez-utils, fuzzel, pipewire-pulse (pactl), optional libnotify
+# Requires: bluez-utils, fzf, kitty, tui-menu, pipewire-pulse (pactl), optional libnotify
 
 # Menu program (reads lines from stdin, prints the selection).
 # Alternatives: (wofi --dmenu)  (rofi -dmenu)  (bemenu)
-MENU=(fuzzel --dmenu --width 60 --lines 10)
+MENU=("${0%/*}/tui-menu" --width 60 --lines 10)
 
 # Must match "signal" in the Waybar module
 SIGNAL=8
 
 # Fixed menu entries with a Nerd Font icon (two spaces, like the device lines)
-PAIR_ENTRY=$'\U000F0415  Neues Gerät koppeln'     # nf-md-plus
-OFF_ENTRY=$'\U000F00B2  Bluetooth ausschalten'    # nf-md-bluetooth_off
-ON_ENTRY=$'\U000F00AF  Bluetooth einschalten'     # nf-md-bluetooth
-AUDIO_ENTRY=$'\U000F04C3  Audioausgabe'           # nf-md-speaker
+PAIR_ENTRY=$'\U000F0415  Pair new device'         # nf-md-plus
+OFF_ENTRY=$'\U000F00B2  Turn Bluetooth off'       # nf-md-bluetooth_off
+ON_ENTRY=$'\U000F00AF  Turn Bluetooth on'         # nf-md-bluetooth
+AUDIO_ENTRY=$'\U000F04C3  Audio output'           # nf-md-speaker
 
 # Submenu for the audio output device (lives next to this script)
 AUDIO_MENU="${0%/*}/audio-menu.sh"
 
-# Each notification replaces the previous one ("Verbinde …" -> "verbunden"),
+# Each notification replaces the previous one ("Connecting …" -> "connected"),
 # so they don't both end up in the notification history.
 NID=""
 notify() {
@@ -88,16 +88,16 @@ codec_menu() {
         }')
 
     if [[ ${#labels[@]} -eq 0 ]]; then
-        notify "Keine Profile gefunden (pactl / pipewire-pulse pruefen)"
+        notify "No profiles found (check pactl / pipewire-pulse)"
         return
     fi
 
     choice=$(printf '%s\n' "${labels[@]}" | "${MENU[@]}") || return
     [[ -n ${KEY_OF[$choice]} ]] || return
     if pactl set-card-profile "$card" "${KEY_OF[$choice]}"; then
-        notify "Profil: ${choice#??}"
+        notify "Profile: ${choice#??}"
     else
-        notify "Profilwechsel fehlgeschlagen"
+        notify "Switching profile failed"
     fi
 }
 
@@ -106,33 +106,33 @@ device_menu() {
     name=$(bluetoothctl info "$mac" | sed -n 's/^[[:space:]]*Name: //p')
 
     if is_connected "$mac"; then
-        entries=$'Trennen\nCodec / Profil wählen\nVergessen'
+        entries=$'Disconnect\nChoose codec / profile\nForget'
     else
-        entries=$'Verbinden\nVergessen'
+        entries=$'Connect\nForget'
     fi
 
     action=$(printf '%s\n' "$entries" | "${MENU[@]}") || return
 
     case $action in
-        Verbinden)
-            notify "Verbinde $name …"
+        Connect)
+            notify "Connecting $name …"
             if bluetoothctl connect "$mac" | grep -q "Connection successful"; then
-                notify "$name verbunden"
+                notify "$name connected"
             else
-                notify "Verbinden mit $name fehlgeschlagen"
+                notify "Connecting to $name failed"
             fi
             ;;
-        Trennen)
+        Disconnect)
             bluetoothctl disconnect "$mac" >/dev/null
-            notify "$name getrennt"
+            notify "$name disconnected"
             ;;
-        "Codec / Profil wählen")
+        "Choose codec / profile")
             codec_menu "$mac"
             ;;
-        Vergessen)
-            if [[ $(printf 'Abbrechen\nJa, %s vergessen\n' "$name" | "${MENU[@]}") == Ja* ]]; then
+        Forget)
+            if [[ $(printf 'Cancel\nYes, forget %s\n' "$name" | "${MENU[@]}") == Yes* ]]; then
                 bluetoothctl remove "$mac" >/dev/null
-                notify "$name vergessen"
+                notify "Forgot $name"
             fi
             ;;
     esac
@@ -143,7 +143,7 @@ pair_new() {
     local labels=() mac name paired choice label
     declare -A NEW NAME_OF
 
-    notify "Suche Geräte (10 s) – Gerät in den Kopplungsmodus versetzen"
+    notify "Scanning for devices (10 s) – put the device in pairing mode"
     bluetoothctl --timeout 10 scan on >/dev/null 2>&1
 
     paired=$(bluetoothctl devices Paired 2>/dev/null)
@@ -157,7 +157,7 @@ pair_new() {
     done < <(bluetoothctl devices)
 
     if [[ ${#labels[@]} -eq 0 ]]; then
-        notify "Keine neuen Geräte gefunden"
+        notify "No new devices found"
         return
     fi
 
@@ -165,27 +165,27 @@ pair_new() {
     mac=${NEW[$choice]}
     [[ -n $mac ]] || return
 
-    notify "Koppeln mit ${NAME_OF[$choice]} …"
+    notify "Pairing with ${NAME_OF[$choice]} …"
     if bluetoothctl pair "$mac" | grep -q "Pairing successful"; then
         bluetoothctl trust "$mac" >/dev/null
         bluetoothctl connect "$mac" >/dev/null
-        notify "Gekoppelt und verbunden"
+        notify "Paired and connected"
     else
-        notify "Koppeln fehlgeschlagen"
+        notify "Pairing failed"
     fi
     refresh
 }
 
 toggle_power() {
     if is_powered; then
-        bluetoothctl power off >/dev/null; notify "Bluetooth aus"
+        bluetoothctl power off >/dev/null; notify "Bluetooth off"
     else
         # An rfkill block (e.g. airplane mode) would otherwise prevent "power on"
         rfkill unblock bluetooth 2>/dev/null
         if bluetoothctl power on >/dev/null; then
-            notify "Bluetooth an"
+            notify "Bluetooth on"
         else
-            notify "Bluetooth einschalten fehlgeschlagen"
+            notify "Turning Bluetooth on failed"
         fi
     fi
     refresh
@@ -198,7 +198,7 @@ main() {
     # The audio output can always be chosen, even without Bluetooth.
     # bluetoothctl waits forever if bluetoothd isn't running -> timeout
     if ! timeout 2 bluetoothctl show >/dev/null 2>&1; then
-        notify "Bluetooth nicht verfügbar (läuft bluetoothd?)"
+        notify "Bluetooth not available (is bluetoothd running?)"
         entries=("$AUDIO_ENTRY")
     elif ! is_powered; then
         entries=("$ON_ENTRY" "$AUDIO_ENTRY")

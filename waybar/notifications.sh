@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Notification history for Waybar (mako).
 #   notifications.sh         -> JSON for Waybar (bell, with a dot when there is something)
-#   notifications.sh menu    -> fuzzel menu with the history, Nerd Font icon per app (selecting copies the text)
+#   notifications.sh menu    -> fzf menu with the history, Nerd Font icon per app (selecting copies the text)
 #   notifications.sh clear   -> clear the history
-# Requires: mako (makoctl), jq, fuzzel, optional wl-clipboard
+# Requires: mako (makoctl), jq, fzf, kitty, tui-menu, optional wl-clipboard
 
-MENU=(fuzzel --dmenu --width 70 --lines 10)
+MENU=("${0%/*}/tui-menu" --width 70 --lines 10)
 SIGNAL=11   # must match "signal" in the Waybar module and "on-notify" in the mako config
 
 # makoctl can't delete the history. Instead we remember the highest
@@ -35,27 +35,27 @@ load() {
 status() {
     local n
     if ! load; then
-        printf '{"text":"%s","tooltip":"mako läuft nicht","class":"empty"}\n' "$BELL"
+        printf '{"text":"%s","tooltip":"mako is not running","class":"empty"}\n' "$BELL"
         return
     fi
 
     n=$(jq length <<<"$ITEMS")
     if (( n == 0 )); then
-        printf '{"text":"%s","tooltip":"Keine Benachrichtigungen","class":"empty"}\n' "$BELL"
+        printf '{"text":"%s","tooltip":"No notifications","class":"empty"}\n' "$BELL"
     else
-        (( n == 1 )) && n="1 Benachrichtigung" || n="$n Benachrichtigungen"
-        printf '{"text":"%s","tooltip":"%s\\nKlick: Verlauf · Rechtsklick: leeren","class":"has-notifications"}\n' \
+        (( n == 1 )) && n="1 notification" || n="$n notifications"
+        printf '{"text":"%s","tooltip":"%s\\nClick: history · Right click: clear","class":"has-notifications"}\n' \
             "$BELL_BADGE" "$n"
     fi
 }
 
 # Nerd Font icon per app (app name or .desktop entry), else the bell.
-# For the popups, my own scripts (WLAN, Bluetooth, Powerprofil, Audio) are set in the mako config.
+# For the popups, my own scripts (Wi-Fi, Bluetooth, Power Profile, Audio) are set in the mako config.
 glyph_for() {
     case "${1,,} ${2,,}" in
-        *wlan*)                      printf '\U000F05A9' ;;  # nf-md-wifi
+        *wi-fi*|*wlan*)              printf '\U000F05A9' ;;  # nf-md-wifi
         *bluetooth*)                 printf '\U000F00AF' ;;  # nf-md-bluetooth
-        *powerprofil*)               printf '\U000F04C5' ;;  # nf-md-speedometer
+        *power\ profile*)            printf '\U000F04C5' ;;  # nf-md-speedometer
         *audio*)                     printf '\U000F04C3' ;;  # nf-md-speaker
         *mullvad*)                   printf '\U000F099D' ;;  # nf-md-shield_lock
         *claude*)                    printf '\U000F06A9' ;;  # nf-md-robot
@@ -70,7 +70,7 @@ glyph_for() {
 menu() {
     local id text desktop_entry app_name label choice
     local labels=()
-    local clear_entry=$'\U000F05E9  Verlauf leeren'   # nf-md-delete_sweep
+    local clear_entry=$'\U000F05E9  Clear history'   # nf-md-delete_sweep
     declare -A ID_OF
     load || exit 0
 
@@ -90,7 +90,7 @@ menu() {
         ' <<<"$ITEMS")
 
     if (( ${#labels[@]} == 0 )); then
-        printf '%s\n' "Keine Benachrichtigungen" | "${MENU[@]}" >/dev/null
+        printf '%s\n' "No notifications" | "${MENU[@]}" >/dev/null
         exit 0
     fi
 
