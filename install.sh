@@ -54,8 +54,8 @@ aur_optional=(brave-origin-bin chatterino2-bin)
 config_dirs=(sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd yazi nvim)
 # Single files: <path in repo>:<destination>
 config_files=(
-    "dolphin/PurpleMocha.colors:$HOME/.local/share/color-schemes/PurpleMocha.colors"
-    "chatterino/PurpleMocha.json:$HOME/.local/share/chatterino/Themes/PurpleMocha.json"
+    "dolphin/blackhole.colors:$HOME/.local/share/color-schemes/blackhole.colors"
+    "chatterino/blackhole.json:$HOME/.local/share/chatterino/Themes/blackhole.json"
     "starship/starship.toml:$HOME/.config/starship.toml"
     "blackhole/blackhole-wallpaper:$HOME/.local/bin/blackhole-wallpaper"
     "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
@@ -180,8 +180,8 @@ apply_settings() {
 
     # Dolphin uses the KDE color scheme from this repo
     if command -v kwriteconfig6 >/dev/null; then
-        kwriteconfig6 --file dolphinrc --group UiSettings --key ColorScheme PurpleMocha
-        note "Dolphin: color scheme PurpleMocha"
+        kwriteconfig6 --file dolphinrc --group UiSettings --key ColorScheme blackhole
+        note "Dolphin: color scheme blackhole"
     fi
 
     # Lock screen sigil, made from this machine's ID

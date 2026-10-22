@@ -1,49 +1,49 @@
-# Yazi colors matching kitty, Sway, Waybar and Neovim (Purple Mocha).
+# Yazi colors matching kitty, Sway, Waybar and Neovim (blackhole).
 # Only changes to the defaults; file colors already come from kitty's palette
 # (folders blue like in eza).
 # Defaults: https://yazi-rs.github.io/docs/configuration/theme
 
 [mgr]
-border_style = { fg = "#45475a" }
+border_style = { fg = "#332645" }
 
 [tabs]
-active   = { fg = "#1e1e2e", bg = "#b794f6", bold = true }
-inactive = { fg = "#b794f6", bg = "#313244" }
+active   = { fg = "#0f0b14", bg = "#be8cff", bold = true }
+inactive = { fg = "#be8cff", bg = "#22192e" }
 
 # Mode and position in the status bar, like the Neovim status line
 [mode]
-normal_main = { fg = "#1e1e2e", bg = "#b794f6", bold = true }
-normal_alt  = { fg = "#b794f6", bg = "#313244" }
+normal_main = { fg = "#0f0b14", bg = "#be8cff", bold = true }
+normal_alt  = { fg = "#be8cff", bg = "#22192e" }
 
 # Hovered file: purple with dark text (like the fuzzel and kitty selection),
 # the folder you came from (left column) only subtly
 [indicator]
-current = { fg = "#1e1e2e", bg = "#b794f6" }
-parent  = { fg = "#b794f6", bg = "#313244" }
+current = { fg = "#0f0b14", bg = "#be8cff" }
+parent  = { fg = "#be8cff", bg = "#22192e" }
 
 # Popup borders purple like in Neovim (default: blue)
 [which]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
 
 [confirm]
-border = { fg = "#b794f6" }
-title  = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
+title  = { fg = "#be8cff" }
 
 [spot]
-border = { fg = "#b794f6" }
-title  = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
+title  = { fg = "#be8cff" }
 
 [pick]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
 
 [input]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
 
 [cmp]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
 
 [tasks]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }
 
 [help]
-border = { fg = "#b794f6" }
+border = { fg = "#be8cff" }

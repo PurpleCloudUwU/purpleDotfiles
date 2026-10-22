@@ -36,8 +36,8 @@ The configs are symlinked into place, so this repo is the live config
 ```sh
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 for d in sway waybar hypr fuzzel mako qt6ct kitty swayimg swayosd yazi nvim; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
-ln -s ~/purpleDotfiles/dolphin/PurpleMocha.colors ~/.local/share/color-schemes/
-ln -s ~/purpleDotfiles/chatterino/PurpleMocha.json ~/.local/share/chatterino/Themes/
+ln -s ~/purpleDotfiles/dolphin/blackhole.colors ~/.local/share/color-schemes/
+ln -s ~/purpleDotfiles/chatterino/blackhole.json ~/.local/share/chatterino/Themes/
 ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
 ~/purpleDotfiles/hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
 ```
@@ -47,8 +47,8 @@ The config folders (`sway`, `waybar`, `hypr`, `fuzzel`, `mako`, `qt6ct`, `kitty`
 
 | File | Destination |
 |---|---|
-| `dolphin/PurpleMocha.colors` | `~/.local/share/color-schemes/` |
-| `chatterino/PurpleMocha.json` | `~/.local/share/chatterino/Themes/` |
+| `dolphin/blackhole.colors` | `~/.local/share/color-schemes/` |
+| `chatterino/blackhole.json` | `~/.local/share/chatterino/Themes/` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
 | `blackhole/blackhole-wallpaper` | `~/.local/bin/` |
 | `blackhole/index.html` | `~/.local/share/blackhole/` |
@@ -70,8 +70,8 @@ Additional settings (`install.sh` does all of these):
   xdg-mime default kew.desktop audio/mpeg audio/flac audio/x-flac audio/wav audio/x-wav audio/mp4 audio/x-m4a audio/ogg audio/opus audio/webm audio/x-vorbis+ogg audio/x-opus+ogg
   ```
 - Dolphin as default for folders (kew also claims folders and would otherwise be picked): `xdg-mime default org.kde.dolphin.desktop inode/directory`
-- Dolphin: in `~/.config/dolphinrc` set `ColorScheme=PurpleMocha` under `[UiSettings]`.
-- Chatterino: select `PurpleMocha` as theme in the settings.
+- Dolphin: in `~/.config/dolphinrc` set `ColorScheme=blackhole` under `[UiSettings]`.
+- Chatterino: select `blackhole` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
 - The Waybar clock is German (weekdays, week starts on Monday): remove the `#` before `de_DE.UTF-8 UTF-8` in `/etc/locale.gen` and run `sudo locale-gen`. Without this locale Waybar hides the clock.
 

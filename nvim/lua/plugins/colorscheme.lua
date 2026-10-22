@@ -1,4 +1,4 @@
--- Purple Mocha: Catppuccin Mocha with the purple accent #b794f6, same palette
+-- blackhole: Catppuccin Mocha in the black hole colors (accent #be8cff), same palette
 -- as kitty, Sway and Waybar. The background is transparent, so kitty's
 -- background (incl. its opacity) shows through.
 return {
@@ -9,9 +9,26 @@ return {
       flavour = "mocha",
       transparent_background = true,
       float = { transparent = true },
-      -- Catppuccin's purple (keywords, borders, ...) becomes the system accent
+      -- Catppuccin's purple (keywords, borders, ...) becomes the system accent,
+      -- text and grays take the colors of the black hole wallpaper
       color_overrides = {
-        mocha = { mauve = "#b794f6" },
+        mocha = {
+          mauve = "#be8cff",
+          pink = "#ff50dc",
+          lavender = "#c8b9ff",
+          text = "#f0d7ff",
+          subtext1 = "#ceb8dc",
+          subtext0 = "#a396d0",
+          overlay2 = "#8a7fae",
+          overlay1 = "#756b95",
+          overlay0 = "#62597e",
+          surface2 = "#44325c",
+          surface1 = "#332645",
+          surface0 = "#22192e",
+          base = "#0f0b14",
+          mantle = "#0b080f",
+          crust = "#08060a",
+        },
       },
       -- Popup borders purple like the Sway and kitty borders (default: blue)
       custom_highlights = function(c)

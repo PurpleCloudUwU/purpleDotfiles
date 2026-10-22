@@ -3,10 +3,10 @@
 # After changes: makoctl reload
 
 font=JetBrainsMono Nerd Font 12
-background-color=#1e1e2ef2
-text-color=#cdd6f4ff
-border-color=#b794f6ff
-progress-color=over #313244ff
+background-color=#0f0b14f2
+text-color=#f0d7ffff
+border-color=#be8cffff
+progress-color=over #22192eff
 
 border-size=1
 border-radius=0
@@ -16,7 +16,7 @@ width=360
 height=150
 
 # App name small in the accent color (like the fuzzel prompt), title and body below
-format=<span color="#b794f6">%a</span>\n<b>%s</b>\n%b
+format=<span color="#be8cff">%a</span>\n<b>%s</b>\n%b
 
 # mako's default is 0 = never hide
 default-timeout=5000
@@ -29,20 +29,20 @@ on-notify=exec pkill -RTMIN+11 waybar
 # Nerd Font icon before the app name for my own scripts
 # (same icons as in the history, see glyph_for in waybar/notifications.sh)
 [app-name=WLAN]
-format=<span color="#b794f6">󰖩  %a</span>\n<b>%s</b>\n%b
+format=<span color="#be8cff">󰖩  %a</span>\n<b>%s</b>\n%b
 
 [app-name=Bluetooth]
-format=<span color="#b794f6">󰂯  %a</span>\n<b>%s</b>\n%b
+format=<span color="#be8cff">󰂯  %a</span>\n<b>%s</b>\n%b
 
 [app-name=Powerprofil]
-format=<span color="#b794f6">󰓅  %a</span>\n<b>%s</b>\n%b
+format=<span color="#be8cff">󰓅  %a</span>\n<b>%s</b>\n%b
 
 [app-name=Audio]
-format=<span color="#b794f6">󰓃  %a</span>\n<b>%s</b>\n%b
+format=<span color="#be8cff">󰓃  %a</span>\n<b>%s</b>\n%b
 
 [urgency=low]
-border-color=#6c7086ff
+border-color=#62597eff
 
 [urgency=critical]
-border-color=#f38ba8ff
+border-color=#ff50dcff
 default-timeout=0

@@ -15,11 +15,11 @@ $character"""
 palette = "purple_mocha"
 
 [palettes.purple_mocha]
-accent   = "#b794f6"
-text     = "#cdd6f4"
-surface1 = "#45475a"
-surface0 = "#313244"
-base     = "#1e1e2e"
+accent   = "#be8cff"
+text     = "#f0d7ff"
+surface1 = "#332645"
+surface0 = "#22192e"
+base     = "#0f0b14"
 err      = "#f38ba8"
 warn     = "#f9e2af"
 

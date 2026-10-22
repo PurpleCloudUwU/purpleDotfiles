@@ -3,8 +3,8 @@
 # Run once; the result is saved to ~/.config/hypr/sigil.png
 
 out="$HOME/.config/hypr/sigil.png"
-fg="#b794f6"     # Sigil color (violet)
-bg="#12101a"     # Background
+fg="#be8cff"     # Sigil color (violet)
+bg="#0f0b14"     # Background
 
 mkdir -p "$(dirname "$out")"
 hash=$(sha256sum /etc/machine-id | cut -d' ' -f1)

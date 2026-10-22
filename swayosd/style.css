@@ -15,7 +15,7 @@ window#osd #container {
    so it is scaled down while drawing. */
 window#osd image,
 window#osd label {
-  color: #b794f6;
+  color: #be8cff;
 }
 
 window#osd image {
@@ -44,7 +44,7 @@ window#osd segment {
   min-height: inherit;
   border-radius: 0;
   border: none;
-  background: #45475a;
+  background: #332645;
 }
 
 window#osd progress,
@@ -53,7 +53,7 @@ window#osd segment.active {
   margin: 0;            /* the GTK theme uses negative margins here, which makes GTK warn */
   border-radius: 0;
   border: none;
-  background: #b794f6;
+  background: #be8cff;
 }
 
 window#osd segment {

@@ -64,16 +64,16 @@ GROUPS = [
     ]),
 ]
 
-# PurpleMocha wie Fuzzel, Mako und qt6ct
+# Farbdesign blackhole wie Fuzzel, Mako und qt6ct
 CSS = """
 :root {
-  --accent-color: #b794f6; --accent-bg-color: #b794f6; --accent-fg-color: #1e1e2e;
-  --window-bg-color: #1e1e2e; --window-fg-color: #cdd6f4;
-  --view-bg-color: #181825; --view-fg-color: #cdd6f4;
-  --headerbar-bg-color: #181825; --headerbar-fg-color: #cdd6f4;
-  --card-bg-color: #232334; --card-fg-color: #cdd6f4;
-  --popover-bg-color: #232334; --popover-fg-color: #cdd6f4;
-  --dialog-bg-color: #1e1e2e; --dialog-fg-color: #cdd6f4;
+  --accent-color: #be8cff; --accent-bg-color: #be8cff; --accent-fg-color: #0f0b14;
+  --window-bg-color: #0f0b14; --window-fg-color: #f0d7ff;
+  --view-bg-color: #0b080f; --view-fg-color: #f0d7ff;
+  --headerbar-bg-color: #0b080f; --headerbar-fg-color: #f0d7ff;
+  --card-bg-color: #150f1c; --card-fg-color: #f0d7ff;
+  --popover-bg-color: #150f1c; --popover-fg-color: #f0d7ff;
+  --dialog-bg-color: #0f0b14; --dialog-fg-color: #f0d7ff;
 }
 """
 

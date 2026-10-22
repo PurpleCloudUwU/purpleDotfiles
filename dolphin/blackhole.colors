@@ -1,9 +1,9 @@
-# KDE color scheme matching Sway/Waybar/fuzzel/mako (Catppuccin Mocha, accent #b794f6).
-# Colors as R,G,B. Enabled in Dolphin via ~/.config/dolphinrc -> [UiSettings] ColorScheme=PurpleMocha
+# KDE color scheme matching Sway/Waybar/fuzzel/mako (Catppuccin Mocha, accent #be8cff).
+# Colors as R,G,B. Enabled in Dolphin via ~/.config/dolphinrc -> [UiSettings] ColorScheme=blackhole
 #
 # Palette:
-#   #11111b crust   #181825 mantle   #1e1e2e base   #313244 surface0   #45475a surface1
-#   #7f849c overlay1   #ffffff text   #b794f6 accent   #cba6f7 mauve
+#   #08060a crust   #0b080f mantle   #0f0b14 base   #22192e surface0   #332645 surface1
+#   #756b95 overlay1   #ffffff text   #be8cff accent   #c8b9ff mauve
 #   #f38ba8 red   #f9e2af yellow   #a6e3a1 green
 
 [ColorEffects:Disabled]
@@ -144,8 +144,8 @@ ForegroundPositive=166,227,161
 ForegroundVisited=203,166,247
 
 [General]
-ColorScheme=PurpleMocha
-Name=Purple Mocha
+ColorScheme=blackhole
+Name=blackhole
 shadeSortColumn=true
 
 [KDE]
