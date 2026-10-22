@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Power profile switcher for TLP (tlp-pd / tlpctl).
 #   power-profile.sh        -> JSON for Waybar (icon + tooltip)
-#   power-profile.sh menu   -> fuzzel menu to switch
+#   power-profile.sh menu   -> fzf menu to switch
 
-MENU=(fuzzel --dmenu --width 30 --lines 3)
+MENU=("${0%/*}/tui-menu" --width 30 --lines 3)
 SIGNAL=9   # must match "signal" in the Waybar module
 
-notify() { command -v notify-send >/dev/null && notify-send -a Powerprofil "$1"; }
+notify() { command -v notify-send >/dev/null && notify-send -a "Power Profile" "$1"; }
 
 valid() { [[ $1 == performance || $1 == balanced || $1 == power-saver ]]; }
 
@@ -28,9 +28,9 @@ status() {
         performance) icon=$'\uf135'; label="Performance" ;;   # rocket
         balanced)    icon=$'\uf24e'; label="Balanced" ;;      # scale
         power-saver) icon=$'\uf06c'; label="Power Saver" ;;   # leaf
-        *)           icon=$'\uf128'; label="Unbekannt" ;;
+        *)           icon=$'\uf128'; label="Unknown" ;;
     esac
-    printf '{"text":"%s","tooltip":"Profil: %s","class":"%s"}\n' "$icon" "$label" "$p"
+    printf '{"text":"%s","tooltip":"Profile: %s","class":"%s"}\n' "$icon" "$label" "$p"
 }
 
 menu() {
@@ -53,7 +53,7 @@ menu() {
     [[ -n $id ]] || exit 0
 
     if ! tlpctl "$id" >/dev/null 2>&1; then
-        notify "Wechsel fehlgeschlagen (läuft tlp-pd?)"
+        notify "Switching failed (is tlp-pd running?)"
         exit 1
     fi
 
@@ -69,9 +69,9 @@ menu() {
     pkill -RTMIN+"$SIGNAL" waybar
 
     if [[ $now == "$id" ]]; then
-        notify "Profil: ${choice#??}"
+        notify "Profile: ${choice#??}"
     else
-        notify "Wechsel nicht bestätigt (aktiv: $now)"
+        notify "Switch not confirmed (active: $now)"
     fi
 }
 

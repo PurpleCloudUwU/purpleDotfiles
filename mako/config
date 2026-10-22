@@ -28,13 +28,13 @@ on-notify=exec pkill -RTMIN+11 waybar
 
 # Nerd Font icon before the app name for my own scripts
 # (same icons as in the history, see glyph_for in waybar/notifications.sh)
-[app-name=WLAN]
+[app-name=Wi-Fi]
 format=<span color="#be8cff">󰖩  %a</span>\n<b>%s</b>\n%b
 
 [app-name=Bluetooth]
 format=<span color="#be8cff">󰂯  %a</span>\n<b>%s</b>\n%b
 
-[app-name=Powerprofil]
+[app-name="Power Profile"]
 format=<span color="#be8cff">󰓅  %a</span>\n<b>%s</b>\n%b
 
 [app-name=Audio]

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Audio menu for sway/Waybar (PipeWire), opened from bt-menu.sh.
 #   audio-menu.sh   -> choose the default output device
-# Requires: pipewire-pulse (pactl), jq, fuzzel, optional libnotify
+# Requires: pipewire-pulse (pactl), jq, fzf, kitty, tui-menu, optional libnotify
 
-MENU=(fuzzel --dmenu --width 55 --lines 8)
+MENU=("${0%/*}/tui-menu" --width 55 --lines 8)
 
 # Each notification replaces the previous one so they don't pile up in the history
 NID=""
@@ -30,13 +30,9 @@ output_menu() {
 
     default=$(pactl get-default-sink 2>/dev/null)
 
-    # LC_ALL=C: English port names, translated below.
+    # LC_ALL=C: English port names
     # Fields separated by \x1f: name, display name, kind (for the icon)
     while IFS=$'\x1f' read -r name label kind; do
-        case $label in
-            "Laptop – Headphones") label="Laptop – Kopfhörer" ;;
-            "Laptop – Speakers")   label="Laptop – Lautsprecher" ;;
-        esac
         if [[ $name == "$default" ]]; then mark="●"; else mark="○"; fi
         line="$(glyph "$kind")  $mark $label"
         lines+=("$line")
@@ -55,19 +51,19 @@ output_menu() {
         | [.name, $label, $kind] | join("\u001f")')
 
     if (( ${#lines[@]} == 0 )); then
-        notify "Keine Ausgabegeräte gefunden (läuft PipeWire?)"
+        notify "No output devices found (is PipeWire running?)"
         exit 1
     fi
 
-    choice=$(printf '%s\n' "${lines[@]}" | "${MENU[@]}" --prompt="Ausgabe > ") || exit 0
+    choice=$(printf '%s\n' "${lines[@]}" | "${MENU[@]}" --prompt="Output > ") || exit 0
     name=${NAME_OF[$choice]}
     [[ -n $name ]] || exit 0
 
     # WirePlumber moves running playback along unless a stream is pinned to a device
     if pactl set-default-sink "$name"; then
-        notify "Ausgabe: ${LABEL_OF[$choice]}"
+        notify "Output: ${LABEL_OF[$choice]}"
     else
-        notify "Ausgabe wechseln fehlgeschlagen"
+        notify "Switching output failed"
     fi
 }
 
