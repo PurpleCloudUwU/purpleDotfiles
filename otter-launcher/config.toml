@@ -14,7 +14,7 @@ external_editor = "nvim"
 [interface]
 padding = [0, 1, 0, 1]
 header = """
-$(printf '\u001B[38;2;190;140;255;1m  \u001B[0m%s@%s   \u001B[38;2;98;89;126m%s\u001B[0m' "$USER" "$HOSTNAME" "$(LC_ALL=C date '+%a %d %b %H:%M')")"""
+$(printf '\u001B[38;2;190;140;255;1m\U000F08C7 \u001B[0m %s@%s   \u001B[38;2;98;89;126m%s\u001B[0m' "$USER" "$HOSTNAME" "$(LC_ALL=C date '+%a %d %b %H:%M')")"""
 prompt_sign = "> "
 prompt_sign_color = "#be8cff"
 placeholder = "search apps · ? for modules"

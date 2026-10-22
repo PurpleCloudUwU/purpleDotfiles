@@ -15,7 +15,7 @@ set $up k
 set $right l
 set $term kitty
 # App launcher: otter-launcher (TUI) in a floating kitty window, see otter-launcher/config.toml
-set $menu kitty --class otter-launcher --title otter-launcher -o remember_window_size=no -o initial_window_width=72c -o initial_window_height=15c -o background_opacity=0.95 -e otter-launcher
+set $menu kitty --class otter-launcher --title otter-launcher -o remember_window_size=no -o initial_window_width=72c -o initial_window_height=15c -o background_opacity=1 -o confirm_os_window_close=0 -e otter-launcher
 
 ### Output
 

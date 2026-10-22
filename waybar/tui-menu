@@ -31,7 +31,8 @@ if [[ -z $TUI_MENU_OUT ]] && ! { : </dev/tty; } 2>/dev/null; then
             -o remember_window_size=no \
             -o initial_window_width="$((width + 2))c" \
             -o initial_window_height="$((lines + 2))c" \
-            -o background_opacity=0.95 \
+            -o background_opacity=1 \
+            -o confirm_os_window_close=0 \
             "$0" "${args[@]}"
     [[ -e $dir/ok ]] || exit 1
     cat "$dir/out"
