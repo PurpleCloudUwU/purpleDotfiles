@@ -341,6 +341,10 @@ class SettingsWindow(Adw.ApplicationWindow):
     def write(self):
         self.save_id = 0
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        # den globalen Schalter setzt die Waybar, nicht diese App: Stand von der Platte übernehmen
+        self.data.pop("enabled", None)
+        if "enabled" in (disk := load()):
+            self.data["enabled"] = disk["enabled"]
         tmp = SETTINGS.with_suffix(".tmp")
         tmp.write_text(json.dumps(self.data, indent=2) + "\n")
         tmp.replace(SETTINGS)                         # atomar, das Wallpaper liest nie eine halbe Datei

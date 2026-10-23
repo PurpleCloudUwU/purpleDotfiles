@@ -283,7 +283,8 @@ class Wallpaper(Gtk.Application):
         return self.settings.get("outputs", {}).get(connector, {})
 
     def enabled(self, connector):
-        return self.output_settings(connector).get("enabled", True)
+        # "enabled" oben in der Datei: Schalter in der Waybar für alle Monitore
+        return self.settings.get("enabled", True) and self.output_settings(connector).get("enabled", True)
 
     def params_for(self, connector):
         """Alle Parameter für einen Monitor: Datei (alle, dann eigene), dann Kommandozeile."""

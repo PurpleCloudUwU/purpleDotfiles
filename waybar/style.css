@@ -61,6 +61,7 @@ tooltip label {
 #pulseaudio,
 #network,
 #custom-notifications,
+#custom-blackhole,
 #custom-lock,
 #custom-reboot,
 #custom-suspend,
@@ -100,6 +101,10 @@ tooltip label {
 /* Power menu */
 #custom-power { color: @hole_accent; }
 
+#custom-blackhole.on { color: @hole_disk; }
+#custom-blackhole.off { color: #ffffff; }
+
+#custom-blackhole:hover,
 #custom-lock:hover,
 #custom-reboot:hover,
 #custom-suspend:hover {
