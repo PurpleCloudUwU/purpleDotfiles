@@ -18,6 +18,7 @@
         "pulseaudio",
         "network",
         "custom/notifications",
+        "custom/blackhole",
         "custom/lock",
         "custom/reboot",
         "custom/suspend",
@@ -150,6 +151,14 @@
         "interval": "once",
         "signal": 10,
         "on-click": "~/.config/waybar/power-menu.sh toggle"
+    },
+    // Animated wallpaper on/off (purple = on, white = off), part of the power menu
+    "custom/blackhole": {
+        "exec": "~/.config/waybar/power-menu.sh item blackhole",
+        "return-type": "json",
+        "interval": "once",
+        "signal": 10,
+        "on-click": "~/.config/waybar/power-menu.sh blackhole"
     },
     "custom/lock": {
         "exec": "~/.config/waybar/power-menu.sh item lock",
