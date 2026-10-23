@@ -157,9 +157,19 @@
   const makeBuckets = () => Array.from({ length: 4 }, () => Array.from({ length: ALPHA_STEPS }, () => []));
   const buckets = makeBuckets(), starBuckets = makeBuckets();
   let t0 = null, lastT = null, lastDraw = -1, at = 0;  // at = Animationszeit, skaliert mit der Geschwindigkeit
+  let paused = false, rafId = 0;
+
+  // Für blackhole-wallpaper: anhalten, solange Fenster den Hintergrund ganz verdecken
+  window.blackholePause = pause => {
+    pause = Boolean(pause);
+    if (pause === paused) return;
+    paused = pause;
+    if (paused) cancelAnimationFrame(rafId);
+    else { lastT = null; rafId = requestAnimationFrame(frame); }  // ohne Sprung weiter
+  };
 
   function frame(ms) {
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
     const now = ms / 1000;
     if (fpsLimit > 0 && now - lastDraw < 1 / fpsLimit - 0.002) return;
     lastDraw = now;
@@ -290,7 +300,7 @@
   applyValues(Object.fromEntries(params));
 
   layout();
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
 })();
 </script>
 </body>

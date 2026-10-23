@@ -25,6 +25,8 @@ LOCK_BIN = Path("~/.local/bin/blackhole-lock").expanduser()
 
 # Sperrbildschirm, Standardwerte wie in blackhole-lock
 LOCK = {"blur": 6, "dim": 75}
+# Anhalten, wenn verdeckt, Standardwerte wie in blackhole-wallpaper
+PAUSE = {"enabled": True, "transparent": ["kitty"]}
 
 # Standardwerte wie in index.html
 DEFAULTS = {
@@ -168,6 +170,21 @@ class SettingsWindow(Adw.ApplicationWindow):
             page.add(group)
             self.setting_groups.append(group)
 
+        # --- Anhalten, wenn verdeckt (für alle Monitore) ---
+        group = Adw.PreferencesGroup(title="Leistung")
+        pause = {**PAUSE, **self.data.get("pause", {})}
+        row = Adw.SwitchRow(title="Anhalten, wenn verdeckt",
+                            subtitle="Keine Animation, solange undurchsichtige Fenster den ganzen Monitor bedecken",
+                            active=pause["enabled"])
+        row.connect("notify::active", lambda r, _p: self.on_pause("enabled", r.get_active()))
+        group.add(row)
+        row = Adw.EntryRow(title="Transparente Programme (app_id, mit Komma getrennt)",
+                           text=", ".join(pause["transparent"]))
+        row.connect("changed", lambda r: self.on_pause(
+            "transparent", [a.strip() for a in r.get_text().split(",") if a.strip()]))
+        group.add(row)
+        page.add(group)
+
         # --- Sperrbildschirm (für alle Monitore) ---
         group = Adw.PreferencesGroup(title="Sperrbildschirm",
                                      description="Das Loch für alle Monitore, halb so groß links; Farben wie oben")
@@ -283,6 +300,10 @@ class SettingsWindow(Adw.ApplicationWindow):
         if out["own"] and not out.get("settings"):
             out["settings"] = dict(self.data["all"])  # mit den Werten für alle Monitore beginnen
         self.fill()
+        self.save()
+
+    def on_pause(self, key, value):
+        self.data.setdefault("pause", {})[key] = value
         self.save()
 
     def on_lock(self, scale, key):

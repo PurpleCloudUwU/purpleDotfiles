@@ -2,7 +2,7 @@
 ## My T580 config.
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
-- Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in the launcher for monitors, size, colors etc.; the old still image is `sway/wallpaper.png`)
+- Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in the launcher for monitors, size, colors etc.; it pauses while opaque windows cover the whole screen (transparent apps like kitty are listed in the app); the old still image is `sway/wallpaper.png`)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole)
 - Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness in the "Black Hole" app). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
