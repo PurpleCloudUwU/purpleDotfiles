@@ -169,7 +169,7 @@ apply_settings() {
 
     # Waybar imports the black hole colors (the animated wallpaper itself is no longer used)
     "$repo/blackhole/blackhole-wallpaper" --colors-only || true
-    note "Waybar: black hole colors (waybar/colors.css, colors.jsonc)"
+    note "Waybar: black hole colors (waybar/colors.css)"
 
     # Jacquard 24 for the eww clock (linked to ~/.local/share/fonts above)
     fc-cache -f ~/.local/share/fonts >/dev/null 2>&1 && note "font cache: Jacquard 24 (eww clock)"
@@ -186,8 +186,7 @@ apply_settings() {
         note "lock screen sigil created"
     fi
 
-    # The Waybar date uses the German locale (otherwise English weekdays); the
-    # "clock" module, if added back, is hidden without it
+    # The Waybar date uses the German locale (otherwise English weekdays)
     if ! locale -a 2>/dev/null | grep -qx 'de_DE.utf8'; then
         if command -v sudo >/dev/null; then
             sudo sed -i 's/^#\(de_DE\.UTF-8 UTF-8\)/\1/' /etc/locale.gen && sudo locale-gen >/dev/null

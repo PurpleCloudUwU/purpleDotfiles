@@ -4,12 +4,9 @@
     "position": "top",
     "height": 30,
     "spacing": 0,
-    // Black hole colors for the calendar below, written by blackhole-wallpaper --colors-only
-    "include": ["~/.config/waybar/colors.jsonc"],
 
     "modules-left": ["sway/workspaces", "sway/window"],
-    // Only weekday and date, the eww clock on the wallpaper shows the time. The
-    // "clock" settings below stay, add it back here to bring it back.
+    // Only weekday and date, the eww clock on the wallpaper shows the time
     "modules-center": ["custom/date"],
     "modules-right": [
         "tray",
@@ -44,29 +41,6 @@
         "exec": "LC_TIME=de_DE.UTF-8 date '+%A  ·  %-d. %b' | sed 's/.*/\\U&/'",
         "interval": 60,
         "tooltip": false
-    },
-
-    "clock": {
-        "format": "{:L%a %d.%m.%Y  %H:%M}",
-        // German weekdays, week starts on Monday (needs locale-gen, see README).
-        // The "L" in the format applies the locale.
-        "locale": "de_DE.UTF-8",
-        "tooltip-format": "<tt>{calendar}</tt>",
-        "calendar": {
-            "mode": "month",
-            "mode-mon-col": 3,
-            "weeks-pos": "left",
-            "on-scroll": 1
-            // "format" (the colors) comes from colors.jsonc
-        },
-        // Scroll: change month, middle click: back to today,
-        // right click: month/year view
-        "actions": {
-            "on-click-right": "mode",
-            "on-click-middle": "shift_reset",
-            "on-scroll-up": "shift_up",
-            "on-scroll-down": "shift_down"
-        }
     },
 
     "tray": {

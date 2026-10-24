@@ -59,7 +59,7 @@ Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
 - Editor for yazi, git etc.: add `export EDITOR=nvim` and `export VISUAL=nvim` to `~/.bash_profile`.
 - Starship and `ls` with icons: add `alias ls='eza --icons=auto'` and, at the end, `eval "$(starship init bash)"` to `~/.bashrc`.
-- Waybar colors: run `~/purpleDotfiles/blackhole/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` and `colors.jsonc`.
+- Waybar colors: run `~/purpleDotfiles/blackhole/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` (the `colors.jsonc` it also writes was for the removed calendar and is unused).
 - swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
 - kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
   ```sh
@@ -72,7 +72,7 @@ Additional settings (`install.sh` does all of these):
 - Dolphin: in `~/.config/dolphinrc` set `ColorScheme=blackhole` under `[UiSettings]`.
 - Chatterino: select `blackhole` as theme in the settings.
 - `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
-- The Waybar clock is German (weekdays, week starts on Monday): remove the `#` before `de_DE.UTF-8 UTF-8` in `/etc/locale.gen` and run `sudo locale-gen`. Without this locale Waybar hides the clock.
+- The Waybar date is German: remove the `#` before `de_DE.UTF-8 UTF-8` in `/etc/locale.gen` and run `sudo locale-gen`. Without this locale the weekday and month are English.
 
 ### Terminal
 Kitty with the starship prompt:
