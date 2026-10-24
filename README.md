@@ -2,9 +2,9 @@
 ## My T580 config.
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
-- Sway (incl. the animated black hole wallpaper `blackhole/` with a settings app "Black Hole" in the launcher for monitors, size, colors etc.; it pauses while opaque windows cover the whole screen (transparent apps like kitty are listed in the app); the old still image is `sway/wallpaper.png`)
+- Sway (wallpaper: the still image `sway/wallpaper.png`; the animated black hole wallpaper and its settings app are still in `blackhole/` but no longer set up)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole)
-- Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness in the "Black Hole" app). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
+- Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness under `"lock"` in `~/.config/blackhole/settings.json`). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
 - Mako (notifications)
 - qt6ct + KDE color scheme (purple theme for Qt apps like Dolphin)
@@ -50,17 +50,14 @@ The config folders (`sway`, `waybar`, `hypr`, `otter-launcher`, `mako`, `qt6ct`,
 | `dolphin/blackhole.colors` | `~/.local/share/color-schemes/` |
 | `chatterino/blackhole.json` | `~/.local/share/chatterino/Themes/` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
-| `blackhole/blackhole-wallpaper` | `~/.local/bin/` |
 | `blackhole/index.html` | `~/.local/share/blackhole/` |
-| `blackhole/blackhole-settings` | `~/.local/bin/` |
 | `blackhole/blackhole-lock` | `~/.local/bin/` |
-| `blackhole/blackhole-settings.desktop` | `~/.local/share/applications/` (with `Exec=` set to the full path) |
 
 Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
 - Editor for yazi, git etc.: add `export EDITOR=nvim` and `export VISUAL=nvim` to `~/.bash_profile`.
 - Starship and `ls` with icons: add `alias ls='eza --icons=auto'` and, at the end, `eval "$(starship init bash)"` to `~/.bashrc`.
-- Waybar colors: run `~/.local/bin/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` and `colors.jsonc` (afterwards the running wallpaper keeps them up to date).
+- Waybar colors: run `~/purpleDotfiles/blackhole/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` and `colors.jsonc`.
 - swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
 - kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
   ```sh

@@ -20,9 +20,9 @@ set $menu kitty --class otter-launcher --title otter-launcher -o remember_window
 ### Output
 
 # List monitor names: swaymsg -t get_outputs
-# Animated black hole (blackhole/ in the repo); the old still image:
-# output * bg ~/.config/sway/wallpaper.png fill
-exec_always ~/.local/bin/blackhole-wallpaper
+# Still image; the animated black hole (blackhole/ in the repo) is no longer used:
+# exec_always ~/purpleDotfiles/blackhole/blackhole-wallpaper
+output * bg ~/.config/sway/wallpaper.png fill
 
 ### Input
 
@@ -208,9 +208,6 @@ for_window [all] inhibit_idle fullscreen
 
 # Launcher and the Waybar menus (waybar/tui-menu) float in the middle, like the old fuzzel
 for_window [app_id="^(otter-launcher|tui-menu)$"] floating enable, border pixel 1
-
-# Black hole settings float on the right, so the wallpaper stays visible while changing it
-for_window [app_id="de.purplecloud.blackhole.settings"] floating enable, resize set 560 px 90 ppt, move position 69 ppt 5 ppt
 
 ### Autostart
 
