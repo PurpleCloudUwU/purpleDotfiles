@@ -1,0 +1,49 @@
+; Minimal desktop widgets around the angel in the middle of the wallpaper.
+; The angel spans roughly y=440..700 on 1920x1080, so the clock sits above it
+; and "now playing" below it.
+
+(defpoll time :interval "5s" "date +%H:%M")
+(defpoll date :interval "60s" "LC_TIME=de_DE.UTF-8 date '+%A, %-d. %B'")
+
+; playerctl prints an empty line when the player stops, which hides the widget
+(deflisten music :initial ""
+  "playerctl --follow metadata --format '{{ artist }} — {{ title }}' 2>/dev/null || true")
+
+(defwidget clock []
+  (box :class "clock" :orientation "v" :space-evenly false
+    (label :class "time" :text time)
+    (label :class "date" :text date)))
+
+(defwidget music []
+  (label :class "music" :visible {music != ""} :limit-width 60
+         :text "♪  ${music}"))
+
+(defwidget stats []
+  (box :class "stats" :orientation "v" :space-evenly false :halign "start"
+    (label :halign "start" :text "cpu  ${round(EWW_CPU.avg, 0)}%")
+    (label :halign "start" :text "ram  ${round(EWW_RAM.used_mem_perc, 0)}%")
+    (label :halign "start" :text "/    ${round(EWW_DISK["/"].used_perc, 0)}%")))
+
+(defwindow clock
+  :monitor 0
+  :geometry (geometry :anchor "top center" :y "200px" :width "600px" :height "150px")
+  :stacking "bottom"
+  :exclusive false
+  :focusable false
+  (clock))
+
+(defwindow music
+  :monitor 0
+  :geometry (geometry :anchor "top center" :y "780px" :width "800px" :height "30px")
+  :stacking "bottom"
+  :exclusive false
+  :focusable false
+  (music))
+
+(defwindow stats
+  :monitor 0
+  :geometry (geometry :anchor "bottom left" :x "40px" :y "40px" :width "200px" :height "70px")
+  :stacking "bottom"
+  :exclusive false
+  :focusable false
+  (stats))

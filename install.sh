@@ -38,7 +38,7 @@ pacman_pkgs=(
     jq libnotify wl-clipboard grim slurp imagemagick xdg-utils
     # Qt colors and Dolphin
     qt6ct dolphin breeze-icons
-    # Animated wallpaper (blackhole-wallpaper) and its settings app
+    # Black hole lock screen (blackhole-lock) and the Waybar colors
     python-gobject gtk4-layer-shell webkitgtk-6.0 libadwaita
     # Fonts
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
@@ -46,20 +46,18 @@ pacman_pkgs=(
     base-devel git fd ripgrep fzf curl unzip tree-sitter-cli
 )
 # From the AUR (paru is installed first if there is no AUR helper)
-aur_pkgs=(sway-screenshot otter-launcher)
+aur_pkgs=(sway-screenshot otter-launcher eww)
 # Optional AUR apps with a keybinding or theme in this repo
 aur_optional=(brave-origin-bin chatterino2-bin)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(sway waybar hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
+config_dirs=(sway waybar eww hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
 # Single files: <path in repo>:<destination>
 config_files=(
     "dolphin/blackhole.colors:$HOME/.local/share/color-schemes/blackhole.colors"
     "chatterino/blackhole.json:$HOME/.local/share/chatterino/Themes/blackhole.json"
     "starship/starship.toml:$HOME/.config/starship.toml"
-    "blackhole/blackhole-wallpaper:$HOME/.local/bin/blackhole-wallpaper"
     "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
-    "blackhole/blackhole-settings:$HOME/.local/bin/blackhole-settings"
     "blackhole/blackhole-lock:$HOME/.local/bin/blackhole-lock"
 )
 
@@ -168,14 +166,8 @@ apply_settings() {
         note "default apps: swayimg (images), kew (music), Dolphin (folders)"
     fi
 
-    # Black hole settings in the launcher (app list); Sway's PATH has no ~/.local/bin, so the full path
-    mkdir -p ~/.local/share/applications
-    sed "s|^Exec=.*|Exec=$HOME/.local/bin/blackhole-settings|" "$repo/blackhole/blackhole-settings.desktop" \
-        > ~/.local/share/applications/blackhole-settings.desktop
-    note "launcher entry: Black Hole (wallpaper settings)"
-
-    # Waybar imports the black hole colors; the wallpaper keeps them up to date
-    "$HOME/.local/bin/blackhole-wallpaper" --colors-only || true
+    # Waybar imports the black hole colors (the animated wallpaper itself is no longer used)
+    "$repo/blackhole/blackhole-wallpaper" --colors-only || true
     note "Waybar: black hole colors (waybar/colors.css, colors.jsonc)"
 
     # Dolphin uses the KDE color scheme from this repo
