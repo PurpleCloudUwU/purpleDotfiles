@@ -46,12 +46,12 @@ pacman_pkgs=(
     base-devel git fd ripgrep fzf curl unzip tree-sitter-cli
 )
 # From the AUR (paru is installed first if there is no AUR helper)
-aur_pkgs=(sway-screenshot otter-launcher)
+aur_pkgs=(sway-screenshot otter-launcher eww)
 # Optional AUR apps with a keybinding or theme in this repo
 aur_optional=(brave-origin-bin chatterino2-bin)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(sway waybar hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
+config_dirs=(sway waybar eww hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
 # Single files: <path in repo>:<destination>
 config_files=(
     "dolphin/blackhole.colors:$HOME/.local/share/color-schemes/blackhole.colors"

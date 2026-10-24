@@ -23,6 +23,8 @@ set $menu kitty --class otter-launcher --title otter-launcher -o remember_window
 # Still image; the animated black hole (blackhole/ in the repo) is no longer used:
 # exec_always ~/purpleDotfiles/blackhole/blackhole-wallpaper
 output * bg ~/.config/sway/wallpaper.png fill
+# Minimal desktop widgets (clock, now playing, stats), see ~/.config/eww
+exec_always ~/.config/eww/launch.sh
 
 ### Input
 

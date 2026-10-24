@@ -7,8 +7,10 @@
     // Black hole colors for the calendar below, written by blackhole-wallpaper --colors-only
     "include": ["~/.config/waybar/colors.jsonc"],
 
-    "modules-left": ["sway/workspaces"],
-    "modules-center": ["clock"],
+    "modules-left": ["sway/workspaces", "sway/window"],
+    // Clock removed, the eww clock on the wallpaper shows the time. The
+    // "clock" settings below stay, add it back here to bring it back.
+    "modules-center": [],
     "modules-right": [
         "tray",
         "custom/bluetooth",
@@ -24,6 +26,12 @@
         "custom/poweroff",
         "custom/power"
     ],
+
+    // Shows nothing, only sets classes on the bar (.empty, .floating, .solo,
+    // .fullscreen) so style.css can hide the background on an empty desktop
+    "sway/window": {
+        "format": ""
+    },
 
     "sway/workspaces": {
         "disable-scroll": true,

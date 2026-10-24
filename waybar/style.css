@@ -18,6 +18,14 @@
 window#waybar {
     background: @bar_bg;
     color: @bar_fg;
+    transition: background-color 0.2s;
+}
+
+/* Transparent bar on an empty desktop (or only floating windows), so the
+   wallpaper shows through; tiled windows bring the background back */
+window#waybar.empty,
+window#waybar.floating {
+    background: transparent;
 }
 
 tooltip {

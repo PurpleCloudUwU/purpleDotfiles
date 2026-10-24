@@ -3,7 +3,8 @@
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
 - Sway (wallpaper: the still image `sway/wallpaper.png`; the animated black hole wallpaper and its settings app are still in `blackhole/` but no longer set up)
-- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole)
+- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole; no clock, and transparent while the workspace is empty)
+- eww desktop widgets on the wallpaper: big clock with date, now playing (playerctl) and CPU/RAM/disk
 - Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness under `"lock"` in `~/.config/blackhole/settings.json`). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
 - Mako (notifications)
@@ -43,7 +44,7 @@ ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
 ```
 
 ### Where the files go
-The config folders (`sway`, `waybar`, `hypr`, `otter-launcher`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
+The config folders (`sway`, `waybar`, `eww`, `hypr`, `otter-launcher`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
 
 | File | Destination |
 |---|---|

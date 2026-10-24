@@ -1,0 +1,36 @@
+// Same palette as waybar/colors.css, kept quiet so the wallpaper stays the focus
+$hole_disk: #be8cff;
+$hole_hot: #f0d7ff;
+$hole_star: #c8b9ff;
+
+* {
+  all: unset;
+  font-family: "JetBrainsMono Nerd Font";
+}
+
+window {
+  background: transparent;
+}
+
+.clock .time {
+  font-size: 84px;
+  font-weight: 200;
+  color: $hole_hot;
+  text-shadow: 0 0 18px rgba($hole_disk, 0.45);
+}
+
+.clock .date {
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: rgba($hole_star, 0.6);
+}
+
+.music {
+  font-size: 13px;
+  color: rgba($hole_star, 0.55);
+}
+
+.stats {
+  font-size: 12px;
+  color: rgba($hole_star, 0.4);
+}
