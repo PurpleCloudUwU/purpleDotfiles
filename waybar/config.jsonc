@@ -8,9 +8,9 @@
     "include": ["~/.config/waybar/colors.jsonc"],
 
     "modules-left": ["sway/workspaces", "sway/window"],
-    // Clock removed, the eww clock on the wallpaper shows the time. The
+    // Only weekday and date, the eww clock on the wallpaper shows the time. The
     // "clock" settings below stay, add it back here to bring it back.
-    "modules-center": [],
+    "modules-center": ["custom/date"],
     "modules-right": [
         "tray",
         "custom/bluetooth",
@@ -37,6 +37,13 @@
         "disable-scroll": true,
         "all-outputs": true,
         "format": "{name}"
+    },
+
+    // "SAMSTAG  ·  24. OKT" in spaced capitals, like it was under the eww clock
+    "custom/date": {
+        "exec": "LC_TIME=de_DE.UTF-8 date '+%A  ·  %-d. %b' | sed 's/.*/\\U&/'",
+        "interval": 60,
+        "tooltip": false
     },
 
     "clock": {

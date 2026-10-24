@@ -22,72 +22,20 @@ window {
   color: rgba($hole_star, 0.4);
 }
 
-// Clock designs (eww.yuck: design 1..5)
-.c-stack {
-  .hours, .minutes {
-    font-size: 110px;
-    font-weight: 100;
-    margin: -22px 0;
-  }
-  .hours { color: $hole_hot; }
-  .minutes { color: rgba($hole_disk, 0.75); }
-}
-
-.c-words label {
-  font-size: 34px;
-  font-weight: 200;
-  color: $hole_hot;
-  text-shadow: 0 0 14px rgba($hole_disk, 0.4);
-}
-
-.c-ring {
-  .ring {
-    color: $hole_disk;
-    background-color: rgba($hole_star, 0.08);
-  }
-  // The ring takes the size of its content
-  .inner { min-width: 210px; min-height: 210px; }
-  .time { font-size: 38px; font-weight: 200; color: $hole_hot; }
-  .sec { font-size: 13px; color: rgba($hole_star, 0.5); }
-}
-
-.c-line {
+.clock {
   .rule {
     min-width: 120px;
     min-height: 1px;
     background-color: rgba($hole_star, 0.35);
-    margin: 0 28px;
+    // The label box includes the font's ascent and descent, so a centered line
+    // sits too high; 24px on top moves it 12px down to the middle of the digits
+    margin: 24px 28px 0;
   }
+  // Jacquard 24 (Google Fonts, in ~/.local/share/fonts): pixel blackletter
+  // with old-style figures, like the athanor lock screen
   .time {
-    font-size: 54px;
-    font-weight: 200;
+    font-family: "Jacquard 24";
+    font-size: 100px;
     color: $hole_hot;
   }
-  .date {
-    margin-top: 10px;
-    font-size: 12px;
-    letter-spacing: 6px;
-    color: rgba($hole_star, 0.55);
-  }
-}
-
-.c-day {
-  .time {
-    font-size: 72px;
-    font-weight: 200;
-    color: $hole_hot;
-  }
-  .bar {
-    margin: 12px 0 10px;
-    min-width: 360px;
-    trough {
-      min-height: 2px;
-      background-color: rgba($hole_star, 0.15);
-    }
-    progress {
-      min-height: 2px;
-      background-color: $hole_disk;
-    }
-  }
-  .pct { font-size: 12px; letter-spacing: 1px; color: rgba($hole_star, 0.55); }
 }
