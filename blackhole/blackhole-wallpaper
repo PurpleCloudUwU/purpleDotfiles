@@ -25,6 +25,7 @@ import socket
 import struct
 import subprocess
 import sys
+import time
 import urllib.parse
 from pathlib import Path
 
@@ -49,6 +50,8 @@ CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", "~/.config")).expanduser() /
 SETTINGS = CONFIG_DIR / "settings.json"
 STILL_IMAGE = Path("~/.config/sway/wallpaper.png").expanduser()
 WAYBAR = Path("~/.config/waybar").expanduser()
+# Neustart nach Absturz des WebKit-Prozesses höchstens einmal in dieser Zeit (Sekunden)
+RESTART_COOLDOWN = 60
 # Anhalten, wenn verdeckt; Standardwerte wie in blackhole-settings
 PAUSE = {"enabled": True, "transparent": ["kitty"]}
 # Standardfarben wie in index.html
@@ -198,6 +201,7 @@ class Wallpaper(Gtk.Application):
         self.paused = {}                              # Anschluss -> angehalten?
         self.sway = None
         self.coverage_id = 0
+        self.restarting = False
 
     def do_activate(self):
         self.hold()                                   # weiterlaufen, auch wenn kurz kein Monitor da ist
@@ -337,6 +341,21 @@ class Wallpaper(Gtk.Application):
             self.windows[monitor.get_connector()] = self.make_window(monitor)
         return GLib.SOURCE_REMOVE
 
+    def on_web_process_terminated(self, _view, reason):
+        """WebKit-Prozess abgestürzt (z. B. nach einem WebKit-Update passen das
+        geladene und das neue Programm nicht zusammen): das Wallpaper neu starten."""
+        if reason == WebKit.WebProcessTerminationReason.TERMINATED_BY_API or self.restarting:
+            return
+        self.restarting = True                        # mehrere Monitore: nur einmal neu starten
+        # stürzt es direkt nach einem Neustart wieder ab: erst nach der Wartezeit erneut versuchen
+        wait = float(os.environ.get("BLACKHOLE_RESTARTED", 0)) + RESTART_COOLDOWN - time.time()
+        print(f"WebKit-Prozess abgestürzt ({reason.value_nick}), Neustart in {max(wait, 0):.0f} s", file=sys.stderr)
+        GLib.timeout_add_seconds(max(round(wait), 0), self.restart)
+
+    def restart(self):
+        os.environ["BLACKHOLE_RESTARTED"] = str(time.time())
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
     def make_window(self, monitor):
         win = Gtk.ApplicationWindow(application=self)
         LayerShell.init_for_window(win)
@@ -359,6 +378,7 @@ class Wallpaper(Gtk.Application):
             black.parse("black")
             view.set_background_color(black)
             view.connect("load-changed", self.on_load_changed, connector)
+            view.connect("web-process-terminated", self.on_web_process_terminated)
             view.load_uri(self.url_for(connector))
             win.set_child(view)
         else:                                         # Loch aus: Standbild statt Animation
