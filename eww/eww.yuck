@@ -2,17 +2,67 @@
 ; The angel spans roughly y=440..700 on 1920x1080, so the clock sits above it
 ; and "now playing" below it.
 
-(defpoll time :interval "5s" "date +%H:%M")
+; Clock design 1..5, switch live with: eww update design=3
+; (the default below is what starts after a login)
+(defvar design 4)
+
+(defpoll clk :interval "1s"
+  "date +'{\"hm\":\"%H:%M\",\"h\":\"%H\",\"m\":\"%M\",\"hi\":%-H,\"mi\":%-M,\"si\":%-S}'")
 (defpoll date :interval "60s" "LC_TIME=de_DE.UTF-8 date '+%A, %-d. %B'")
+(defpoll date_caps :interval "60s" "LC_TIME=de_DE.UTF-8 date '+%A  ·  %-d. %b' | sed 's/.*/\\U&/'")
+(defpoll words :interval "20s" "~/.config/eww/scripts/wordclock.sh")
 
 ; playerctl prints an empty line when the player stops, which hides the widget
 (deflisten music :initial ""
   "playerctl --follow metadata --format '{{ artist }} — {{ title }}' 2>/dev/null || true")
 
 (defwidget clock []
-  (box :class "clock" :orientation "v" :space-evenly false
-    (label :class "time" :text time)
-    (label :class "date" :text date)))
+  ; Boxes instead of a stack: eww 0.5 ignores the stack's first :selected
+  (box :class "clock" :valign "center" :space-evenly false :halign "center"
+    (box :visible {design == 1} (clock-stack))
+    (box :visible {design == 2} (clock-words))
+    (box :visible {design == 3} (clock-ring))
+    (box :visible {design == 4} (clock-line))
+    (box :visible {design == 5} (clock-day))))
+
+; 1: hours above minutes, big and thin
+(defwidget clock-stack []
+  (box :class "c-stack" :orientation "v" :space-evenly false :halign "center"
+    (label :class "hours" :text {clk.h})
+    (label :class "minutes" :text {clk.m})))
+
+; 2: German word clock
+(defwidget clock-words []
+  (box :class "c-words" :orientation "v" :space-evenly false :halign "center"
+    (label :text {words.a})
+    (label :text {words.b})
+    (label :text {words.c})))
+
+; 3: ring that fills up over the hour, time and weekday inside
+(defwidget clock-ring []
+  (box :class "c-ring" :halign "center"
+    (circular-progress :class "ring" :value {clk.mi / 60 * 100}
+                       :start-at 75 :thickness 3 :clockwise true
+      (box :class "inner"
+        (box :orientation "v" :space-evenly false :valign "center" :halign "center"
+          (label :class "time" :text {clk.hm})
+          (label :class "sec" :text {clk.si < 10 ? "0${clk.si}" : clk.si}))))))
+
+; 4: time between two thin lines, spaced capitals below
+(defwidget clock-line []
+  (box :class "c-line" :orientation "v" :space-evenly false :halign "center"
+    (box :space-evenly false :halign "center"
+      (box :class "rule" :valign "center")
+      (label :class "time" :text {clk.hm})
+      (box :class "rule" :valign "center"))
+    (label :class "date" :text date_caps)))
+
+; 5: time with a bar showing how much of the day is gone
+(defwidget clock-day []
+  (box :class "c-day" :orientation "v" :space-evenly false :halign "center"
+    (label :class "time" :text {clk.hm})
+    (progress :class "bar" :value {(clk.hi * 60 + clk.mi) / 14.4})
+    (label :class "pct" :text "${round((clk.hi * 60 + clk.mi) / 14.4, 0)}% des Tages · ${date}")))
 
 (defwidget music []
   (label :class "music" :visible {music != ""} :limit-width 60
@@ -26,7 +76,7 @@
 
 (defwindow clock
   :monitor 0
-  :geometry (geometry :anchor "top center" :y "200px" :width "600px" :height "150px")
+  :geometry (geometry :anchor "top center" :y "110px" :width "900px" :height "300px")
   :stacking "bottom"
   :exclusive false
   :focusable false
