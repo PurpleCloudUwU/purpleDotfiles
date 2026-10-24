@@ -61,7 +61,7 @@ workspace_layout default
 # Applications
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
-bindsym $mod+Shift+w exec brave-origin
+bindsym $mod+Shift+w exec librewolf
 bindsym $mod+Shift+e exec dolphin
 bindsym $mod+Shift+b exec ~/.config/waybar/bt-menu.sh
 
@@ -209,6 +209,9 @@ for_window [all] inhibit_idle fullscreen
 # Launcher and the Waybar menus (waybar/tui-menu) float in the middle, like the old fuzzel
 for_window [app_id="^(otter-launcher|tui-menu)$"] floating enable, border pixel 1
 
+# Ableton Live (Wine Desktop): leicht transparent
+for_window [class="explorer.exe" title="^Wine Desktop$"] opacity 0.9
+
 ### Autostart
 
 # Password prompts for programs that need admin rights
@@ -220,3 +223,6 @@ exec swayosd-server
 exec dex -a -s ~/.config/autostart
 # Keyboard backlight to 100% at login
 exec ~/.config/sway/kbd-light.sh
+
+# Bitwarden-Popout (LibreWolf-Erweiterung): schwebend oben rechts
+for_window [app_id="librewolf" title="^Extension: \(Bitwarden"] floating enable, resize set 457 px 668 px, move position 1462 px 1 px
