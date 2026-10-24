@@ -1,0 +1,45 @@
+# python-validity-git (AUR) plus uunicorn/python-validity PR #290: fixes the
+# 06cb:009a (T480/T580) init on Python 3.14 / libusb 1.0.30 (issue #272:
+# busy status 0x0104/0x0401, empty flash info, USB timeouts) and stops the
+# restart loop. Own package name, so AUR updates don't drop the patch; switch
+# back to python-validity-git once the PR is merged upstream.
+#   cd ~/purpleDotfiles/fingerprint/python-validity-patched && makepkg -si
+pkgname=python-validity-patched
+_pkgdirname=python-validity
+_commit=a6bbc21dce7b8b3c3cd92378a0b2579a2fb45920   # tag 0.15, the base of PR #290
+pkgver=0.15.pr290
+pkgrel=1
+pkgdesc="Validity fingerprint sensor driver, with the 06cb:009a init fixes (PR #290)"
+arch=(any)
+license=(MIT)
+depends=(python python-pyusb python-cryptography python-dbus python-gobject python-yaml
+  innoextract open-fprintd fprintd-clients)
+makedepends=(git python-setuptools)
+conflicts=(python-validity python-validity-git)
+provides=(python-validity)
+url="https://github.com/uunicorn/python-validity/pull/290"
+source=("${_pkgdirname}::git+https://github.com/uunicorn/python-validity.git#commit=${_commit}"
+        pr290-009a-init-fixes.patch)
+sha256sums=('SKIP'
+            '4dc6fa39a6c3fcdd14797754169ba78fbb960d1e187cede43a64018bb6260af9')
+
+prepare() {
+  cd "$srcdir/$_pkgdirname"
+  git apply "$srcdir/pr290-009a-init-fixes.patch"
+}
+
+build() {
+  cd "$srcdir/$_pkgdirname"
+  python setup.py build
+}
+
+package() {
+  cd "$srcdir/$_pkgdirname"
+  python setup.py install --prefix=/usr --root "$pkgdir"
+
+  install -D -m 644 debian/python3-validity.service \
+    "$pkgdir/usr/lib/systemd/system/python3-validity.service"
+
+  install -D -m 644 debian/python3-validity.udev \
+    "$pkgdir/usr/lib/udev/rules.d/60-python-validity.rules"
+}

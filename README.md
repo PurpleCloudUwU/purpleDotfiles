@@ -43,6 +43,18 @@ ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
 ~/purpleDotfiles/hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
 ```
 
+#### Fingerprint (T580 only)
+The T580's Synaptics sensor (`06cb:009a`) is not supported by libfprint, so
+`~/purpleDotfiles/fingerprint/setup.sh` sets up python-validity with open-fprintd
+(not part of `install.sh`). The script:
+- builds python-validity with the init fixes from upstream PR #290, without them the sensor doesn't start on Python 3.14
+- keeps the sensor out of USB autosuspend and its firmware in `/var/lib`
+- allows the finger for sudo and polkit
+- starts enrolling a finger
+
+While a finger is wanted, eww shows a fingerprint icon at the bottom right. The
+black hole lock screen and hyprlock unlock with the finger too.
+
 ### Where the files go
 The config folders (`sway`, `waybar`, `eww`, `hypr`, `otter-launcher`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
 

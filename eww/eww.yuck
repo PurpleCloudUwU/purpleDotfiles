@@ -48,3 +48,14 @@
   :exclusive false
   :focusable false
   (stats))
+
+; nf-md-fingerprint while fprintd waits for a finger (sudo, polkit),
+; opened and closed by fingerprint.sh
+(defwindow fingerprint
+  :monitor 0
+  :geometry (geometry :anchor "bottom right" :x "32px" :y "32px" :width "72px" :height "72px")
+  :stacking "overlay"
+  :exclusive false
+  :focusable false
+  ; fixed size: the glyph is wider than its advance width and got cut off
+  (label :class "fingerprint" :halign "center" :valign "center" :text "󰈷"))

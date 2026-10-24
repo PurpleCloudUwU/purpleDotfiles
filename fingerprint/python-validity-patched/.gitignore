@@ -1,0 +1,4 @@
+src/
+pkg/
+python-validity/
+*.pkg.tar.*

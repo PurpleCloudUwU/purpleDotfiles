@@ -4,6 +4,8 @@
 Sperrt über ext-session-lock (gtk4-layer-shell), wie hyprlock: Stürzt das Programm
 ab, bleibt der Bildschirm gesperrt; ~/.config/sway/lock.sh startet dann hyprlock,
 das die Sperre übernimmt. Das Passwort prüft PAM (Dienst "login", wie hyprlock).
+Parallel dazu wartet fprintd auf einen Finger; solange zeigt unten rechts ein
+Fingerabdruck-Symbol, dass der Sensor bereit ist.
 
 Links läuft das Loch verschwommen (Unschärfe und Helligkeit in der Black-Hole-App),
 rechts das Layout von hypr/hyprlock.conf: Siegel, Uhr, Datum, Mond, Passwort, Status.
@@ -119,6 +121,103 @@ def authenticate(user, password):
     return result == 0
 
 
+# --- Fingerabdruck ---
+FPRINT = "net.reactivated.Fprint"
+FINGER_ICON = "\U000F0237"                           # nf-md-fingerprint
+
+
+class Fingerprint:
+    """Wartet über fprintd (D-Bus) auf einen Finger, parallel zur Passworteingabe.
+
+    on_state(state) bekommt "scan" (Sensor bereit), "no-match" oder None (kein Sensor);
+    on_match() wird bei einem erkannten Finger aufgerufen. Ohne Sensor bleibt es
+    beim Passwort, alle 10 s wird es erneut versucht (z. B. nach dem Aufwachen).
+    """
+
+    def __init__(self, on_match, on_state):
+        self.on_match, self.on_state = on_match, on_state
+        self.device = None
+        self.stopped = False
+
+    def start(self):
+        if self.stopped:
+            return GLib.SOURCE_REMOVE
+        Gio.DBusProxy.new_for_bus(Gio.BusType.SYSTEM, Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES, None,
+                                  FPRINT, "/net/reactivated/Fprint/Manager", FPRINT + ".Manager",
+                                  None, self.on_manager)
+        return GLib.SOURCE_REMOVE
+
+    def stop(self):
+        """Sensor freigeben (vor dem Entsperren, sonst bleibt das eww-Symbol offen)."""
+        self.stopped = True
+        if self.device:
+            for method in ("VerifyStop", "Release"):
+                try:
+                    self.device.call_sync(method, None, Gio.DBusCallFlags.NONE, 1000, None)
+                except GLib.Error:
+                    pass
+            self.device = None
+
+    def failed(self, error):
+        print(f"Fingerabdruck: {error.message}", file=sys.stderr)
+        if self.device:
+            try:
+                self.device.call_sync("Release", None, Gio.DBusCallFlags.NONE, 1000, None)
+            except GLib.Error:
+                pass
+        self.device = None
+        self.on_state(None)
+        if not self.stopped:
+            GLib.timeout_add_seconds(10, self.start)
+
+    def call(self, proxy, method, args, then):
+        """Asynchroner D-Bus-Aufruf; Fehler landen in failed() statt im crash-Hook."""
+        def done(proxy, result):
+            try:
+                reply = proxy.call_finish(result)
+            except GLib.Error as error:
+                self.failed(error)
+                return
+            if not self.stopped:
+                then(reply)
+        proxy.call(method, args, Gio.DBusCallFlags.NONE, -1, None, done)
+
+    def on_manager(self, _source, result):
+        try:
+            manager = Gio.DBusProxy.new_for_bus_finish(result)
+        except GLib.Error as error:
+            self.failed(error)
+            return
+        self.call(manager, "GetDefaultDevice", None, self.on_device)
+
+    def on_device(self, reply):
+        try:
+            self.device = Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SYSTEM, Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES, None,
+                FPRINT, reply.unpack()[0], FPRINT + ".Device", None)
+        except GLib.Error as error:
+            self.failed(error)
+            return
+        self.device.connect("g-signal", self.on_signal)
+        self.call(self.device, "Claim", GLib.Variant("(s)", ("",)), lambda _: self.verify())
+
+    def verify(self):
+        self.call(self.device, "VerifyStart", GLib.Variant("(s)", ("any",)), lambda _: self.on_state("scan"))
+
+    def on_signal(self, _proxy, _sender, signal, params):
+        if signal != "VerifyStatus" or self.stopped:
+            return
+        status, done = params.unpack()
+        if status == "verify-match":
+            self.stop()
+            self.on_match()
+            return
+        if status == "verify-no-match":
+            self.on_state("no-match")
+        if done:                                      # Versuch vorbei: neu starten
+            self.call(self.device, "VerifyStop", None, lambda _: self.verify())
+
+
 # --- Einstellungen ---
 def load_settings():
     try:
@@ -157,6 +256,8 @@ def css_for(settings):
     .lock entry.failed {{ border-color: {c["accent"]}; }}
     .lock entry.capslock {{ border-color: #f9e2af; }}
     .lock entry > text > placeholder {{ color: {c["accent"]}; }}
+    .finger {{ font-family: "JetBrainsMono Nerd Font"; font-size: 48px; color: {c["disk"]}; }}
+    .finger.failed {{ color: {c["accent"]}; }}
     """
 
 
@@ -195,11 +296,13 @@ class LockScreen(Gtk.Application):
         self.settings = load_settings()
         self.user = os.environ.get("USER") or os.getlogin()
         self.windows = {}                             # Anschluss -> Fenster
-        self.labels = {"clock": [], "date": [], "sky": [], "moon": [], "status": [], "sigil": []}
+        self.labels = {"clock": [], "date": [], "sky": [], "moon": [], "status": [], "sigil": [], "finger": []}
         self.entries = []
         self.attempts = 0
         self.checking = False
         self.lock = None
+        self.fingerprint = Fingerprint(self.unlock, self.finger_state)
+        self.finger_reset = 0
 
     def do_activate(self):
         if self.lock or self.windows:                 # schon gesperrt (zweiter Aufruf)
@@ -236,6 +339,7 @@ class LockScreen(Gtk.Application):
         keyboard = Gdk.Display.get_default().get_default_seat().get_keyboard()
         if keyboard:
             keyboard.connect("notify::caps-lock-state", lambda *_: self.caps_lock())
+        self.fingerprint.start()
         self.update_clock()
         self.update_info("date", "sky", "moon", "sigil", "status")
         GLib.timeout_add_seconds(1, self.update_clock)
@@ -270,6 +374,14 @@ class LockScreen(Gtk.Application):
 
         overlay = Gtk.Overlay(child=view)
         overlay.add_overlay(self.make_layout())
+        # Fingerabdruck unten rechts, wie das eww-Symbol außerhalb der Sperre
+        finger = self.label(FINGER_ICON, "finger", key="finger")
+        finger.set_halign(Gtk.Align.END)
+        finger.set_valign(Gtk.Align.END)
+        finger.set_margin_end(40)
+        finger.set_margin_bottom(40)
+        finger.set_visible(self.fingerprint.device is not None)
+        overlay.add_overlay(finger)
         win.set_child(overlay)
         return win
 
@@ -354,6 +466,29 @@ class LockScreen(Gtk.Application):
         for entry in self.entries:
             (entry.add_css_class if on else entry.remove_css_class)("capslock")
 
+    # --- Fingerabdruck ---
+    def finger_state(self, state):
+        for label in self.labels["finger"]:
+            label.set_visible(state is not None)
+            (label.add_css_class if state == "no-match" else label.remove_css_class)("failed")
+        if state == "no-match":                       # kurz rot, dann wieder bereit
+            if self.finger_reset:
+                GLib.source_remove(self.finger_reset)
+            self.finger_reset = GLib.timeout_add(1500, self.finger_ready)
+
+    def finger_ready(self):
+        self.finger_reset = 0
+        for label in self.labels["finger"]:
+            label.remove_css_class("failed")
+        return GLib.SOURCE_REMOVE
+
+    def unlock(self):
+        self.fingerprint.stop()
+        if self.lock:
+            self.lock.unlock()                        # "unlocked" beendet das Programm
+        else:
+            self.quit()
+
     # --- Passwort ---
     def on_typing(self, entry):
         if entry.get_text():
@@ -377,10 +512,7 @@ class LockScreen(Gtk.Application):
     def on_result(self, ok):
         self.checking = False
         if ok:
-            if self.lock:
-                self.lock.unlock()                    # "unlocked" beendet das Programm
-            else:
-                self.quit()
+            self.unlock()
             return GLib.SOURCE_REMOVE
         self.attempts += 1
         for e in self.entries:
