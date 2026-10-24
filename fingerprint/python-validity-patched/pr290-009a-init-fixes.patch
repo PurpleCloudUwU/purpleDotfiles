@@ -1,0 +1,779 @@
+diff --git a/dbus_service/dbus-service b/dbus_service/dbus-service
+index 1c63e8d..dfa31df 100755
+--- a/dbus_service/dbus-service
++++ b/dbus_service/dbus-service
+@@ -27,7 +27,7 @@ from validitysensor.init_data_dir import PYTHON_VALIDITY_DATA_DIR, init_data_dir
+ from validitysensor.sensor import sensor, RebootException
+ from validitysensor.sid import sid_from_string
+ from validitysensor.tls import tls
+-from validitysensor.usb import usb
++from validitysensor.usb import usb, CancelledException
+ from validitysensor.fingerprint_constants import finger_ids
+ 
+ dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+@@ -71,11 +71,9 @@ class Device(dbus.service.Object):
+     @dbus.service.method(dbus_interface=INTERFACE_NAME, in_signature='', out_signature='')
+     def Resume(self):
+         logging.debug('In Resume')
+-        tls.reset()
+-        try:
+-            init.open_common()
+-        except:
+-            init.open_common()
++        # Re-acquire the USB device and rebuild sensor state; open_common() alone
++        # reuses a stale handle after the device re-enumerates (see #249).
++        init.resume()
+ 
+     @dbus.service.method(dbus_interface=INTERFACE_NAME, in_signature="s", out_signature="as")
+     def ListEnrolledFingers(self, user):
+@@ -125,8 +123,13 @@ class Device(dbus.service.Object):
+                     self.VerifyStatus('verify-match', True)
+                 else:
+                     self.VerifyStatus('verify-no-match', True)
++            except CancelledException:
++                # Normal when the client stops/cancels a verify or the sensor
++                # timed out waiting for a finger; not worth a traceback.
++                logging.info('Verify cancelled')
++                self.VerifyStatus('verify-no-match', True)
+             except usb_core.USBError as e:
+-                logging.exception(e)
++                logging.warning('Verify failed: %s', e)
+                 self.VerifyStatus('verify-no-match', True)
+                 loop.quit()
+             except Exception as e:
+@@ -158,8 +161,11 @@ class Device(dbus.service.Object):
+             try:
+                 sensor.enroll(usr, index, update_cb)
+                 self.EnrollStatus('enroll-completed', True)
++            except CancelledException:
++                logging.info('Enroll cancelled')
++                self.EnrollStatus('enroll-failed', True)
+             except usb_core.USBError as e:
+-                logging.exception(e)
++                logging.warning('Enroll failed: %s', e)
+                 self.EnrollStatus('enroll-failed', True)
+                 loop.quit()
+             except Exception as e:
+diff --git a/debian/python3-validity.service b/debian/python3-validity.service
+index 93c8c9f..7b79820 100644
+--- a/debian/python3-validity.service
++++ b/debian/python3-validity.service
+@@ -1,11 +1,14 @@
+ [Unit]
+ Description=python-validity driver dbus service
+ After=open-fprintd.service
++StartLimitIntervalSec=300
++StartLimitBurst=5
+ 
+ [Service]
+ Type=simple
+-ExecStart=/usr/lib/python-validity/dbus-service --debug
+-Restart=no
++ExecStart=/usr/lib/python-validity/dbus-service
++Restart=on-failure
++RestartSec=5
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/pytest.ini b/pytest.ini
+new file mode 100644
+index 0000000..5ee6477
+--- /dev/null
++++ b/pytest.ini
+@@ -0,0 +1,2 @@
++[pytest]
++testpaths = tests
+diff --git a/tests/test_flash_info.py b/tests/test_flash_info.py
+new file mode 100644
+index 0000000..9651b3d
+--- /dev/null
++++ b/tests/test_flash_info.py
+@@ -0,0 +1,45 @@
++"""Tests for flash-info parsing and safe handling of an unidentified flash IC.
++
++These tests do not need the fingerprint sensor; they stub the USB/TLS layer.
++"""
++import pytest
++
++from validitysensor.flash import FlashInfo, get_flash_info
++
++
++def test_get_flash_info_parses_full_reply(monkeypatch):
++    import validitysensor.flash as flash
++
++    # status 0000 + header (jid0=0xef, jid1=0x40 -> W25Q80B, 0x100 * 0x1000 = 1 MiB, pcnt=0)
++    header = (0x00EF, 0x0040, 0x0100, 0x0000, 0x1000, 0x0000, 0x0000)
++    reply = b'\x00\x00' + b''.join(int(v).to_bytes(2, 'little') for v in header)
++    monkeypatch.setattr(flash.tls, 'cmd', lambda cmd: reply)
++
++    info = get_flash_info()
++
++    assert info.ic is not None
++    assert info.ic.name == 'W25Q80B'
++    assert info.partitions == []
++
++
++def test_get_flash_info_short_reply_returns_empty_flashinfo(monkeypatch):
++    import validitysensor.flash as flash
++
++    # Uninitialized 06cb:009a replies with only the 2-byte status word.
++    monkeypatch.setattr(flash.tls, 'cmd', lambda cmd: b'\x00\x00')
++
++    info = get_flash_info()
++
++    assert isinstance(info, FlashInfo)
++    assert info.ic is None
++    assert info.partitions == []
++
++
++def test_init_flash_refuses_to_format_without_identified_ic(monkeypatch):
++    import validitysensor.init_flash as init_flash
++
++    monkeypatch.setattr(init_flash, 'get_flash_info', lambda: FlashInfo(None, 0, 0, 0, 0, []))
++    monkeypatch.setattr(init_flash.usb, 'cmd', lambda cmd: b'\x00\x00')
++
++    with pytest.raises(Exception, match='flash IC could not be identified'):
++        init_flash.init_flash()
+diff --git a/tests/test_init_recovery.py b/tests/test_init_recovery.py
+new file mode 100644
+index 0000000..1989348
+--- /dev/null
++++ b/tests/test_init_recovery.py
+@@ -0,0 +1,134 @@
++"""Tests for bounded init recovery (USB reset/re-open) in validitysensor.init."""
++import pytest
++
++import validitysensor.init as init
++
++
++class FakeUsb:
++    def __init__(self, events):
++        self._events = events
++
++    def reset(self):
++        self._events.append('reset')
++
++    def reopen(self):
++        self._events.append('reopen')
++
++
++def test_open_with_recovery_resets_and_retries(monkeypatch):
++    monkeypatch.setattr(init, 'INIT_RETRY_DELAY', 0)
++    attempts = {'n': 0}
++    events = []
++    monkeypatch.setattr(init, 'usb', FakeUsb(events))
++
++    def fake_open_common():
++        attempts['n'] += 1
++        if attempts['n'] < 3:
++            raise RuntimeError('USBTimeoutError: [Errno 110] Operation timed out')
++
++    monkeypatch.setattr(init, 'open_common', fake_open_common)
++
++    init._open_with_recovery(lambda: events.append('open'))
++
++    assert attempts['n'] == 3
++    assert events.count('reopen') == 2
++
++
++def test_open_with_recovery_gives_up_bounded(monkeypatch):
++    monkeypatch.setattr(init, 'INIT_RETRY_DELAY', 0)
++    monkeypatch.setattr(init, 'INIT_ATTEMPTS', 3)
++    attempts = {'n': 0}
++    events = []
++    monkeypatch.setattr(init, 'usb', FakeUsb(events))
++
++    def always_fail():
++        attempts['n'] += 1
++        raise RuntimeError('stuck sensor')
++
++    monkeypatch.setattr(init, 'open_common', always_fail)
++
++    with pytest.raises(RuntimeError, match='stuck sensor'):
++        init._open_with_recovery(lambda: events.append('open'))
++
++    assert attempts['n'] == 3
++    # No reset after the final attempt.
++    assert events.count('reopen') == 2
++
++
++def test_reboot_exception_is_not_retried(monkeypatch):
++    monkeypatch.setattr(init, 'INIT_RETRY_DELAY', 0)
++    events = []
++    monkeypatch.setattr(init, 'usb', FakeUsb(events))
++
++    def rebooted():
++        raise init.RebootException()
++
++    monkeypatch.setattr(init, 'open_common', rebooted)
++
++    with pytest.raises(init.RebootException):
++        init._open_with_recovery(lambda: events.append('open'))
++
++    assert 'reopen' not in events
++
++
++def test_open_common_loads_firmware_before_flash(monkeypatch):
++    order = []
++    monkeypatch.setattr(init, 'init_data_dir', lambda: order.append('init_data_dir'))
++    monkeypatch.setattr(init.usb, 'send_init', lambda: order.append('send_init'))
++    monkeypatch.setattr(init, 'init_flash', lambda: order.append('init_flash'))
++    monkeypatch.setattr(init, 'read_tls_flash', lambda: b'')
++    monkeypatch.setattr(init.tls, 'parse_tls_flash', lambda b: order.append('parse_tls_flash'))
++    monkeypatch.setattr(init.tls, 'open', lambda: order.append('tls_open'))
++    monkeypatch.setattr(init, 'upload_fwext', lambda: order.append('upload_fwext'))
++    monkeypatch.setattr(init.sensor, 'open', lambda: order.append('sensor_open'))
++    monkeypatch.setattr(init, 'init_db', lambda: order.append('init_db'))
++    monkeypatch.setattr(init.atexit, 'register', lambda fn: None)
++    monkeypatch.setattr(init, '_close_registered', False)
++
++    init.open_common()
++
++    assert order.index('send_init') < order.index('init_flash')
++    assert order[-1] == 'init_db'
++
++
++def test_close_ignores_unexpected_reboot_errors(monkeypatch):
++    events = []
++
++    class FakeUsb:
++        dev = object()
++
++        def close(self):
++            events.append('close')
++
++    monkeypatch.setattr(init, 'usb', FakeUsb())
++
++    def failing_reboot():
++        raise RuntimeError('device already gone')
++
++    monkeypatch.setattr(init, 'reboot', failing_reboot)
++
++    # Must not propagate: this runs from atexit during shutdown/suspend.
++    init.close()
++
++    assert events == ['close']
++
++
++def test_close_handles_reboot_exception(monkeypatch):
++    events = []
++
++    class FakeUsb:
++        dev = object()
++
++        def close(self):
++            events.append('close')
++
++    monkeypatch.setattr(init, 'usb', FakeUsb())
++
++    def reboot_exc():
++        raise init.RebootException()
++
++    monkeypatch.setattr(init, 'reboot', reboot_exc)
++
++    init.close()
++
++    assert events == ['close']
+diff --git a/tests/test_resume.py b/tests/test_resume.py
+new file mode 100644
+index 0000000..d558bb5
+--- /dev/null
++++ b/tests/test_resume.py
+@@ -0,0 +1,43 @@
++"""Tests for post-suspend re-initialization in validitysensor.init."""
++import validitysensor.init as init
++
++
++class FakeUsb:
++    def __init__(self, events, reopen_fails=False):
++        self._events = events
++        self._reopen_fails = reopen_fails
++
++    def reopen(self):
++        self._events.append('reopen')
++        if self._reopen_fails:
++            raise Exception('USB device was never opened; cannot reopen')
++
++    def open(self):
++        self._events.append('open')
++
++
++def test_resume_reopens_usb_and_reinitializes(monkeypatch):
++    monkeypatch.setattr(init, 'INIT_RETRY_DELAY', 0)
++    events = []
++    monkeypatch.setattr(init, 'usb', FakeUsb(events))
++    monkeypatch.setattr(init, 'open_common', lambda: events.append('open_common'))
++    monkeypatch.setattr(init.tls, 'reset', lambda: events.append('tls_reset'))
++
++    init.resume()
++
++    assert events[0] == 'tls_reset'
++    assert 'reopen' in events
++    assert events[-1] == 'open_common'
++
++
++def test_resume_falls_back_to_fresh_open(monkeypatch):
++    monkeypatch.setattr(init, 'INIT_RETRY_DELAY', 0)
++    events = []
++    monkeypatch.setattr(init, 'usb', FakeUsb(events, reopen_fails=True))
++    monkeypatch.setattr(init, 'open_common', lambda: events.append('open_common'))
++    monkeypatch.setattr(init.tls, 'reset', lambda: events.append('tls_reset'))
++
++    init.resume()
++
++    assert 'open' in events
++    assert events[-1] == 'open_common'
+diff --git a/tests/test_service_unit.py b/tests/test_service_unit.py
+new file mode 100644
+index 0000000..1c63860
+--- /dev/null
++++ b/tests/test_service_unit.py
+@@ -0,0 +1,27 @@
++"""Tests for the packaged systemd unit.
++
++The unit must not enable debug logging by default and must throttle restarts
++so a stuck sensor can never produce an unbounded restart loop.
++"""
++from configparser import ConfigParser
++from pathlib import Path
++
++
++def _unit():
++    unit_path = Path(__file__).resolve().parents[1] / 'debian' / 'python3-validity.service'
++    parser = ConfigParser()
++    parser.read(unit_path)
++    return parser
++
++
++def test_debug_is_not_enabled_by_default():
++    exec_start = _unit().get('Service', 'ExecStart')
++    assert '--debug' not in exec_start
++
++
++def test_restart_is_throttled():
++    parser = _unit()
++    assert parser.get('Service', 'Restart') == 'on-failure'
++    assert parser.getint('Service', 'RestartSec') >= 1
++    assert parser.getint('Unit', 'StartLimitBurst') >= 1
++    assert parser.getint('Unit', 'StartLimitIntervalSec') >= 60
+diff --git a/tests/test_usb_retry.py b/tests/test_usb_retry.py
+new file mode 100644
+index 0000000..155fbca
+--- /dev/null
++++ b/tests/test_usb_retry.py
+@@ -0,0 +1,77 @@
++"""Tests for the transient-busy command retry helper in validitysensor.usb."""
++import errno
++
++from usb.core import USBError
++
++from validitysensor.usb import Usb
++
++
++def _no_sleep(monkeypatch):
++    import validitysensor.usb as usbmod
++
++    monkeypatch.setattr(usbmod, 'CMD_RETRY_DELAY', 0)
++
++
++def test_retries_transient_busy_status(monkeypatch):
++    _no_sleep(monkeypatch)
++    usb = Usb()
++    responses = iter([b'\x04\x01', b'\x04\x01', b'\x00\x00payload'])
++    usb.cmd = lambda out: next(responses)
++
++    assert usb.cmd_retry_busy(b'\x01') == b'\x00\x00payload'
++
++
++def test_retries_transient_usb_timeout(monkeypatch):
++    _no_sleep(monkeypatch)
++    usb = Usb()
++    calls = []
++
++    def cmd(out):
++        calls.append(out)
++        if len(calls) == 1:
++            raise USBError('Operation timed out', errno=errno.ETIMEDOUT)
++        return b'\x00\x00ok'
++
++    usb.cmd = cmd
++
++    assert usb.cmd_retry_busy(b'\x01') == b'\x00\x00ok'
++    assert len(calls) == 2
++
++
++def test_non_timeout_usb_error_is_not_retried(monkeypatch):
++    _no_sleep(monkeypatch)
++    usb = Usb()
++    calls = []
++
++    def cmd(out):
++        calls.append(out)
++        raise USBError('No such device', errno=errno.ENODEV)
++
++    usb.cmd = cmd
++
++    try:
++        usb.cmd_retry_busy(b'\x01')
++    except USBError:
++        pass
++    else:
++        raise AssertionError('USBError should propagate')
++
++    assert len(calls) == 1
++
++
++def test_bounded_when_sensor_stays_busy(monkeypatch):
++    import validitysensor.usb as usbmod
++
++    _no_sleep(monkeypatch)
++    monkeypatch.setattr(usbmod, 'CMD_RETRY_ATTEMPTS', 3)
++    usb = Usb()
++    calls = []
++
++    def cmd(out):
++        calls.append(out)
++        return b'\x04\x01'
++
++    usb.cmd = cmd
++
++    assert usb.cmd_retry_busy(b'\x01') == b'\x04\x01'
++    assert len(calls) == 3
+diff --git a/validitysensor/flash.py b/validitysensor/flash.py
+index 54c5240..2ecdeda 100644
+--- a/validitysensor/flash.py
++++ b/validitysensor/flash.py
+@@ -1,3 +1,4 @@
++import logging
+ import typing
+ from struct import pack, unpack
+ 
+@@ -21,7 +22,8 @@ def __repr__(self):
+ 
+ 
+ class FlashInfo:
+-    def __init__(self, ic: FlashIcInfo, blocks: int, unknown0: int, blocksize: int, unknown1: int,
++    def __init__(self, ic: typing.Optional[FlashIcInfo], blocks: int, unknown0: int,
++                 blocksize: int, unknown1: int,
+                  partitions: typing.Sequence[PartitionInfo]):
+         self.ic = ic
+         self.blocks = blocks
+@@ -40,6 +42,17 @@ def get_flash_info():
+     rsp = tls.cmd(unhex('3e'))
+     assert_status(rsp)
+     rsp = rsp[2:]
++
++    # Some sensors (e.g. 06cb:009a with an uninitialized/empty flash) reply
++    # with only the status word (0000) and no header/partition data. Treat a
++    # short response as an uninitialized flash so that init_flash() can handle
++    # it instead of crashing on unpack(). Callers must not attempt to format a
++    # flash whose IC could not be identified.
++    if len(rsp) < 0xe:
++        logging.info('Flash info response too short (%d bytes); assuming uninitialized flash',
++                     len(rsp))
++        return FlashInfo(None, 0, 0, 0, 0, [])
++
+     hdr = rsp[:0xe]
+     rsp = rsp[0xe:]
+     jid0, jid1, blocks, unknown0, blocksize, unknown1, pcnt = unpack('<HHHHHHH', hdr)
+diff --git a/validitysensor/init.py b/validitysensor/init.py
+index 1153cf7..3148cc7 100644
+--- a/validitysensor/init.py
++++ b/validitysensor/init.py
+@@ -1,5 +1,7 @@
+ import atexit
+ import logging
++import time
++import typing
+ 
+ from validitysensor.init_data_dir import init_data_dir
+ from validitysensor.flash import read_tls_flash
+@@ -10,6 +12,14 @@
+ from validitysensor.upload_fwext import upload_fwext
+ from validitysensor.usb import usb
+ 
++# Bounded initialization recovery: the sensor can be left unresponsive after a
++# reboot or resume. Reset/re-open the USB device a few times before giving up,
++# so a stuck sensor recovers instead of crash-looping.
++INIT_ATTEMPTS = 5
++INIT_RETRY_DELAY = 1.0
++
++_close_registered = False
++
+ 
+ def close():
+     logging.debug('In atexit handler')
+@@ -22,14 +32,21 @@ def close():
+             reboot()
+         except RebootException:
+             pass
++        except Exception as e:
++            # The device can already be gone/reset during shutdown or suspend;
++            # this is expected and must not print a traceback from atexit.
++            logging.debug('atexit: reboot failed: %s', e)
+         finally:
+             usb.close()
+ 
+ 
+ def open_common():
+     init_data_dir()
+-    init_flash()
++    # Load the hardcoded init/firmware blobs before touching the protected
++    # flash. On 06cb:009a the flash commands time out when send_init() runs
++    # after init_flash() (see uunicorn/python-validity#272).
+     usb.send_init()
++    init_flash()
+     tls.parse_tls_flash(read_tls_flash())
+     tls.open()
+     upload_fwext()
+@@ -41,15 +58,69 @@ def open_common():
+     #
+     # Don't attempt to autoreboot unless we finished initializing the sensor successfully.
+     # Otherwise if there is a bug in initialization, we may end up in a loop constantly rebooting the device.
+-    atexit.register(close)
++    global _close_registered
++    if not _close_registered:
++        atexit.register(close)
++        _close_registered = True
+     logging.debug('atexit registered')
+ 
+ 
++def _open_with_recovery(opener: typing.Callable[[], None]):
++    """Open the device and initialize the sensor, with bounded recovery.
++
++    On failure the USB device is reset and re-opened before the next attempt.
++    This breaks the infinite restart loop seen when the sensor stops answering
++    commands (USBTimeoutError) and was never reset because a failed init never
++    reached the atexit handler that performs usb.close().
++    """
++    last_exc: typing.Optional[Exception] = None
++    for attempt in range(1, INIT_ATTEMPTS + 1):
++        try:
++            opener()
++            open_common()
++            return
++        except RebootException:
++            # Normal exit: the sensor reboots and udev starts the service again.
++            raise
++        except Exception as e:
++            last_exc = e
++            logging.warning('Sensor initialization attempt %d/%d failed: %s: %s', attempt,
++                            INIT_ATTEMPTS, type(e).__name__, e)
++            if attempt == INIT_ATTEMPTS:
++                break
++            try:
++                usb.reopen()
++            except Exception as reopen_exc:
++                logging.debug('Could not reopen USB device: %s', reopen_exc)
++            time.sleep(INIT_RETRY_DELAY)
++
++    raise last_exc
++
++
+ def open():
+-    usb.open()
+-    open_common()
++    _open_with_recovery(usb.open)
+ 
+ 
+ def open_devpath(busnum: int, address: int):
+-    usb.open_devpath(busnum, address)
+-    open_common()
++    _open_with_recovery(lambda: usb.open_devpath(busnum, address))
++
++
++def _reacquire_usb():
++    try:
++        usb.reopen()
++    except Exception:
++        # Fall back to plain discovery if the original open method is unknown
++        # or the device re-enumerated in a way reopen() cannot handle.
++        usb.open()
++
++
++def resume():
++    """Re-initialize the sensor after suspend/resume.
++
++    The USB device may have been reset or re-enumerated while suspended, so the
++    previous handle cannot be reused (that produced 'USBError: [Errno 19] No
++    such device'). Re-acquire the device and rebuild all sensor state, with the
++    same bounded recovery as a normal start.
++    """
++    tls.reset()
++    _open_with_recovery(_reacquire_usb)
+diff --git a/validitysensor/init_flash.py b/validitysensor/init_flash.py
+index 61c918b..4f4501c 100644
+--- a/validitysensor/init_flash.py
++++ b/validitysensor/init_flash.py
+@@ -100,6 +100,12 @@ def serialize_partition(p: PartitionInfo):
+ 
+ 
+ def partition_flash(info: FlashInfo, layout: typing.List[PartitionInfo], signature, client_public):
++    if info.ic is None:
++        # Formatting requires the exact flash parameters (size, sector size,
++        # erase command). Never guess them: a wrong value can corrupt the
++        # sensor flash. Callers retry/reset instead.
++        raise Exception('Cannot format flash: the flash IC could not be identified')
++
+     logging.info('Detected Flash IC: %s, %d bytes' % (info.ic.name, info.ic.size))
+ 
+     cmd = unhex('4f 0000 0000')
+@@ -129,6 +135,14 @@ def init_flash():
+ 
+     assert_status(usb.cmd(reset_blob))
+ 
++    if info.ic is None:
++        # The flash header may be available only after the reset above (seen on
++        # an uninitialized 06cb:009a). Re-query before giving up so formatting
++        # can still proceed when the IC becomes readable.
++        info = get_flash_info()
++    if info.ic is None:
++        raise Exception('Flash is uninitialized but the flash IC could not be identified')
++
+     skey = ec.generate_private_key(ec.SECP256R1(), crypto_backend)
+     snums = skey.private_numbers()
+     client_private = snums.private_value
+diff --git a/validitysensor/usb.py b/validitysensor/usb.py
+index 464b092..060598b 100644
+--- a/validitysensor/usb.py
++++ b/validitysensor/usb.py
+@@ -1,5 +1,6 @@
+ import errno
+ import logging
++import time
+ import typing
+ from binascii import hexlify, unhexlify
+ from enum import Enum
+@@ -26,6 +27,17 @@ def from_usbid(cls, vendorid, productid):
+ 
+ supported_devices = dict((dev.value, dev) for dev in SupportedDevices)
+ 
++# Status words the sensor may return while it is still settling after a
++# wake-up or a reset. They are transient, so the command should be retried
++# instead of being treated as a hard failure by assert_status().
++BUSY_STATUSES = (0x0104, 0x0401)
++
++# Retry budget for a single command: 20 * 0.5s = 10s on top of the 15s USB
++# timeout. Bounded so a genuinely stuck sensor still fails fast enough for the
++# init recovery loop to reset it.
++CMD_RETRY_ATTEMPTS = 20
++CMD_RETRY_DELAY = 0.5
++
+ 
+ class CancelledException(Exception):
+     pass
+@@ -36,6 +48,8 @@ def __init__(self):
+         self.trace_enabled = False
+         self.dev: typing.Optional[ucore.Device] = None
+         self.cancel = False
++        # Callable that re-opens the device the way it was opened originally.
++        self._reopen_fn: typing.Optional[typing.Callable[[], None]] = None
+ 
+     def open(self, vendor=None, product=None):
+         if vendor is not None and product is not None:
+@@ -48,6 +62,7 @@ def match(d):
+             dev = ucore.find(custom_match=match)
+ 
+         self.open_dev(dev)
++        self._reopen_fn = lambda: self.open(vendor, product)
+ 
+     def open_devpath(self, busnum: int, address: int):
+         def match(d):
+@@ -56,15 +71,37 @@ def match(d):
+         dev = ucore.find(custom_match=match)
+ 
+         self.open_dev(dev)
++        self._reopen_fn = lambda: self.open_devpath(busnum, address)
+ 
+     def open_dev(self, dev: ucore.Device):
+         if dev is None:
+-            raise Exception('No matching devices found')
++            raise USBError('No matching devices found')
+ 
+         self.dev = dev
+         self.dev.default_timeout = 15000
+         dev.set_configuration()
+ 
++    def reset(self):
++        """Reset the USB device without sending the sensor reboot command."""
++        if self.dev is not None:
++            try:
++                self.dev.reset()
++            except Exception:
++                pass
++
++    def reopen(self):
++        """Reset and re-open the device the way it was originally opened.
++
++        Used to recover a sensor that stopped responding to commands. The
++        device may re-enumerate at a different USB address, so discovery is
++        repeated instead of reusing the stale handle.
++        """
++        self.reset()
++        self.dev = None
++        if self._reopen_fn is None:
++            raise Exception('USB device was never opened; cannot reopen')
++        self._reopen_fn()
++
+     def close(self):
+         if self.dev is not None:
+             try:
+@@ -76,18 +113,55 @@ def close(self):
+     def usb_dev(self):
+         return self.dev
+ 
++    def cmd_retry_busy(self, out: typing.Union[bytes, typing.Callable[[], bytes]]):
++        """Run a command, retrying while the sensor reports a transient busy
++        status (or times out). Returns the last response.
++        """
++        if callable(out):
++            out = out()
++            if not out:
++                return 0
++
++        rsp: typing.Union[bytes, int] = 0
++        for attempt in range(CMD_RETRY_ATTEMPTS):
++            last_attempt = attempt + 1 == CMD_RETRY_ATTEMPTS
++            try:
++                rsp = self.cmd(out)
++            except USBError as e:
++                if e.errno == errno.ETIMEDOUT and not last_attempt:
++                    time.sleep(CMD_RETRY_DELAY)
++                    continue
++                raise
++
++            if not isinstance(rsp, (bytes, bytearray)) or len(rsp) < 2:
++                return rsp
++
++            status, = unpack('<H', rsp[:2])
++            if status in BUSY_STATUSES and not last_attempt:
++                time.sleep(CMD_RETRY_DELAY)
++                continue
++
++            return rsp
++
++        return rsp
++
+     def send_init(self):
+         # self.dev.set_configuration()
+ 
+         # TODO analyse responses, detect hardware type
+-        assert_status(self.cmd(unhexlify('01')))  # RomInfo.get()
++        # The first command after wake-up/reset can return a transient busy
++        # status (0x0104/0x0401); retry it before asserting.
++        assert_status(self.cmd_retry_busy(unhexlify('01')))  # RomInfo.get()
+         assert_status(self.cmd(unhexlify('19')))
+ 
+         # 43 -- get partition header(?) (02 -- fwext partition)
+         # c28c745a in response is a FwextBuildtime = 0x5A748CC2
+-        rsp = self.cmd(unhexlify('4302'))  # get_fw_info()
++        rsp = self.cmd_retry_busy(unhexlify('4302'))  # get_fw_info()
+ 
+-        assert_status(self.cmd(init_hardcoded))
++        # init_hardcoded returns a non-zero status when no firmware is loaded
++        # yet; that is a normal state which the check below handles, so do not
++        # assert on it.
++        self.cmd_retry_busy(init_hardcoded)
+ 
+         (err, ), rsp = unpack('<H', rsp[:2]), rsp[2:]
+         if err != 0:

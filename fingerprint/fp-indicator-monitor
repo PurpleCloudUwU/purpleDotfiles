@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Watches the system bus for fprintd verify requests (sudo, polkit, ...) and
+# appends "start"/"stop" to /run/fp-indicator/events. ~/.config/eww/fingerprint.sh
+# reads that file and shows the fingerprint icon. Runs as root
+# (fp-indicator.service): only root may monitor the system bus.
+events=/run/fp-indicator/events
+: > "$events"
+
+# Bus name of the program waiting for a finger. A client that gets killed
+# (Ctrl+C on sudo, closed dialog) never sends VerifyStop, so once a second
+# check whether it is still on the bus.
+client=
+gone() {
+    ! busctl --system call org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus GetNameOwner s "$1" >/dev/null 2>&1
+}
+
+dbus-monitor --system --profile "type='method_call',interface='net.reactivated.Fprint.Device'" |
+while true; do
+    if read -r -t 1 _type _time _serial sender _dest _path _iface member; then
+        case $member in
+            VerifyStart) client=$sender; echo start ;;
+            VerifyStop|Release) [[ $sender == "$client" ]] && client= && echo stop ;;
+        esac
+    elif (($? <= 128)); then
+        break                                         # dbus-monitor ended
+    elif [[ -n $client ]] && gone "$client"; then
+        client=
+        echo stop
+    fi
+done >> "$events"

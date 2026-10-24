@@ -1,0 +1,2 @@
+# The 06cb:009a sensor stops answering (USB timeouts) after USB autosuspend
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="06cb", ATTR{idProduct}=="009a", TEST=="power/control", ATTR{power/control}="on"
