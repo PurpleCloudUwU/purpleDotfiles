@@ -77,6 +77,14 @@ tooltip label {
     padding: 0 10px;
 }
 
+/* Weekday and date */
+#custom-date {
+    padding: 0 10px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: alpha(@hole_star, 0.75);
+}
+
 /* Bluetooth */
 #custom-bluetooth { color: @hole_star; }
 #custom-bluetooth.low { color: #f38ba8; }

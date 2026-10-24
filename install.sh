@@ -59,6 +59,7 @@ config_files=(
     "starship/starship.toml:$HOME/.config/starship.toml"
     "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
     "blackhole/blackhole-lock:$HOME/.local/bin/blackhole-lock"
+    "fonts/Jacquard24-Regular.ttf:$HOME/.local/share/fonts/Jacquard24-Regular.ttf"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -170,6 +171,9 @@ apply_settings() {
     "$repo/blackhole/blackhole-wallpaper" --colors-only || true
     note "Waybar: black hole colors (waybar/colors.css, colors.jsonc)"
 
+    # Jacquard 24 for the eww clock (linked to ~/.local/share/fonts above)
+    fc-cache -f ~/.local/share/fonts >/dev/null 2>&1 && note "font cache: Jacquard 24 (eww clock)"
+
     # Dolphin uses the KDE color scheme from this repo
     if command -v kwriteconfig6 >/dev/null; then
         kwriteconfig6 --file dolphinrc --group UiSettings --key ColorScheme blackhole
@@ -182,13 +186,14 @@ apply_settings() {
         note "lock screen sigil created"
     fi
 
-    # The Waybar clock uses the German locale and is hidden without it
+    # The Waybar date uses the German locale (otherwise English weekdays); the
+    # "clock" module, if added back, is hidden without it
     if ! locale -a 2>/dev/null | grep -qx 'de_DE.utf8'; then
         if command -v sudo >/dev/null; then
             sudo sed -i 's/^#\(de_DE\.UTF-8 UTF-8\)/\1/' /etc/locale.gen && sudo locale-gen >/dev/null
-            note "locale de_DE.UTF-8 generated (Waybar clock)"
+            note "locale de_DE.UTF-8 generated (Waybar date)"
         else
-            note "generate de_DE.UTF-8 (/etc/locale.gen, locale-gen), otherwise Waybar hides the clock"
+            note "generate de_DE.UTF-8 (/etc/locale.gen, locale-gen), otherwise the Waybar date is in English"
         fi
     fi
 }

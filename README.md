@@ -3,8 +3,8 @@
 ![Example Picture from my Desktop.](screenshots/desktop.png)
 The Dotfiles include:
 - Sway (wallpaper: the still image `sway/wallpaper.png`; the animated black hole wallpaper and its settings app are still in `blackhole/` but no longer set up)
-- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole; no clock, and transparent while the workspace is empty)
-- eww desktop widgets on the wallpaper: big clock with date, now playing (playerctl) and CPU/RAM/disk
+- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole; only weekday and date in the middle, no clock, and transparent while the workspace is empty)
+- eww desktop widgets on the wallpaper: clock in the pixel blackletter font Jacquard 24 between two thin lines, now playing (playerctl) and CPU/RAM/disk
 - Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness under `"lock"` in `~/.config/blackhole/settings.json`). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
 - Mako (notifications)
@@ -53,6 +53,7 @@ The config folders (`sway`, `waybar`, `eww`, `hypr`, `otter-launcher`, `mako`, `
 | `starship/starship.toml` | `~/.config/starship.toml` |
 | `blackhole/index.html` | `~/.local/share/blackhole/` |
 | `blackhole/blackhole-lock` | `~/.local/bin/` |
+| `fonts/Jacquard24-Regular.ttf` | `~/.local/share/fonts/` (Jacquard 24 from Google Fonts, SIL OFL 1.1, see `fonts/Jacquard24-OFL.txt`; run `fc-cache -f` afterwards) |
 
 Additional settings (`install.sh` does all of these):
 - Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
