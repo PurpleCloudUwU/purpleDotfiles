@@ -19,6 +19,27 @@
   (label :class "music" :visible {music != ""} :limit-width 60
          :text "♪  ${music}"))
 
+; Spotify player in the bottom right corner, hidden while Spotify isn't running
+(deflisten sp :initial '{"status":"","artist":"","title":""}'
+  "~/.config/eww/spotify.sh")
+(defpoll sppos :interval "1s" :run-while {sp.title != ""}
+  :initial '{"time":"0:00","total":"0:00","bar":""}'
+  "~/.config/eww/spotify-pos.sh")
+
+; Mirror of the stats in the bottom left: three right-aligned lines with the
+; time, a text progress bar and the controls (title and artist are already in
+; "now playing" below the angel)
+(defwidget player []
+  (box :class "player" :orientation "v" :space-evenly false :halign "end"
+       :visible {sp.title != ""}
+    (label :class "time" :halign "end" :text "${sppos.time} / ${sppos.total}")
+    (label :class "bar" :halign "end" :text {sppos.bar})
+    (box :class "controls" :space-evenly false :spacing 12 :halign "end"
+      (button :onclick "playerctl -p spotify previous" "󰒮")
+      (button :onclick "playerctl -p spotify play-pause"
+        {sp.status == "Playing" ? "󰏤" : "󰐊"})
+      (button :onclick "playerctl -p spotify next" "󰒭"))))
+
 (defwidget stats []
   (box :class "stats" :orientation "v" :space-evenly false :halign "start"
     (label :halign "start" :text "cpu  ${round(EWW_CPU.avg, 0)}%")
@@ -48,6 +69,15 @@
   :exclusive false
   :focusable false
   (stats))
+
+; Same position and height as the stats, mirrored; wider for the progress bar
+(defwindow player
+  :monitor 0
+  :geometry (geometry :anchor "bottom right" :x "40px" :y "40px" :width "300px" :height "70px")
+  :stacking "bottom"
+  :exclusive false
+  :focusable false
+  (player))
 
 ; nf-md-fingerprint while fprintd waits for a finger (sudo, polkit),
 ; opened and closed by fingerprint.sh
