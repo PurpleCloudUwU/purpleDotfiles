@@ -23,17 +23,18 @@
 (deflisten sp :initial '{"status":"","artist":"","title":""}'
   "~/.config/eww/spotify.sh")
 (defpoll sppos :interval "1s" :run-while {sp.title != ""}
-  :initial '{"time":"0:00","total":"0:00","bar":""}'
+  :initial '{"pct":0,"time":"0:00","total":"0:00"}'
   "~/.config/eww/spotify-pos.sh")
 
 ; Mirror of the stats in the bottom left: three right-aligned lines with the
-; time, a text progress bar and the controls (title and artist are already in
-; "now playing" below the angel)
+; time, a hairline progress bar like the lines beside the clock and the
+; controls (title and artist are already in "now playing" below the angel)
 (defwidget player []
   (box :class "player" :orientation "v" :space-evenly false :halign "end"
        :visible {sp.title != ""}
     (label :class "time" :halign "end" :text "${sppos.time} / ${sppos.total}")
-    (label :class "bar" :halign "end" :text {sppos.bar})
+    (box :class "bar" :halign "end"
+      (progress :class "hairline" :valign "center" :value {sppos.pct}))
     (box :class "controls" :space-evenly false :spacing 12 :halign "end"
       (button :onclick "playerctl -p spotify previous" "󰒮")
       (button :onclick "playerctl -p spotify play-pause"

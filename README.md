@@ -4,7 +4,7 @@
 The Dotfiles include:
 - Sway (wallpaper: the still image `sway/wallpaper.png`; the animated black hole wallpaper and its settings app are still in `blackhole/` but no longer set up)
 - Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole; only weekday and date in the middle, no clock, and transparent while the workspace is empty)
-- eww desktop widgets on the wallpaper: clock in the pixel blackletter font Jacquard 24 between two thin lines, now playing (playerctl), CPU/RAM/disk in the bottom left and, mirrored in the bottom right, a Spotify player with a text progress bar (▰▰▰▱▱▱) and previous/play-pause/next
+- eww desktop widgets on the wallpaper: clock in the pixel blackletter font Jacquard 24 between two thin lines, now playing (playerctl), CPU/RAM/disk in the bottom left and, mirrored in the bottom right, a Spotify player with a hairline progress bar and previous/play-pause/next
 - Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness under `"lock"` in `~/.config/blackhole/settings.json`). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
 - otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
 - Mako (notifications)
