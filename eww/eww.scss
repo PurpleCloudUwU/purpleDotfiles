@@ -44,7 +44,14 @@ window {
 .player {
   font-size: 12px;
   color: rgba($hole_star, 0.4);
-  .bar { color: rgba($hole_disk, 0.8); }
+  .bar {
+    min-height: 17px;   // one text line high, like the stats
+    .hairline {
+      // the GTK theme's trough is 150px wide otherwise
+      trough { min-width: 112px; min-height: 1px; background-color: rgba($hole_star, 0.18); }
+      progress { min-height: 1px; background-color: $hole_disk; }
+    }
+  }
   .controls {
     color: rgba($hole_star, 0.7);
     button:hover { color: $hole_disk; }
