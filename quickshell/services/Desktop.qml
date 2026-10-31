@@ -54,6 +54,32 @@ Singleton {
             Quickshell.execDetached(["station", "desktop", "column", "on"]);
     }
 
+    // From scripts:
+    //   qs ipc call desktop move music 24 600
+    //   qs ipc call desktop show tasks false
+    //   qs ipc call desktop reset
+    IpcHandler {
+        target: "desktop"
+
+        function move(name: string, x: int, y: int): void {
+            if (root.defaults[name])
+                root.update(name, { x: x, y: y });
+        }
+
+        function show(name: string, on: bool): void {
+            if (root.defaults[name])
+                root.update(name, { visible: on });
+        }
+
+        function column(on: bool): void {
+            root.setColumn(on);
+        }
+
+        function reset(): void {
+            root.reset();
+        }
+    }
+
     FileView {
         id: file
         path: Theme.stateDir + "/desktop.json"

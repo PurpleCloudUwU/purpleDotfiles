@@ -230,6 +230,8 @@ FloatingWindow {
 
             // CRT CALIBRATION
             ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 spacing: 0
 
                 RowLayout {
@@ -549,7 +551,10 @@ FloatingWindow {
             }
 
             // DESKTOP WIDGETS
-            DesktopPage {}
+            DesktopPage {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
         }
     }
 }
