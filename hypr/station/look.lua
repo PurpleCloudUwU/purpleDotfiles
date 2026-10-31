@@ -53,13 +53,14 @@ hl.window_rule({
     border_size = 3,
 })
 
--- Workspace 1 keeps the right column free for the floating file
--- manager and the desktop widgets, like on canvas board 01: tiled windows
--- end at x 1116, the column runs from 1140 to 1896. Switch it off on the
+-- Every workspace on the laptop panel keeps the right column free for the
+-- floating file manager and the desktop widgets, like on canvas board 01:
+-- tiled windows end at x 1116, the column runs from 1140 to 1896. Super+G
+-- makes one window big over it (binds.lua). Switch the column off on the
 -- DESKTOP WIDGETS page of STATION SETUP (station desktop column off).
 if s.desktop.column ~= "off" then
     hl.workspace_rule({
-        workspace = "1",
+        workspace = "m[eDP-1]",
         gaps_out  = { top = 24, left = 24, bottom = 24, right = 804 },
     })
 end

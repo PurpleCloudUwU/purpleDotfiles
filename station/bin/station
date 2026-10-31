@@ -20,7 +20,7 @@
 #   station open <what>                 terminal, files, editor, monitor, music,
 #                                       player, browser, crt
 #   station shot <screen|region|window> screenshot to ~/Pictures/Screenshots
-#   station desktop column <on|off>     keep the right column of workspace 1 free
+#   station desktop column <on|off>     keep the right column free for the widgets
 #                                       for the desktop widgets (STATION SETUP)
 #   station battery                     charge of all batteries together
 #   station reload                      reload Hyprland and Quickshell (after git pull)
@@ -603,7 +603,7 @@ shot() {
     if command -v notify-send >/dev/null; then notify-send -a station "Screenshot saved" "${file/#"$HOME"/\~}"; fi
 }
 
-# Whether Hyprland keeps workspace 1's right column free (hypr/station/look.lua)
+# Whether Hyprland keeps the right column free (hypr/station/look.lua)
 desktop() {
     [[ ${1:-} == column && ( ${2:-} == on || ${2:-} == off ) ]] || die "usage: station desktop column <on|off>"
     echo "column=$2" > "$state/desktop.conf"

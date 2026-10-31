@@ -75,7 +75,7 @@ Rectangle {
         }
     }
 
-    // Windows on workspace 1
+    // Where tiled windows go
     Rectangle {
         x: 24 * root.s
         y: root.windowTop * root.s
@@ -89,13 +89,13 @@ Rectangle {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.margins: 8
-            text: "WINDOWS · WORKSPACE 1"
+            text: "WINDOWS"
             color: Theme.muted
             font.pixelSize: 10
         }
     }
 
-    // The column Hyprland keeps free on workspace 1
+    // The column Hyprland keeps free next to the windows
     Item {
         visible: Desktop.column
         x: (root.screenW - 780) * root.s

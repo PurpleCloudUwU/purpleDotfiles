@@ -70,7 +70,8 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 | Super+Shift+F12 | STATION SETUP: CRT calibration and desktop widgets |
 | Super+F11 | Next theme |
 | Super+Shift+Q | Close window |
-| Super+F / Super+Shift+F | Fullscreen / maximise |
+| Super+F | Fullscreen |
+| Super+G | Big window over the widget column, not fullscreen (again: back) |
 | Super+Shift+Space | Float |
 | Super+H J K L or arrows | Focus (with Shift: move, with Ctrl: resize) |
 | Super+1…0 | Workspace (with Shift: move the window there) |
@@ -93,9 +94,10 @@ The bar is 0.75 of the canvas size; `barScale` in
 canvas). With another value, also adjust the yazi position in
 `hypr/station/rules.lua` (bar bottom + 24).
 
-Workspace 1 keeps the right column free for the floating file
-manager and the desktop widgets, like on the canvas. Change it in
-`hypr/station/look.lua`.
+Every workspace keeps the right column free for the floating file
+manager and the desktop widgets, like on the canvas; Super+G makes a window
+big over it. Switch the column off on the DESKTOP WIDGETS page of STATION
+SETUP.
 
 ## Themes and CRT
 
@@ -135,7 +137,7 @@ MUSIC, TASKS and the PDA panel sit below the windows. The **DESKTOP
 WIDGETS** page of STATION SETUP shows the screen in small: drag a widget
 there and the real one moves along (8 px grid). The page also shows or
 hides each widget, switches the music visualizer and the done tasks, and
-decides whether Hyprland keeps the right column of workspace 1 free for
+decides whether Hyprland keeps the right column free for
 them (`station desktop column on|off`). The layout is kept in
 `~/.local/state/station/desktop.json`; RESET LAYOUT brings back the one
 from the canvas.

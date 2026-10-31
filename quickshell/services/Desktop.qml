@@ -13,7 +13,7 @@ Singleton {
     readonly property var names: ({ music: "MUSIC", tasks: "TASKS", pda: "PDA PANEL" })
     // Sizes on screen (the task card grows with its list, 230 is typical)
     readonly property var sizes: ({ music: Qt.size(448, 284), tasks: Qt.size(284, 230), pda: Qt.size(756, 208) })
-    // The canvas layout: the right column next to workspace 1's windows
+    // The canvas layout: the right column next to the windows
     readonly property var defaults: ({
         column: true,
         music: { visible: true, x: 1140, y: 540, visualizer: true },
@@ -26,7 +26,7 @@ Singleton {
     readonly property var music: widget("music")
     readonly property var tasks: widget("tasks")
     readonly property var pda: widget("pda")
-    // Hyprland keeps the right column of workspace 1 free (hypr/station/look.lua)
+    // Hyprland keeps the right column free on every workspace (hypr/station/look.lua)
     readonly property bool column: layout.column ?? true
 
     function widget(key) {

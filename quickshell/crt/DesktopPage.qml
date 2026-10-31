@@ -132,7 +132,7 @@ ColumnLayout {
 
             Section {
                 Layout.topMargin: 14
-                text: "WORKSPACE 1"
+                text: "WINDOWS"
             }
 
             Check {

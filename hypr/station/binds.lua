@@ -29,12 +29,43 @@ hl.bind(mod .. " + SHIFT + F12", shell("crt"),       { description = "STATION SE
 hl.bind(mod .. " + SHIFT + Q",     hl.dsp.window.close())
 hl.bind(mod .. " + SHIFT + C",     hl.dsp.reload_config())
 hl.bind(mod .. " + F",             hl.dsp.window.fullscreen())
-hl.bind(mod .. " + SHIFT + F",     hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mod .. " + SHIFT + space", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + P",             hl.dsp.window.pseudo())
 hl.bind(mod .. " + B",             hl.dsp.layout("togglesplit"))
 hl.bind(mod .. " + W",             hl.dsp.group.toggle())
 hl.bind(mod .. " + Tab",           hl.dsp.group.next())
+
+-- Super+G: one window big, but not fullscreen. It floats over everything
+-- below the bar, the widget column too. Pressed again, it goes back to where
+-- it was: into the tiles, or to its old floating spot. (Maximising would not
+-- help: it stays inside the gaps, so the column would stay free.)
+local big = {}
+hl.bind(mod .. " + G", function()
+    local w = hl.get_active_window()
+    if not w then return end
+
+    local before = big[w.address]
+    if before then
+        big[w.address] = nil
+        if before.floating then
+            hl.dispatch(hl.dsp.window.resize({ x = before.size.x, y = before.size.y }))
+            hl.dispatch(hl.dsp.window.move({ x = before.at.x, y = before.at.y }))
+        elseif w.floating then
+            hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+        end
+        return
+    end
+
+    local m = w.monitor
+    if not m then return end
+    local top = (m.reserved and m.reserved.top or 0) + 24
+    big[w.address] = { floating = w.floating, at = w.at, size = w.size }
+    if not w.floating then
+        hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
+    end
+    hl.dispatch(hl.dsp.window.resize({ x = m.width - 48, y = m.height - top - 24 }))
+    hl.dispatch(hl.dsp.window.move({ x = m.x + 24, y = m.y + top }))
+end, { description = "Big window (not fullscreen)" })
 
 -- Focus, move and resize with hjkl or the arrow keys
 local directions = {

@@ -6,7 +6,7 @@ import qs.services
 // The desktop widgets (canvas board 01), below the windows. Where they sit
 // and which are shown is set on the DESKTOP WIDGETS page of STATION SETUP
 // (services/Desktop.qml). By default they fill the right column that
-// Hyprland keeps free on workspace 1.
+// Hyprland keeps free next to the windows.
 PanelWindow {
     id: win
 
