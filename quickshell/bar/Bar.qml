@@ -34,11 +34,6 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.namespace: "station-bar"
 
-    // Text in the bar's size
-    component BarText: PText {
-        font.pixelSize: Math.round(26 * Theme.barScale)
-    }
-
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
