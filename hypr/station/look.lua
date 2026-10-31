@@ -68,10 +68,14 @@ end
 hl.curve("step", { type = "bezier", points = { {0.2, 0}, {0, 1} } })
 hl.curve("linear", { type = "bezier", points = { {0, 0}, {1, 1} } })
 hl.animation({ leaf = "global",     enabled = true, speed = 3, bezier = "step" })
-hl.animation({ leaf = "windowsIn",  enabled = true, speed = 2, bezier = "step", style = "popin 92%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "linear", style = "popin 92%" })
-hl.animation({ leaf = "border",     enabled = false, speed = 1, bezier = "linear" })
 hl.animation({ leaf = "fade",       enabled = true, speed = 2, bezier = "linear" })
+hl.animation({ leaf = "border",     enabled = false, speed = 1, bezier = "linear" })
+-- Windows appear and vanish at once: no pop-in and no fade when they open
+-- or close (moving and resizing still animate)
+hl.animation({ leaf = "windowsIn",  enabled = false, speed = 1, bezier = "linear" })
+hl.animation({ leaf = "windowsOut", enabled = false, speed = 1, bezier = "linear" })
+hl.animation({ leaf = "fadeIn",     enabled = false, speed = 1, bezier = "linear" })
+hl.animation({ leaf = "fadeOut",    enabled = false, speed = 1, bezier = "linear" })
 hl.animation({ leaf = "layers",     enabled = true, speed = 2, bezier = "step", style = "fade" })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 2, bezier = "step", style = "fade" })
 
