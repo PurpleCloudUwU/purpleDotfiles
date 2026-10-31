@@ -83,6 +83,11 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 After a `git pull` in the repo, `station reload` reloads Hyprland and
 Quickshell.
 
+Only a new folder in `quickshell/` needs a real restart (`qs kill`, then
+`qs -n -d`). Quickshell 0.3.2 sometimes crashes while it shuts down and then
+shows its crash dialog; that is a Quickshell bug at exit, the restarted shell
+is fine.
+
 The bar is 0.75 of the canvas size; `barScale` in
 `quickshell/services/Theme.qml` makes it bigger or smaller (1.0 is the
 canvas). With another value, also adjust the yazi position in
