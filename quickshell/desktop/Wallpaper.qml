@@ -5,7 +5,7 @@ import qs.services
 import qs.widgets
 
 // The station's star chart (canvas board 01): grid, orbit rings, crosshair.
-// Green uses a dot grid like the calibration board. Drawn once, redrawn only
+// Mono uses a dot grid like the calibration board. Drawn once, redrawn only
 // when the theme or the screen size changes.
 PanelWindow {
     id: win
@@ -27,7 +27,7 @@ PanelWindow {
     // Canvas coordinates are for 1920x1080 and scale with the screen
     readonly property real sx: width / 1920
     readonly property real sy: height / 1080
-    readonly property bool dots: Theme.name === "green"
+    readonly property bool dots: Theme.name === "mono"
 
     Canvas {
         id: chart

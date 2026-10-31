@@ -640,7 +640,7 @@ PanelWindow {
             }
 
             Repeater {
-                model: ["amber", "red", "green", "violet"]
+                model: ["amber", "red", "mono", "violet"]
 
                 Choice {
                     required property string modelData

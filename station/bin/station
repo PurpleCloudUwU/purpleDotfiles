@@ -2,7 +2,7 @@
 # station: colour worlds and the CRT screen of the Mondbasis rice.
 #
 #   station theme                       show the current theme
-#   station theme <name>|next           amber, red, green, violet, or the next one
+#   station theme <name>|next           amber, red, mono, violet, or the next one
 #   station crt                         show the CRT settings
 #   station crt <preset>                off, work, subtle, full
 #   station crt toggle                  off <-> the last preset (Super+F12)
@@ -36,7 +36,7 @@ conf=${XDG_CONFIG_HOME:-$HOME/.config}
 home=$conf/station
 state=${XDG_STATE_HOME:-$HOME/.local/state}/station
 
-themes=(amber red green violet)
+themes=(amber red mono violet)
 crt_keys=(scan curve glow fringe vig noise flick)
 # Values in crt_keys order, 0-100. Curvature and flicker need a full redraw
 # every frame, so only "full" uses them (it costs noticeable battery).

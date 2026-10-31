@@ -1,7 +1,7 @@
 # purpleDotfiles · Mondbasis
 
 My ThinkPad T580 rice: Arch Linux, Hyprland and Quickshell, styled like the
-terminals of a moon base. Four colour worlds (Amber, Red, Green, Violet),
+terminals of a moon base. Four colour worlds (Amber, Red, Mono, Violet),
 pixel fonts and an optional CRT screen shader.
 
 The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
@@ -102,7 +102,7 @@ SETUP.
 ## Themes and CRT
 
 ```sh
-station theme violet          # amber, red, green, violet, next
+station theme violet          # amber, red, mono, violet, next
 station crt subtle            # off, work, subtle, full
 station crt toggle            # Super+F12
 station crt tint amber        # phosphor tint: neutral, amber, green, red
