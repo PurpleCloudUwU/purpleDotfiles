@@ -84,8 +84,10 @@ PanelWindow {
             }
         }
 
-        // Workspaces
+        // Workspaces that exist right now, just their numbers
         Row {
+            id: workspaces
+
             Layout.fillHeight: true
             spacing: bar.px(6)
 
@@ -97,14 +99,13 @@ PanelWindow {
                     readonly property var ws: Wm.workspace(modelData)
                     readonly property bool focused: Hyprland.focusedWorkspace?.id === modelData
                     readonly property bool used: (ws?.toplevels.values.length ?? 0) > 0
-                    readonly property string label: Wm.names[String(modelData)] ?? ""
 
                     height: Theme.barHeight
                     minWidth: Theme.barHeight
                     fontSize: Math.round(26 * Theme.barScale)
-                    padding: focused ? bar.px(14) : 0
+                    padding: bar.px(10)
                     active: focused
-                    text: focused && label ? modelData + " " + label : String(modelData)
+                    text: String(modelData)
                     ink: focused ? Theme.bg : used ? Theme.fg : Theme.muted
                     outline: ws?.urgent ? Theme.accent : used ? Theme.muted : Theme.line
                     Accessible.name: "Workspace " + modelData + (focused ? ", active" : "")
@@ -113,42 +114,15 @@ PanelWindow {
             }
         }
 
-        // Focused window
+        // The window title sits on top, in the middle of the bar
         Item {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-
-            Row {
-                anchors.centerIn: parent
-                spacing: bar.px(12)
-
-                BarText {
-                    text: "WINDOW:"
-                    color: Theme.muted
-                }
-
-                BarText {
-                    id: title
-                    text: Wm.title
-                    width: Math.min(implicitWidth, bar.px(640))
-                    elide: Text.ElideMiddle
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.leftMargin: -bar.px(6)
-                        anchors.rightMargin: -bar.px(6)
-                        height: 2
-                        color: Theme.accent
-                    }
-                }
-            }
         }
 
         // Status box
         Rectangle {
+            id: statusBox
+
             Layout.fillHeight: true
             implicitWidth: status.implicitWidth + bar.px(18)
             color: "transparent"
@@ -312,6 +286,41 @@ PanelWindow {
                     Accessible.name: "Power menu"
                     onClicked: Panels.toggle("power")
                 }
+            }
+        }
+    }
+
+    // Focused window, always in the middle of the bar, however wide the
+    // workspaces and the status box are. Long titles get shortened.
+    Row {
+        id: windowTitle
+
+        // Free width around the middle, the same on both sides
+        readonly property real room: bar.width - 2 * Math.max(workspaces.x + workspaces.width, bar.width - statusBox.x) - 2 * bar.px(24)
+
+        anchors.centerIn: parent
+        spacing: bar.px(12)
+        visible: room > windowLabel.width + bar.px(60)
+
+        BarText {
+            id: windowLabel
+            text: "WINDOW:"
+            color: Theme.muted
+        }
+
+        BarText {
+            text: Wm.title
+            width: Math.min(implicitWidth, windowTitle.room - windowLabel.width - windowTitle.spacing)
+            elide: Text.ElideMiddle
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.leftMargin: -bar.px(6)
+                anchors.rightMargin: -bar.px(6)
+                height: 2
+                color: Theme.accent
             }
         }
     }

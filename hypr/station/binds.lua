@@ -51,7 +51,7 @@ for _, d in ipairs(directions) do
     end
 end
 
--- Workspaces 1-10 (1 TERM, 2 WEB, 3 SYS, 4 CODE, 5 MEDIA in the bar)
+-- Workspaces 1-10 (the bar shows the ones that exist)
 for i = 1, 10 do
     local key = i % 10
     hl.bind(mod .. " + " .. key,         hl.dsp.focus({ workspace = i }))

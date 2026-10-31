@@ -53,7 +53,7 @@ hl.window_rule({
     border_size = 3,
 })
 
--- Workspace 1 (TERM) keeps the right column free for the floating file
+-- Workspace 1 keeps the right column free for the floating file
 -- manager and the desktop widgets, like on canvas board 01: tiled windows
 -- end at x 1116, the column runs from 1140 to 1896. Switch it off on the
 -- DESKTOP WIDGETS page of STATION SETUP (station desktop column off).

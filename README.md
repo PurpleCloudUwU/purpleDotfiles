@@ -93,7 +93,7 @@ The bar is 0.75 of the canvas size; `barScale` in
 canvas). With another value, also adjust the yazi position in
 `hypr/station/rules.lua` (bar bottom + 24).
 
-Workspace 1 (TERM) keeps the right column free for the floating file
+Workspace 1 keeps the right column free for the floating file
 manager and the desktop widgets, like on the canvas. Change it in
 `hypr/station/look.lua`.
 

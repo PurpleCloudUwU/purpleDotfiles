@@ -10,9 +10,6 @@ import Quickshell.Wayland
 Singleton {
     id: root
 
-    // Names shown on the active workspace button (1 TERM, 2 WEB, ...)
-    readonly property var names: ({ "1": "TERM", "2": "WEB", "3": "SYS", "4": "CODE", "5": "MEDIA" })
-
     // Short names for the "WINDOW:" field
     readonly property var apps: ({
         "foot": "TERMINAL",
@@ -65,14 +62,14 @@ Singleton {
         return t && t.toUpperCase() !== app ? app + " — " + t : app;
     }
 
-    // Workspaces 1-5 always, higher ones while they exist
+    // The workspaces that exist (Hyprland removes empty ones you leave);
+    // special workspaces like the scratchpad have negative ids and stay out
     readonly property var workspaceIds: {
-        const ids = [1, 2, 3, 4, 5];
+        const ids = [];
         const all = Hyprland.workspaces.values;
         for (let i = 0; i < all.length; i++) {
-            const id = all[i].id;
-            if (id > 5 && ids.indexOf(id) < 0)
-                ids.push(id);
+            if (all[i].id > 0)
+                ids.push(all[i].id);
         }
         return ids.sort((a, b) => a - b);
     }
