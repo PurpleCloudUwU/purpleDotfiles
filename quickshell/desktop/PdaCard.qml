@@ -27,6 +27,7 @@ Rectangle {
         // Battery
         ColumnLayout {
             Layout.preferredWidth: 330
+            Layout.fillWidth: false
             Layout.fillHeight: true
             spacing: 8
 
@@ -108,6 +109,7 @@ Rectangle {
         // The floppy: opens the dots repository in yazi
         ColumnLayout {
             Layout.preferredWidth: 104
+            Layout.fillWidth: false
             Layout.fillHeight: true
             spacing: 8
 

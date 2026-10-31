@@ -3,12 +3,21 @@
 
 [[ $- == *i* ]] || return
 
-# Prompt in the theme colours: user@host ~/dots $
 station_state=${XDG_STATE_HOME:-$HOME/.local/state}/station
-[[ -f $station_state/prompt.sh ]] && . "$station_state/prompt.sh"
 
-# The window title is the folder, the bar shows it as "TERMINAL — ~/dots"
-PROMPT_COMMAND='printf "\e]2;%s\a" "${PWD/#$HOME/\~}"'${PROMPT_COMMAND:+"; $PROMPT_COMMAND"}
+# Runs before every prompt, after Arch's own title (/etc/bash.bashrc):
+# - the window title is the folder, the bar shows it as "TERMINAL — ~/dots"
+# - after `station theme` the prompt takes the new colours (user@host ~/dots $)
+__station_prompt() {
+    local theme
+    printf '\e]2;%s\a' "${PWD/#$HOME/\~}"
+    read -r theme 2>/dev/null < "$station_state/theme" || return 0
+    if [[ $theme != "${__station_theme:-}" ]]; then
+        __station_theme=$theme
+        [[ -f $station_state/prompt.sh ]] && . "$station_state/prompt.sh"
+    fi
+}
+PROMPT_COMMAND+=(__station_prompt)
 
 alias ls='eza --group-directories-first'
 alias ll='eza -l --group-directories-first'
