@@ -60,13 +60,15 @@ hl.bind(mod .. " + G", function()
 
     local m = w.monitor
     if not m then return end
+    -- w is live: read the place before floating changes it
+    local x, y, height = w.at.x, w.at.y, w.size.y
     local right = m.x + m.width - 24 - frame
-    big[w.address] = { floating = w.floating, at = w.at, size = w.size }
+    big[w.address] = { floating = w.floating, at = { x = x, y = y }, size = { x = w.size.x, y = height } }
     if not w.floating then
         hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
     end
-    hl.dispatch(hl.dsp.window.resize({ x = right - w.at.x, y = w.size.y }))
-    hl.dispatch(hl.dsp.window.move({ x = w.at.x, y = w.at.y }))
+    hl.dispatch(hl.dsp.window.resize({ x = right - x, y = height }))
+    hl.dispatch(hl.dsp.window.move({ x = x, y = y }))
 end, { description = "Big window (not fullscreen)" })
 
 -- Focus, move and resize with hjkl or the arrow keys

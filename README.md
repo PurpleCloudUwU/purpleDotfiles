@@ -16,7 +16,7 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
 | `nvim/` | Neovim without plugins: station colours and the statusline from the canvas |
-| `fastfetch/` | System info with the pixel moon |
+| `fastfetch/` | System info with the moon and a rocket around it (pixel image, drawn by the `fastfetch` shell function) |
 | `btop/` | System monitor |
 | `fingerprint/` | Fingerprint login for the T580's sensor (not part of `install.sh`) |
 
@@ -71,7 +71,7 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 | Super+F11 | Next theme |
 | Super+Shift+Q | Close window |
 | Super+F | Fullscreen |
-| Super+G | Big window over the widget column, not fullscreen (again: back) |
+| Super+G | Window grows to the right over the widget column, not fullscreen (again: back) |
 | Super+Shift+Space | Float |
 | Super+H J K L or arrows | Focus (with Shift: move, with Ctrl: resize) |
 | Super+1…0 | Workspace (with Shift: move the window there) |
