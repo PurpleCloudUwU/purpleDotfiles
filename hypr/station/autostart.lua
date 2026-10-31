@@ -1,8 +1,9 @@
 -- Started once when Hyprland starts (not on reload)
 
 hl.on("hyprland.start", function()
-    -- Quickshell: bar, program select, widgets, notifications, OSD
-    hl.exec_cmd("qs")
+    -- Quickshell: bar, program select, widgets, notifications, OSD.
+    -- -n: never a second instance (two would fight over the shortcuts)
+    hl.exec_cmd("qs -n")
     -- Idle: dim, lock, screen off, suspend on battery (hypridle.conf)
     hl.exec_cmd("hypridle")
     -- Password and fingerprint dialogs for apps that need root
