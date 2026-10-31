@@ -56,6 +56,11 @@ ColumnLayout {
                     font.pixelSize: 22
                 }
             }
+
+            // Lets the column (and the page) grow to the window height
+            Item {
+                Layout.fillHeight: true
+            }
         }
 
         // Settings per widget
@@ -134,6 +139,11 @@ ColumnLayout {
                 text: "Keep the right column free"
                 checked: Desktop.column
                 onToggled: Desktop.setColumn(!checked)
+            }
+
+            // Lets the column (and the page) grow to the window height
+            Item {
+                Layout.fillHeight: true
             }
         }
     }

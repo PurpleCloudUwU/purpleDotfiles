@@ -347,6 +347,11 @@ FloatingWindow {
                                 }
                             }
                         }
+
+                        // Lets the column (and the page) grow to the window height
+                        Item {
+                            Layout.fillHeight: true
+                        }
                     }
 
                     // Parameters, phosphor colour, behaviour
