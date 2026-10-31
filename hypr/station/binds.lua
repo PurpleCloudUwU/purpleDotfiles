@@ -35,11 +35,13 @@ hl.bind(mod .. " + B",             hl.dsp.layout("togglesplit"))
 hl.bind(mod .. " + W",             hl.dsp.group.toggle())
 hl.bind(mod .. " + Tab",           hl.dsp.group.next())
 
--- Super+G: one window big, but not fullscreen. It floats over everything
--- below the bar, the widget column too. Pressed again, it goes back to where
--- it was: into the tiles, or to its old floating spot. (Maximising would not
+-- Super+G: one window big, but not fullscreen. It keeps its place and height
+-- and only grows to the right, over the widget column, to the same 24 px
+-- edge (plus the 3 px focus frame) as on the left. Pressed again, it goes
+-- back: into the tiles, or to its old floating spot. (Maximising would not
 -- help: it stays inside the gaps, so the column would stay free.)
 local big = {}
+local frame = 3
 hl.bind(mod .. " + G", function()
     local w = hl.get_active_window()
     if not w then return end
@@ -58,13 +60,13 @@ hl.bind(mod .. " + G", function()
 
     local m = w.monitor
     if not m then return end
-    local top = (m.reserved and m.reserved.top or 0) + 24
+    local right = m.x + m.width - 24 - frame
     big[w.address] = { floating = w.floating, at = w.at, size = w.size }
     if not w.floating then
         hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
     end
-    hl.dispatch(hl.dsp.window.resize({ x = m.width - 48, y = m.height - top - 24 }))
-    hl.dispatch(hl.dsp.window.move({ x = m.x + 24, y = m.y + top }))
+    hl.dispatch(hl.dsp.window.resize({ x = right - w.at.x, y = w.size.y }))
+    hl.dispatch(hl.dsp.window.move({ x = w.at.x, y = w.at.y }))
 end, { description = "Big window (not fullscreen)" })
 
 -- Focus, move and resize with hjkl or the arrow keys

@@ -19,10 +19,10 @@ __station_prompt() {
 }
 PROMPT_COMMAND+=(__station_prompt)
 
-# The moon needs about 80 columns next to the info, so narrow terminals
+# The patch needs about 72 columns next to the info, so narrow terminals
 # (two tiles on workspace 1) get it on top
 fastfetch() {
-    if ((COLUMNS < 80)); then command fastfetch --logo-position top "$@"; else command fastfetch "$@"; fi
+    if ((COLUMNS < 72)); then command fastfetch --logo-position top "$@"; else command fastfetch "$@"; fi
 }
 
 alias ls='eza --group-directories-first'

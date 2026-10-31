@@ -284,13 +284,31 @@ theme[process_end]="$accent"
 EOF
 }
 
+# The mission patch for fastfetch (fastfetch/patch.svg.in): drawn on a 96 px
+# grid without anti-aliasing, then scaled up 4x with hard pixel edges.
+# Needs resvg and ImageMagick; without them fastfetch keeps the text moon.
+render_patch() {
+    local tpl=$conf/fastfetch/patch.svg.in k
+    local -a args=()
+    [[ -f $tpl ]] && command -v resvg >/dev/null && command -v magick >/dev/null || return 1
+    for k in surface bg frame line fg fg2 muted faint accent accent2; do
+        args+=(-e "s/@${k^^}@/${P[$k]}/g")
+    done
+    sed "${args[@]}" "$tpl" > "$state/patch.svg"
+    resvg --width 96 --height 96 "$state/patch.svg" "$state/patch-small.png" 2>/dev/null &&
+        magick "$state/patch-small.png" -filter point -resize 400% "$state/patch.png" || return 1
+    rm -f "$state/patch-small.png"
+}
+
 # fastfetch has no includes, so its config is made from config.jsonc.in
 render_fastfetch() {
-    local tpl=$conf/fastfetch/config.jsonc.in
+    local tpl=$conf/fastfetch/config.jsonc.in type=file source=$conf/fastfetch/moon.txt
     [[ -f $tpl ]] || return 0
+    if render_patch; then type=sixel source=$state/patch.png; fi
     sed -e "s/@FG@/${P[fg]}/g" -e "s/@FG2@/${P[fg2]}/g" -e "s/@MUTED@/${P[muted]}/g" \
         -e "s/@FAINT@/${P[faint]}/g" -e "s/@BORDER@/${P[border]}/g" -e "s/@ACCENT@/${P[accent]}/g" \
-        -e "s/@FRAME@/${P[frame]}/g" "$tpl" > "$conf/fastfetch/config.jsonc"
+        -e "s/@FRAME@/${P[frame]}/g" -e "s|@LOGO_TYPE@|$type|" -e "s|@LOGO_SOURCE@|$source|" \
+        "$tpl" > "$conf/fastfetch/config.jsonc"
 }
 
 render_theme() {

@@ -1,11 +1,14 @@
-// fastfetch with the pixel moon (canvas board 01).
+// fastfetch with the mission patch (patch.svg.in, a sixel image in foot) or,
+// without resvg/ImageMagick, the text moon (moon.txt).
 // Template: `station theme` writes config.jsonc from it with the theme's
-// colours (@...@). Edit this file, not config.jsonc.
+// colours and the logo (@...@). Edit this file, not config.jsonc.
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "logo": {
-        "type": "file",
-        "source": "~/.config/fastfetch/moon.txt",
+        "type": "@LOGO_TYPE@",
+        "source": "@LOGO_SOURCE@",
+        "width": 26,
+        "preserveAspectRatio": true,
         "color": {
             "1": "@FG@",
             "2": "@FG2@",
