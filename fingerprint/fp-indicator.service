@@ -1,5 +1,5 @@
 [Unit]
-Description=Fingerprint request indicator (feeds the eww fingerprint icon)
+Description=Fingerprint request indicator (feeds the Quickshell notification)
 After=dbus.service
 
 [Service]

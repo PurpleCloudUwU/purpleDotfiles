@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Watches the system bus for fprintd verify requests (sudo, polkit, ...) and
-# appends "start"/"stop" to /run/fp-indicator/events. ~/.config/eww/fingerprint.sh
-# reads that file and shows the fingerprint icon. Runs as root
+# appends "start"/"stop" to /run/fp-indicator/events. Quickshell
+# (services/Notifs.qml) reads that file and shows a notification. Runs as root
 # (fp-indicator.service): only root may monitor the system bus.
 events=/run/fp-indicator/events
 : > "$events"

@@ -1,0 +1,5 @@
+[x] Arch minimal
+[x] Hyprland + Quickshell
+[ ] Calibrate the CRT shader
+[ ] Install the Pocket font
+[ ] Back up the dots

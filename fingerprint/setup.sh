@@ -6,8 +6,8 @@
 # - python-validity + open-fprintd drive the sensor, libfprint can't
 # - sudo and polkit dialogs accept the finger (password still works: Ctrl+C
 #   in the terminal, or just type it in the dialog)
-# - fp-indicator.service tells eww when a finger is wanted, which then shows
-#   the fingerprint icon at the bottom right
+# - fp-indicator.service tells Quickshell when a finger is wanted, which then
+#   shows a "FINGER REQUESTED" notification
 set -euo pipefail
 
 dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)

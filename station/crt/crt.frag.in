@@ -1,0 +1,106 @@
+#version 300 es
+// CRT screen shader for Hyprland (decoration.screen_shader).
+//
+// This is a template: `station crt` replaces the @...@ values (0.0 - 1.0)
+// and writes the result to ~/.local/state/station/crt/. Edit the template,
+// not the generated files.
+//
+// Cost on the Intel UHD 620: scanlines, vignette, tint and grain are a few
+// multiplications per pixel. Glow adds 4 texture reads, colour fringe 2.
+// Curvature and flicker need a full redraw every frame (damage tracking
+// off), which is why only the FULL TUBE preset uses them.
+
+precision highp float;
+
+#define USE_TIME @USE_TIME@
+
+in vec2 v_texcoord;
+layout(location = 0) out vec4 fragColor;
+uniform sampler2D tex;
+uniform vec2 fullSize;
+#if USE_TIME
+uniform float time;
+#endif
+
+const float SCAN     = @SCAN@;
+const float CURVE    = @CURVE@;
+const float GLOW     = @GLOW@;
+const float FRINGE   = @FRINGE@;
+const float VIG      = @VIG@;
+const float NOISE    = @NOISE@;
+const float FLICK    = @FLICK@;
+const vec3  TINT     = vec3(@TINT@);
+const float TINT_MIX = @TINT_MIX@;
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// Barrel distortion like a curved tube
+vec2 curve(vec2 uv) {
+    vec2 c = uv * 2.0 - 1.0;
+    c *= 1.0 + c.yx * c.yx * (CURVE * 0.10);
+    return c * 0.5 + 0.5;
+}
+
+void main() {
+    vec2 uv = CURVE > 0.0 ? curve(v_texcoord) : v_texcoord;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
+    vec2 px = 1.0 / fullSize;
+    vec4 src = texture(tex, uv);
+    vec3 col = src.rgb;
+
+    // Colour fringe: red and blue drift apart by up to 2.5 px
+    if (FRINGE > 0.0) {
+        float o = FRINGE * 2.5 * px.x;
+        col.r = texture(tex, uv + vec2(o, 0.0)).r;
+        col.b = texture(tex, uv - vec2(o, 0.0)).b;
+    }
+
+    // Glow: bright pixels bleed into their neighbours
+    if (GLOW > 0.0) {
+        vec3 b = texture(tex, uv + vec2( 1.5, 0.0) * px).rgb
+               + texture(tex, uv + vec2(-1.5, 0.0) * px).rgb
+               + texture(tex, uv + vec2(0.0,  1.5) * px).rgb
+               + texture(tex, uv + vec2(0.0, -1.5) * px).rgb;
+        col += max(b * 0.25 - 0.35, 0.0) * GLOW * 0.9;
+    }
+
+    // Phosphor tint
+    if (TINT_MIX > 0.0) {
+        float l = dot(col, vec3(0.299, 0.587, 0.114));
+        col = mix(col, l * TINT * 1.15, TINT_MIX);
+    }
+
+    // Scanlines: one dark line every 3 pixels
+    if (SCAN > 0.0) {
+        float line = 0.5 + 0.5 * cos(uv.y * fullSize.y * 2.0943951);
+        col *= 1.0 - SCAN * 0.45 * (1.0 - line);
+    }
+
+    // Vignette
+    if (VIG > 0.0) {
+        vec2 c = uv - 0.5;
+        col *= clamp(1.0 - dot(c, c) * VIG * 1.6, 0.0, 1.0);
+    }
+
+    // Grain (static unless the shader has the time uniform)
+    if (NOISE > 0.0) {
+        vec2 seed = floor(uv * fullSize);
+#if USE_TIME
+        seed += floor(time * 24.0) * vec2(7.0, 13.0);
+#endif
+        col += (hash(seed) - 0.5) * NOISE * 0.12;
+    }
+
+#if USE_TIME
+    // Flicker
+    col *= 1.0 - FLICK * 0.06 * (0.5 + 0.5 * sin(time * 60.0));
+#endif
+
+    fragColor = vec4(col, src.a);
+}

@@ -1,7 +1,0 @@
-# Yazi key bindings (only changes to the defaults).
-# Defaults: https://yazi-rs.github.io/docs/configuration/keymap
-
-[[mgr.prepend_keymap]]
-on   = "<Enter>"
-run  = "plugin smart-enter"
-desc = "Enter the child directory, or open the file"

@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Black Hole
-GenericName=Hintergrund-Einstellungen
-Comment=Animiertes Schwarzes Loch anpassen
-Exec=blackhole-settings
-Icon=preferences-desktop-wallpaper
-Categories=Settings;DesktopSettings;

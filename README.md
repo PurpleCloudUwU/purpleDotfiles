@@ -1,97 +1,140 @@
-# purpleDotfiles
-## My T580 config.
-![Example Picture from my Desktop.](screenshots/desktop.png)
-The Dotfiles include:
-- Sway (wallpaper: the still image `sway/wallpaper.png`; the animated black hole wallpaper and its settings app are still in `blackhole/` but no longer set up)
-- Waybar (incl. Bluetooth, audio output, WLAN, power profile and notification history menus; colors follow the black hole; only weekday and date in the middle, no clock, and transparent while the workspace is empty)
-- eww desktop widgets on the wallpaper: clock in the pixel blackletter font Jacquard 24 between two thin lines, now playing (playerctl), CPU/RAM/disk in the bottom left and, mirrored in the bottom right, a Spotify player with a hairline progress bar and previous/play-pause/next
-- Lock screen `blackhole-lock`: the black hole runs blurred behind the clock and password field (blur and brightness under `"lock"` in `~/.config/blackhole/settings.json`). Hyprlock stays as fallback: `sway/lock.sh` starts it if `blackhole-lock` fails
-- otter-launcher (TUI app launcher on Super+D, in a floating kitty; the Waybar menus use fzf through `waybar/tui-menu`)
-- Mako (notifications)
-- qt6ct + KDE color scheme (purple theme for Qt apps like Dolphin)
-- Chatterino theme
-- Kitty (terminal, same colors)
-- Starship (shell prompt as flat purple blocks)
-- swayimg (image viewer, same colors)
-- SwayOSD (small on-screen display with icon for volume and brightness)
-- Yazi (file manager in the same colors; Enter goes into folders instead of opening them in $EDITOR, nvim when $EDITOR is unset)
-- Neovim (LazyVim with Catppuccin Mocha, purple accent, transparent background like kitty)
+# purpleDotfiles · Mondbasis
 
-### Setup
+My ThinkPad T580 rice: Arch Linux, Hyprland and Quickshell, styled like the
+terminals of a moon base. Four colour worlds (Amber, Red, Green, Violet),
+pixel fonts and an optional CRT screen shader.
+
+The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
+
+## What's inside
+
+| Part | What it does |
+|---|---|
+| `hypr/` | Hyprland (Lua config, 0.55+), hyprlock, hypridle |
+| `quickshell/` | Everything on screen that isn't a window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper |
+| `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
+| `foot/` | Terminal (Departure Mono) |
+| `yazi/` | File manager, floats in the right column (Super+E) |
+| `nvim/` | Neovim without plugins: station colours and the statusline from the canvas |
+| `fastfetch/` | System info with the pixel moon |
+| `btop/` | System monitor |
+| `fingerprint/` | Fingerprint login for the T580's sensor (not part of `install.sh`) |
+
+The interface is English, the keyboard layout German without dead keys
+(`hypr/station/input.lua`).
+
+## Setup
+
 On a fresh, minimal Arch Linux, as your normal user with sudo:
+
 ```sh
 sudo pacman -S --needed git
 git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 ~/purpleDotfiles/install.sh
 ```
-The script installs the needed packages (official repos, plus `sway-screenshot` and
-`otter-launcher` from the AUR via paru), symlinks the configs into place (old ones are moved to
-`~/dotfiles-backup-<date>/`), applies the additional settings below and enables
-NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and choose
-Sway in ly. Options: `--copy` (copy instead of symlink), `--no-packages`,
-`--no-services`, `--help`.
 
-#### Manual setup
-The configs are symlinked into place, so this repo is the live config
-(move existing folders out of the way first):
+The script installs the packages (official repos, plus three pixel fonts
+from the AUR via paru), symlinks the configs into `~/.config` (old ones go to
+`~/dotfiles-backup-<date>/`), writes the theme files for Violet and enables
+NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and
+choose Hyprland in ly. Options: `--copy`, `--no-packages`, `--no-services`,
+`--help`.
+
+### Where the files go
+
+| Repo | Destination |
+|---|---|
+| `hypr`, `quickshell`, `station`, `foot`, `yazi`, `nvim`, `fastfetch` | `~/.config/<name>` (symlink) |
+| `station/bin/station` | `~/.local/bin/station` |
+| `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
+| `station/tasks.txt` | `~/.local/share/station/tasks.txt` (only the first time) |
+| `station/shell.bash` | sourced from `~/.bashrc` (prompt, aliases, `y` for yazi) |
+
+Generated, not in git: everything in `~/.local/state/station/` (theme,
+CRT settings and shaders, terminal colours, prompt, hyprlock colours),
+`yazi/theme.toml`, `fastfetch/config.jsonc` and btop's `themes/station.theme`.
+
+## Keys
+
+| Keys | Action |
+|---|---|
+| Super+Return | Terminal |
+| Super+D | Program select |
+| Super+E | Files (yazi) |
+| Super+Shift+W | Browser (LibreWolf) |
+| Super+Shift+M | Music (Spotify) |
+| Super+N | PDA quick access: WiFi, brightness, volume, toggles, theme, CRT |
+| Super+Shift+E | Power menu |
+| Super+Escape | Lock |
+| Super+F12 | CRT on/off |
+| Super+F11 | Next theme |
+| Super+Shift+Q | Close window |
+| Super+F / Super+Shift+F | Fullscreen / maximise |
+| Super+Shift+Space | Float |
+| Super+H J K L or arrows | Focus (with Shift: move, with Ctrl: resize) |
+| Super+1…0 | Workspace (with Shift: move the window there) |
+| Super+minus | Scratchpad (with Shift: move the window there) |
+| Super+W / Super+Tab | Tab group / next tab |
+| Print, Super+Print, Super+Shift+Print | Screenshot of the screen, window, region |
+| Super+Shift+N | Dismiss notifications |
+| Super+Shift+C | Reload Hyprland |
+
+Workspace 1 (TERM) keeps the right column free for the floating file
+manager and the desktop widgets, like on the canvas. Change it in
+`hypr/station/look.lua`.
+
+## Themes and CRT
+
 ```sh
-git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
-for d in sway waybar hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim; do ln -s ~/purpleDotfiles/$d ~/.config/$d; done
-ln -s ~/purpleDotfiles/dolphin/blackhole.colors ~/.local/share/color-schemes/
-ln -s ~/purpleDotfiles/chatterino/blackhole.json ~/.local/share/chatterino/Themes/
-ln -s ~/purpleDotfiles/starship/starship.toml ~/.config/starship.toml
-~/purpleDotfiles/hypr/make-sigil.sh   # creates hypr/sigil.png (ignored by git)
+station theme violet          # amber, red, green, violet, next
+station crt subtle            # off, work, subtle, full
+station crt toggle            # Super+F12
+station crt tint amber        # phosphor tint: neutral, amber, green, red
+station crt set scan 50       # single values 0-100, the preset becomes "custom"
+station crt option battery_subtle off
 ```
 
-#### Fingerprint (T580 only)
+The same is reachable from scripts through Quickshell, e.g.
+`qs ipc call crt preset subtle` or `qs ipc call theme set amber`; the CRT
+calibration app will use this.
+
+| Preset | Effects | Cost on the UHD 620 |
+|---|---|---|
+| OFF | none | none |
+| WORK | scanlines, a little glow, vignette | barely measurable |
+| SUBTLE | plus colour fringe and static grain | small |
+| FULL TUBE | plus curvature and flicker | noticeable: full redraw every frame |
+
+The shader (`station/crt/crt.frag.in`) runs through Hyprland's
+`decoration.screen_shader`. Curvature and flicker need a full redraw on every
+frame, so only FULL TUBE switches Hyprland's damage tracking off. Two
+options, both on by default: on battery FULL TUBE drops to SUBTLE, and the
+shader goes off while a window is fullscreen.
+
+## Fonts
+
+- **Departure Mono** (Nerd Font) in the terminal, **VT323** for the displays,
+  **Silkscreen** for small labels. All three come from the AUR.
+- **Pocket** by Aaron D. Chand is the font the game uses for its displays. It
+  isn't packaged and its licence isn't stated clearly, so check it on dafont
+  before you use it. Put the `.ttf` into `~/.local/share/fonts/` and run
+  `fc-cache -f`: Quickshell and hyprlock pick it up instead of VT323.
+
+## Tasks
+
+The task widget reads `~/.local/share/station/tasks.txt`, one `[ ] task` or
+`[x] task` per line. Click a task to tick it off, click the header to edit
+the file in nvim.
+
+## Fingerprint (T580 only)
+
 The T580's Synaptics sensor (`06cb:009a`) is not supported by libfprint, so
-`~/purpleDotfiles/fingerprint/setup.sh` sets up python-validity with open-fprintd
-(not part of `install.sh`). The script:
+`~/purpleDotfiles/fingerprint/setup.sh` sets up python-validity with
+open-fprintd (not part of `install.sh`). The script:
 - builds python-validity with the init fixes from upstream PR #290, without them the sensor doesn't start on Python 3.14
 - keeps the sensor out of USB autosuspend and its firmware in `/var/lib`
 - allows the finger for sudo and polkit
 - starts enrolling a finger
 
-While a finger is wanted, eww shows a fingerprint icon at the bottom right. The
-black hole lock screen and hyprlock unlock with the finger too.
-
-### Where the files go
-The config folders (`sway`, `waybar`, `eww`, `hypr`, `otter-launcher`, `mako`, `qt6ct`, `kitty`, `swayimg`, `swayosd`, `yazi`, `nvim`) go to `~/.config/` (e.g. `waybar/` -> `~/.config/waybar/`); `screenshots/` is only for this README. Exceptions:
-
-| File | Destination |
-|---|---|
-| `dolphin/blackhole.colors` | `~/.local/share/color-schemes/` |
-| `chatterino/blackhole.json` | `~/.local/share/chatterino/Themes/` |
-| `starship/starship.toml` | `~/.config/starship.toml` |
-| `blackhole/index.html` | `~/.local/share/blackhole/` |
-| `blackhole/blackhole-lock` | `~/.local/bin/` |
-| `fonts/Jacquard24-Regular.ttf` | `~/.local/share/fonts/` (Jacquard 24 from Google Fonts, SIL OFL 1.1, see `fonts/Jacquard24-OFL.txt`; run `fc-cache -f` afterwards) |
-
-Additional settings (`install.sh` does all of these):
-- Qt apps use qt6ct: add `export QT_QPA_PLATFORMTHEME=qt6ct` to `~/.bash_profile` (needs a re-login).
-- Editor for yazi, git etc.: add `export EDITOR=nvim` and `export VISUAL=nvim` to `~/.bash_profile`.
-- Starship and `ls` with icons: add `alias ls='eza --icons=auto'` and, at the end, `eval "$(starship init bash)"` to `~/.bashrc`.
-- Waybar colors: run `~/purpleDotfiles/blackhole/blackhole-wallpaper --colors-only` once; Waybar imports the generated `waybar/colors.css` (the `colors.jsonc` it also writes was for the removed calendar and is unused).
-- swayimg as default image viewer: `xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' /usr/share/applications/swayimg.desktop | tr ';' ' ')`
-- kew as default music player. kew is a terminal app, so a local copy of its desktop entry starts it in its own kitty window (otherwise xdg-open, yazi and browsers run it invisibly):
-  ```sh
-  sed -e 's|^Exec=kew play %F$|Exec=kitty --class kew -e kew play %F|' -e 's|^Terminal=true$|Terminal=false|' \
-      -e 's|^MimeType=.*|&audio/x-vorbis+ogg;audio/x-opus+ogg;|' \
-      /usr/share/applications/kew.desktop > ~/.local/share/applications/kew.desktop
-  xdg-mime default kew.desktop audio/mpeg audio/flac audio/x-flac audio/wav audio/x-wav audio/mp4 audio/x-m4a audio/ogg audio/opus audio/webm audio/x-vorbis+ogg audio/x-opus+ogg
-  ```
-- Dolphin as default for folders (kew also claims folders and would otherwise be picked): `xdg-mime default org.kde.dolphin.desktop inode/directory`
-- Dolphin: in `~/.config/dolphinrc` set `ColorScheme=blackhole` under `[UiSettings]`.
-- Chatterino: select `blackhole` as theme in the settings.
-- `hypr/sigil.png` is generated per machine with `hypr/make-sigil.sh`.
-- The Waybar date is German: remove the `#` before `de_DE.UTF-8 UTF-8` in `/etc/locale.gen` and run `sudo locale-gen`. Without this locale the weekday and month are English.
-
-### Terminal
-Kitty with the starship prompt:
-
-![Terminal: kitty with the starship prompt](screenshots/terminal.png)
-
-### Yazi and Neovim
-Yazi (left) and Neovim with LazyVim (right) in the same colors:
-
-![Yazi and Neovim side by side](screenshots/yazi-nvim.png)
+While a finger is wanted, Quickshell shows a "FINGER REQUESTED"
+notification. hyprlock unlocks with the finger too.

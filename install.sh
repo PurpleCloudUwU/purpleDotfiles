@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# purpleDotfiles installer for a fresh, minimal Arch Linux.
+# purpleDotfiles installer: the Mondbasis rice (Hyprland + Quickshell) for a
+# fresh, minimal Arch Linux on the ThinkPad T580.
 #
-# Installs the programs the configs need, puts the configs into place and
-# applies the additional settings from the README. Run it as your normal
-# user (not as root); sudo asks for your password where needed:
+# Installs the programs, links the configs into place, writes the theme
+# files (Violet) and enables the services. Run it as your normal user (not
+# as root); sudo asks for your password where needed:
 #   git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 #   ~/purpleDotfiles/install.sh
 #
@@ -23,67 +24,68 @@ copy=0 packages=1 services=1
 
 # Programs from the official repos, grouped by what needs them
 pacman_pkgs=(
-    # Desktop: Sway with bar, lock screen, launcher, notifications, OSD
-    sway swaybg swayidle waybar hyprlock mako swayosd
-    xdg-desktop-portal-wlr xorg-xwayland polkit-gnome dex
-    # Login manager (starts Sway and unlocks GNOME Keyring)
+    # Compositor and the Hypr tools (lock, idle, polkit, night light)
+    hyprland hyprlock hypridle hyprpolkitagent hyprsunset hyprshutdown
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xorg-xwayland
+    # Bar, program select, PDA panels, widgets, notifications, OSD
+    quickshell
+    # Login manager (starts Hyprland and unlocks GNOME Keyring)
     ly gnome-keyring
-    # Terminal, prompt, file manager, editor, image viewer, music player
-    kitty starship eza yazi neovim swayimg kew
-    # Audio (volume keys, audio menu)
-    pipewire pipewire-pulse pipewire-alsa wireplumber libpulse pavucontrol playerctl
-    # WLAN, Bluetooth, power profiles, brightness
-    networkmanager bluez bluez-utils tlp tlp-pd brightnessctl
-    # Used by the Waybar/Sway scripts, screenshots and the lock screen sigil
-    jq libnotify wl-clipboard grim slurp imagemagick xdg-utils
-    # Qt colors and Dolphin
-    qt6ct dolphin breeze-icons
-    # Black hole lock screen (blackhole-lock) and the Waybar colors
-    python-gobject gtk4-layer-shell webkitgtk-6.0 libadwaita
-    # Fonts
-    ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
-    # Neovim (LazyVim) needs these; base-devel and git also build AUR packages
-    base-devel git fd ripgrep fzf curl unzip tree-sitter-cli
+    # Terminal, file manager, editor, system info
+    foot yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
+    # yazi previews
+    chafa resvg ffmpegthumbnailer poppler imagemagick
+    # Audio and media keys
+    pipewire pipewire-pulse pipewire-alsa wireplumber playerctl pavucontrol
+    # WiFi, Bluetooth, battery, power profiles, brightness
+    networkmanager bluez bluez-utils upower tlp tlp-pd brightnessctl
+    # Screenshots, clipboard, notifications, helpers of the station script
+    grim slurp wl-clipboard libnotify xdg-utils xdg-user-dirs glib2
+    # Browser and music (Spotify, kew for local files)
+    librewolf spotify-launcher kew
+    # Fonts and dark GTK apps
+    noto-fonts noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme
+    # Building AUR packages
+    base-devel git curl unzip
 )
-# From the AUR (paru is installed first if there is no AUR helper)
-aur_pkgs=(sway-screenshot otter-launcher eww)
-# Optional AUR apps with a keybinding or theme in this repo
-aur_optional=(brave-origin-bin chatterino2-bin)
+# Pixel fonts from the AUR: Departure Mono (terminal), VT323 (displays,
+# stand-in for Pocket), Silkscreen (small labels)
+aur_pkgs=(otf-departure-mono-nerd ttf-vt323 ttf-silkscreen)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(sway waybar eww hypr otter-launcher mako qt6ct kitty swayimg swayosd yazi nvim)
+config_dirs=(hypr quickshell station foot yazi nvim fastfetch)
 # Single files: <path in repo>:<destination>
 config_files=(
-    "dolphin/blackhole.colors:$HOME/.local/share/color-schemes/blackhole.colors"
-    "chatterino/blackhole.json:$HOME/.local/share/chatterino/Themes/blackhole.json"
-    "starship/starship.toml:$HOME/.config/starship.toml"
-    "blackhole/index.html:$HOME/.local/share/blackhole/index.html"
-    "blackhole/blackhole-lock:$HOME/.local/bin/blackhole-lock"
-    "fonts/Jacquard24-Regular.ttf:$HOME/.local/share/fonts/Jacquard24-Regular.ttf"
+    "station/bin/station:$HOME/.local/bin/station"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
 note() { printf '\033[1;33m  ->\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m==> Error:\033[0m %s\n' "$*" >&2; exit 1; }
-ask()  { local a; read -rp "$1 [y/N] " a; [[ $a == [yYjJ]* ]]; }
 
 usage() {
     # The comment block at the top of this file, without the "# "
     sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d; s/^# \{0,1\}//'
 }
 
+# Moves whatever is at $1 into the backup folder
+stash() {
+    local dest=$1 rel
+    rel=${dest#"$HOME"/}
+    mkdir -p "$(dirname "$backup/$rel")"
+    mv "$dest" "$backup/$rel"
+    note "moved the old ~/$rel to $backup"
+}
+
 # Puts <repo>/$1 at $2 (symlink, or a copy with --copy). Whatever is already
 # there is moved to the backup folder, unless it is already the right link.
 place() {
-    local src="$repo/$1" dest=$2 rel
+    local src="$repo/$1" dest=$2
     if [[ -L $dest && $(readlink -f "$dest") == "$(readlink -f "$src")" ]]; then
         ((copy)) || return 0
         rm "$dest"
     elif [[ -e $dest || -L $dest ]]; then
-        rel=${dest#"$HOME"/}
-        mkdir -p "$(dirname "$backup/$rel")"
-        mv "$dest" "$backup/$rel"
-        note "moved the old ~/$rel to $backup"
+        stash "$dest"
     fi
     mkdir -p "$(dirname "$dest")"
     if ((copy)); then cp -r "$src" "$dest"; else ln -s "$src" "$dest"; fi
@@ -95,10 +97,6 @@ add_line() {
 }
 
 install_packages() {
-    # xxd (lock screen) comes with vim or tinyxxd; both conflict, so only
-    # add tinyxxd when there is no xxd yet
-    command -v xxd >/dev/null || pacman_pkgs+=(tinyxxd)
-
     info "Installing packages from the official repos"
     sudo pacman -Syu --needed "${pacman_pkgs[@]}"
 
@@ -114,13 +112,8 @@ install_packages() {
         helper=paru
     fi
 
-    info "Installing packages from the AUR: ${aur_pkgs[*]}"
+    info "Installing the pixel fonts from the AUR: ${aur_pkgs[*]}"
     "$helper" -S --needed "${aur_pkgs[@]}"
-
-    echo
-    if ask "Also install Brave Origin (browser, Super+Shift+W) and Chatterino (Twitch chat, theme included) from the AUR?"; then
-        "$helper" -S --needed "${aur_optional[@]}"
-    fi
 }
 
 install_configs() {
@@ -132,83 +125,56 @@ install_configs() {
     for f in "${config_files[@]}"; do
         place "${f%%:*}" "${f#*:}"
     done
+
+    # btop writes its whole config back on exit, so it gets a copy
+    if [[ ! -e ~/.config/btop/btop.conf ]] || ! cmp -s "$repo/btop/btop.conf" ~/.config/btop/btop.conf; then
+        [[ -e ~/.config/btop/btop.conf ]] && stash ~/.config/btop/btop.conf
+        mkdir -p ~/.config/btop
+        cp "$repo/btop/btop.conf" ~/.config/btop/btop.conf
+    fi
+
+    # The task list on the desktop (only the first time)
+    local tasks=${XDG_DATA_HOME:-$HOME/.local/share}/station/tasks.txt
+    if [[ ! -e $tasks ]]; then
+        mkdir -p "$(dirname "$tasks")"
+        cp "$repo/station/tasks.txt" "$tasks"
+    fi
 }
 
 apply_settings() {
-    info "Applying the additional settings"
+    info "Applying the settings"
 
-    # Qt colors, editor, prompt and ls with icons (like in the screenshots)
+    # ~/.local/bin for the station script, the shell settings from the repo
     [[ -f ~/.bash_profile ]] || printf '%s\n' '[[ -f ~/.bashrc ]] && . ~/.bashrc' > ~/.bash_profile
-    add_line ~/.bash_profile 'export QT_QPA_PLATFORMTHEME=qt6ct'
-    add_line ~/.bash_profile 'export EDITOR=nvim'
-    add_line ~/.bash_profile 'export VISUAL=nvim'
-    add_line ~/.bashrc "alias ls='eza --icons=auto'"
-    add_line ~/.bashrc 'eval "$(starship init bash)"'
-    note "~/.bash_profile and ~/.bashrc: qt6ct, EDITOR=nvim, eza, starship"
+    add_line ~/.bash_profile 'export PATH="$HOME/.local/bin:$PATH"'
+    add_line ~/.bash_profile 'export EDITOR=nvim VISUAL=nvim'
+    add_line ~/.bashrc '[[ -f ~/.config/station/shell.bash ]] && . ~/.config/station/shell.bash'
+    note "~/.bash_profile and ~/.bashrc: PATH, EDITOR, prompt, aliases"
 
-    # Default apps: swayimg for images, kew for music, Dolphin for folders
-    if command -v xdg-mime >/dev/null; then
-        local apps=/usr/share/applications
-        if [[ -f $apps/swayimg.desktop ]]; then
-            # shellcheck disable=SC2046  # one argument per MIME type
-            xdg-mime default swayimg.desktop $(grep -Po '(?<=^MimeType=).*' "$apps/swayimg.desktop" | tr ';' ' ')
+    # Theme files (foot, yazi, btop, fastfetch, hyprlock, prompt) and the
+    # CRT shader. Violet and SUBTLE on the first run, the last choice after.
+    chmod +x "$repo/station/bin/station" "$repo/quickshell/scripts/sysinfo.sh"
+    "$repo/station/bin/station" init | sed 's/^/  -> /'
+
+    # Dark GTK apps (Hyprland also sets the colour scheme on every start)
+    local gtk
+    for gtk in gtk-3.0 gtk-4.0; do
+        mkdir -p ~/.config/$gtk
+        if [[ ! -e ~/.config/$gtk/settings.ini ]]; then
+            printf '%s\n' '[Settings]' 'gtk-theme-name=adw-gtk3-dark' 'gtk-application-prefer-dark-theme=1' > ~/.config/$gtk/settings.ini
         fi
-        if [[ -f $apps/kew.desktop ]]; then
-            # kew is a terminal app: a local copy of its desktop entry starts
-            # it in kitty (xdg-open, yazi and browsers would run it invisibly)
-            mkdir -p ~/.local/share/applications
-            sed -e 's|^Exec=kew play %F$|Exec=kitty --class kew -e kew play %F|' -e 's|^Terminal=true$|Terminal=false|' \
-                -e 's|^MimeType=.*|&audio/x-vorbis+ogg;audio/x-opus+ogg;|' \
-                "$apps/kew.desktop" > ~/.local/share/applications/kew.desktop
-            xdg-mime default kew.desktop audio/mpeg audio/flac audio/x-flac audio/wav audio/x-wav audio/mp4 \
-                audio/x-m4a audio/ogg audio/opus audio/webm audio/x-vorbis+ogg audio/x-opus+ogg
-        fi
-        [[ -f $apps/org.kde.dolphin.desktop ]] && xdg-mime default org.kde.dolphin.desktop inode/directory
-        note "default apps: swayimg (images), kew (music), Dolphin (folders)"
+    done
+    note "GTK: adw-gtk3-dark"
+
+    command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update
+    if command -v xdg-settings >/dev/null && [[ -f /usr/share/applications/librewolf.desktop ]]; then
+        xdg-settings set default-web-browser librewolf.desktop 2>/dev/null && note "default browser: LibreWolf"
     fi
 
-    # Waybar imports the black hole colors (the animated wallpaper itself is no longer used)
-    "$repo/blackhole/blackhole-wallpaper" --colors-only || true
-    note "Waybar: black hole colors (waybar/colors.css)"
-
-    # Jacquard 24 for the eww clock (linked to ~/.local/share/fonts above)
-    fc-cache -f ~/.local/share/fonts >/dev/null 2>&1 && note "font cache: Jacquard 24 (eww clock)"
-
-    # Dolphin uses the KDE color scheme from this repo
-    if command -v kwriteconfig6 >/dev/null; then
-        kwriteconfig6 --file dolphinrc --group UiSettings --key ColorScheme blackhole
-        note "Dolphin: color scheme blackhole"
+    fc-cache -f >/dev/null 2>&1 || true
+    if ! fc-list 2>/dev/null | grep -qi pocket; then
+        note "Pocket (the game's display font) is not installed, VT323 stands in. See the README."
     fi
-
-    # Lock screen sigil, made from this machine's ID
-    if [[ ! -e ~/.config/hypr/sigil.png ]] && command -v magick >/dev/null; then
-        ~/.config/hypr/make-sigil.sh >/dev/null
-        note "lock screen sigil created"
-    fi
-
-    # The Waybar date uses the German locale (otherwise English weekdays)
-    if ! locale -a 2>/dev/null | grep -qx 'de_DE.utf8'; then
-        if command -v sudo >/dev/null; then
-            sudo sed -i 's/^#\(de_DE\.UTF-8 UTF-8\)/\1/' /etc/locale.gen && sudo locale-gen >/dev/null
-            note "locale de_DE.UTF-8 generated (Waybar date)"
-        else
-            note "generate de_DE.UTF-8 (/etc/locale.gen, locale-gen), otherwise the Waybar date is in English"
-        fi
-    fi
-}
-
-install_nvim_plugins() {
-    command -v nvim >/dev/null || return 0
-    info "Installing the Neovim plugins (versions from lazy-lock.json, takes a moment)"
-    # The first start installs the plugins, but some in their newest version,
-    # and rewrites lazy-lock.json. So keep the file and restore its versions.
-    local lock=~/.config/nvim/lazy-lock.json saved
-    saved=$(mktemp)
-    cp "$lock" "$saved"
-    nvim --headless "+Lazy! install" +qa >/dev/null 2>&1 || true
-    cp "$saved" "$lock"
-    rm "$saved"
-    nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 || note "failed, Neovim installs them on its first start"
 }
 
 enable_services() {
@@ -241,9 +207,9 @@ fi
 ((packages)) && install_packages
 install_configs
 apply_settings
-((packages)) && install_nvim_plugins
 ((services)) && enable_services
 
 info "Done"
 [[ -d $backup ]] && note "your old configs are in $backup"
-note "reboot, log in with ly and choose Sway"
+note "reboot, log in with ly and choose Hyprland"
+note "fingerprint (T580 only): ~/purpleDotfiles/fingerprint/setup.sh"
