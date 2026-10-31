@@ -1,5 +1,6 @@
-// fastfetch with the moon and the rocket (patch.svg.in, sixel image in foot)
-// or, without resvg/ImageMagick, the text moon (moon.txt).
+// fastfetch with the moon and the rocket (patch.svg.in): fastfetch keeps a
+// blank logo area free, the fastfetch function in station/shell.bash draws
+// the sixel image into it. Without resvg/ImageMagick: the text moon.
 // Template: `station theme` writes config.jsonc from it with the theme's
 // colours and the logo (@...@). Edit this file, not config.jsonc.
 {
@@ -15,9 +16,9 @@
             "3": "@FAINT@"
         },
         "padding": {
-            "top": 1,
+            "top": 0,
             "left": 1,
-            "right": 4
+            "right": 3
         }
     },
     "display": {

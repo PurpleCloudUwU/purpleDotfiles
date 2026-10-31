@@ -19,10 +19,29 @@ __station_prompt() {
 }
 PROMPT_COMMAND+=(__station_prompt)
 
-# The patch needs about 72 columns next to the info, so narrow terminals
-# (two tiles on workspace 1) get it on top
+# fastfetch with the moon and the rocket: fastfetch leaves a blank 30x10
+# logo area (station writes it with the image, ~/.local/state/station/
+# patch.six), this draws the sixel image into it afterwards. Narrow
+# terminals get the logo on top of the info.
 fastfetch() {
-    if ((COLUMNS < 72)); then command fastfetch --logo-position top "$@"; else command fastfetch "$@"; fi
+    local six=$station_state/patch.six out lines
+    local -a pos=()
+    ((COLUMNS < 76)) && pos=(--logo-position top)
+    if (($#)) || [[ ! -t 1 || ! -f $six ]]; then
+        command fastfetch "${pos[@]}" "$@"
+        return
+    fi
+    out=$(command fastfetch --pipe false "${pos[@]}")
+    lines=$(printf '%s\n' "$out" | wc -l)
+    printf '%s\n' "$out"
+    # Up to the logo area, one column in (its padding), draw; the cursor
+    # then sits below the image, so go down the rest of the way
+    if ((lines >= 10 && lines < LINES)); then
+        printf '\e[%dA\r\e[1C' "$lines"
+        cat "$six"
+        if ((lines > 10)); then printf '\e[%dB' "$((lines - 10))"; fi
+        printf '\r'
+    fi
 }
 
 alias ls='eza --group-directories-first'
