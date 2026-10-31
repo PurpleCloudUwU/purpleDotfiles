@@ -34,7 +34,7 @@ PanelWindow {
         { name: "EDITOR", hint: "nvim", icon: "pencil", cmd: ["station", "open", "editor"] },
         { name: "MUSIC", hint: "spotify", icon: "music", cmd: ["station", "open", "music"] },
         { name: "SYSTEM MONITOR", hint: "btop", icon: "bars", cmd: ["station", "open", "monitor"] },
-        { name: "CRT CALIBRATION", hint: "station crt", icon: "tube", cmd: ["station", "open", "crt"] },
+        { name: "CRT CALIBRATION", hint: "qs crt", icon: "tube", cmd: ["station", "open", "crt"] },
         { name: "MUSIC PLAYER", hint: "kew", icon: "music", cmd: ["station", "open", "player"] }
     ]
     readonly property var apps: Array.from(DesktopEntries.applications.values)

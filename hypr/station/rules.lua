@@ -10,6 +10,15 @@ hl.window_rule({
     move  = { "monitor_w-780", 88 },
 })
 
+-- The CRT calibration window (Quickshell) floats in the middle
+hl.window_rule({
+    name   = "crt-calibration",
+    match  = { class = "^org\\.quickshell$", title = "^CRT CALIBRATION$" },
+    float  = true,
+    center = true,
+    size   = { 1320, 900 },
+})
+
 -- Small tools float in the middle
 hl.window_rule({
     name   = "float-tools",

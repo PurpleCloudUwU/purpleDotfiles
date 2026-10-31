@@ -46,6 +46,9 @@ Singleton {
         if (emptyWorkspace || !active)
             return "DESKTOP";
         const id = active.appId ?? "";
+        // The shell's own windows (CRT CALIBRATION) are named by their title
+        if (id === "org.quickshell")
+            return (active.title ?? "SHELL").toUpperCase();
         const app = apps[id] ?? (id.split(".").pop() || "WINDOW").toUpperCase();
         // foot titles look like "~/dots" (see bash/station.bash)
         const t = (active.title ?? "").trim();

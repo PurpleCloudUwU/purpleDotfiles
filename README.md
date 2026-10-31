@@ -11,7 +11,7 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 | Part | What it does |
 |---|---|
 | `hypr/` | Hyprland (Lua config, 0.55+), hyprlock, hypridle |
-| `quickshell/` | Everything on screen that isn't a window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper |
+| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper, and the CRT CALIBRATION window (Super+Shift+F12) |
 | `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
@@ -67,6 +67,7 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 | Super+Shift+E | Power menu |
 | Super+Escape | Lock |
 | Super+F12 | CRT on/off |
+| Super+Shift+F12 | CRT calibration window |
 | Super+F11 | Next theme |
 | Super+Shift+Q | Close window |
 | Super+F / Super+Shift+F | Fullscreen / maximise |
@@ -78,6 +79,9 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 | Print, Super+Print, Super+Shift+Print | Screenshot of the screen, window, region |
 | Super+Shift+N | Dismiss notifications |
 | Super+Shift+C | Reload Hyprland |
+
+After a `git pull` in the repo, `station reload` reloads Hyprland and
+Quickshell.
 
 Workspace 1 (TERM) keeps the right column free for the floating file
 manager and the desktop widgets, like on the canvas. Change it in
@@ -94,9 +98,12 @@ station crt set scan 50       # single values 0-100, the preset becomes "custom"
 station crt option battery_subtle off
 ```
 
-The same is reachable from scripts through Quickshell, e.g.
-`qs ipc call crt preset subtle` or `qs ipc call theme set amber`; the CRT
-calibration app will use this.
+The **CRT CALIBRATION** window (Super+Shift+F12, or CRT CALIBRATION in the
+program select) shows the effects on a test picture first: presets, the seven
+values, phosphor colour, the behaviour options and an estimate of the GPU
+load. APPLY sends everything to `station crt write`; the colour world row
+switches the theme right away. From scripts: `qs ipc call crt open`,
+`qs ipc call crt preset subtle`, `qs ipc call theme set amber`.
 
 | Preset | Effects | Cost on the UHD 620 |
 |---|---|---|
@@ -109,7 +116,8 @@ The shader (`station/crt/crt.frag.in`) runs through Hyprland's
 `decoration.screen_shader`. Curvature and flicker need a full redraw on every
 frame, so only FULL TUBE switches Hyprland's damage tracking off. Two
 options, both on by default: on battery FULL TUBE drops to SUBTLE, and the
-shader goes off while a window is fullscreen.
+shader goes off while a window is fullscreen. A third one, off by default,
+lets the tube flicker for a moment at login.
 
 ## Fonts
 

@@ -13,6 +13,8 @@ Singleton {
     property bool launcher: false
     property bool quick: false
     property bool power: false
+    // The CRT calibration window is a normal window, closeAll() leaves it alone
+    property bool crt: false
 
     // A panel closed by clicking outside must not reopen from the same click
     // on its bar button
@@ -94,6 +96,12 @@ Singleton {
         name: "power"
         description: "Power menu"
         onPressed: root.toggle("power")
+    }
+
+    GlobalShortcut {
+        name: "crt"
+        description: "CRT calibration"
+        onPressed: root.crt = !root.crt
     }
 
     GlobalShortcut {

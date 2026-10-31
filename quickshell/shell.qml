@@ -5,6 +5,7 @@
 // crt` (services/Station.qml). Quickshell reloads on save.
 //
 //   bar/       top bar
+//   crt/       CRT CALIBRATION window (Super+Shift+F12)
 //   desktop/   wallpaper and the widgets in the right column
 //   launcher/  STATION: PROGRAM SELECT (Super+D)
 //   pda/       PDA quick access (Super+N) and the power menu (Super+Shift+E)
@@ -16,6 +17,7 @@
 import QtQuick
 import Quickshell
 import qs.bar
+import qs.crt
 import qs.desktop
 import qs.launcher
 import qs.notify
@@ -48,6 +50,7 @@ ShellRoot {
     Launcher {}
     QuickAccess {}
     PowerMenu {}
+    CrtApp {}
     Toasts {}
     Osd {}
 

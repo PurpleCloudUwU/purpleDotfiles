@@ -33,7 +33,15 @@ Item {
         anchors.fill: parent
         enabled: root.interactive
         cursorShape: Qt.PointingHandCursor
-        onClicked: mouse => root.picked(Math.max(1, Math.ceil(mouse.x / (root.cellWidth + root.gap))))
+        // Click or drag: every cell up to the pointer; left of the first cell: 0
+        onPressed: mouse => root.pick(mouse.x)
+        onPositionChanged: mouse => root.pick(mouse.x)
         onWheel: wheel => root.picked(Math.max(0, Math.min(root.count, Math.round(root.value) + (wheel.angleDelta.y > 0 ? 1 : -1))))
+    }
+
+    function pick(x) {
+        const cells = x < 0 ? 0 : Math.min(count, Math.ceil(x / (cellWidth + gap)));
+        if (cells !== Math.round(value))
+            picked(cells);
     }
 }

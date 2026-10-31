@@ -23,6 +23,7 @@ hl.bind(mod .. " + Escape",    exec("station power lock"),    { description = "L
 -- Screen: CRT on/off (as on the calibration board) and the next colour world
 hl.bind(mod .. " + F12", exec("station crt toggle"),  { description = "CRT on/off" })
 hl.bind(mod .. " + F11", exec("station theme next"),  { description = "Next theme" })
+hl.bind(mod .. " + SHIFT + F12", shell("crt"),       { description = "CRT calibration" })
 
 -- Windows
 hl.bind(mod .. " + SHIFT + Q",     hl.dsp.window.close())

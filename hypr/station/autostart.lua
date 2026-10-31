@@ -4,6 +4,8 @@ hl.on("hyprland.start", function()
     -- Quickshell: bar, program select, widgets, notifications, OSD.
     -- -n: never a second instance (two would fight over the shortcuts)
     hl.exec_cmd("qs -n")
+    -- Power-on flicker of the tube, if switched on in the CRT app
+    hl.exec_cmd("station crt boot")
     -- Idle: dim, lock, screen off, suspend on battery (hypridle.conf)
     hl.exec_cmd("hypridle")
     -- Password and fingerprint dialogs for apps that need root

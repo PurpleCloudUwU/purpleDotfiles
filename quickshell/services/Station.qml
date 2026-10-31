@@ -17,11 +17,28 @@ Singleton {
 
     property var crt: ({})
 
+    // Same table as in the station script (values 0-100 in this order)
+    readonly property var keys: ["scan", "curve", "glow", "fringe", "vig", "noise", "flick"]
+    readonly property var presets: ({
+        off: [0, 0, 0, 0, 0, 0, 0],
+        work: [20, 0, 25, 5, 20, 0, 0],
+        subtle: [35, 0, 40, 15, 30, 8, 0],
+        full: [85, 60, 75, 55, 70, 35, 20]
+    })
+
     readonly property string preset: crt.preset ?? "subtle"
     readonly property string tint: crt.tint ?? "neutral"
     readonly property bool batterySubtle: (crt.battery_subtle ?? "on") === "on"
     readonly property bool fullscreenOff: (crt.fullscreen_off ?? "on") === "on"
-    readonly property bool heavy: preset === "full" || (preset === "custom" && (Number(crt.curve) > 0 || Number(crt.flick) > 0))
+    readonly property bool bootFlicker: (crt.boot_flicker ?? "off") === "on"
+    // The values of the saved preset: from the table, or the custom ones
+    readonly property var values: {
+        const out = {};
+        const table = presets[preset];
+        keys.forEach((k, i) => out[k] = table ? table[i] : Number(crt[k] ?? 0));
+        return out;
+    }
+    readonly property bool heavy: values.curve > 0 || values.flick > 0
     readonly property bool fullscreen: Hyprland.focusedWorkspace?.hasFullscreen ?? false
 
     // A preset shown instead of the saved one, or "" for the saved one
@@ -95,6 +112,11 @@ Singleton {
 
         function preset(name: string): void {
             root.setPreset(name);
+        }
+
+        // The CRT calibration window
+        function open(): void {
+            Panels.crt = true;
         }
 
         function toggle(): void {

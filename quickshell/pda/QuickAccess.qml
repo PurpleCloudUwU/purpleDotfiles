@@ -10,8 +10,8 @@ import qs.services
 import qs.widgets
 
 // "PDA: QUICK ACCESS" (canvas board 04): WiFi, brightness, volume, toggles
-// and the current profile. Until the CRT calibration app exists it also
-// switches the theme and the CRT preset.
+// and the current profile, plus quick theme and CRT preset switches
+// (the CRT calibration window has all settings).
 PanelWindow {
     id: win
 
@@ -80,50 +80,6 @@ PanelWindow {
             return "PERFORMANCE";
         default:
             return "BALANCED";
-        }
-    }
-
-    // Small choice button with an optional colour swatch
-    component Choice: Rectangle {
-        id: choice
-
-        property string text
-        property bool active
-        property color swatch: "transparent"
-        signal clicked
-
-        implicitHeight: 44
-        color: active ? Theme.surface2 : "transparent"
-        border.width: 2
-        border.color: active || mouse.containsMouse ? Theme.frame : Theme.line
-        Accessible.role: Accessible.Button
-        Accessible.name: text
-
-        Row {
-            anchors.centerIn: parent
-            spacing: 8
-
-            Rectangle {
-                visible: choice.swatch.a > 0
-                width: 14
-                height: 14
-                anchors.verticalCenter: parent.verticalCenter
-                color: choice.swatch
-            }
-
-            PText {
-                text: choice.text
-                font.pixelSize: 22
-                color: choice.active ? Theme.fg : Theme.muted
-            }
-        }
-
-        MouseArea {
-            id: mouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: choice.clicked()
         }
     }
 
@@ -670,7 +626,7 @@ PanelWindow {
             color: Theme.line
         }
 
-        // THEME (the CRT app takes this over later)
+        // THEME (also in the CRT calibration window)
         RowLayout {
             Layout.fillWidth: true
             Layout.leftMargin: 14

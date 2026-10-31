@@ -18,6 +18,16 @@ Singleton {
     property string name: "violet"
     property var p: ({})
 
+    // user@host for test pictures and labels
+    readonly property string user: Quickshell.env("USER") || "user"
+    property string host: "station"
+
+    FileView {
+        path: "/etc/hostname"
+        printErrors: false
+        onLoaded: root.host = text().trim() || "station"
+    }
+
     // Violet until the palette file is read
     readonly property color bg: p.bg ?? "#0c0d14"
     readonly property color grid: p.grid ?? "#181a28"

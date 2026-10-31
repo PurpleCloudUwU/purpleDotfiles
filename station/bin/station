@@ -9,7 +9,10 @@
 #   station crt tint <tint>             neutral, amber, green, red
 #   station crt set <key> <0-100>       scan, curve, glow, fringe, vig, noise, flick
 #                                       (the preset becomes "custom")
-#   station crt option <name> <on|off>  battery_subtle, fullscreen_off
+#   station crt option <name> <on|off>  battery_subtle, fullscreen_off, boot_flicker
+#   station crt write key=value ...     all values, tint and options at once
+#                                       (what the CRT calibration app sends)
+#   station crt boot                    the power-on flicker (Hyprland start)
 #   station crt apply [preset]          apply the saved settings again, or show a
 #                                       preset without saving it (Quickshell uses
 #                                       this on battery and for fullscreen windows)
@@ -332,7 +335,7 @@ theme_set() {
 declare -A C V
 crt_load() {
     local k v i=0 vals
-    C=([preset]=subtle [last]=subtle [tint]=neutral [battery_subtle]=on [fullscreen_off]=on [shader]="" [full_redraw]=0)
+    C=([preset]=subtle [last]=subtle [tint]=neutral [battery_subtle]=on [fullscreen_off]=on [boot_flicker]=off [shader]="" [full_redraw]=0)
     read -ra vals <<< "${crt_presets[subtle]}"
     for k in "${crt_keys[@]}"; do C[$k]=${vals[i++]}; done
     [[ -f $state/crt.conf ]] || return 0
@@ -346,7 +349,8 @@ crt_save() {
     local k
     {
         echo "# Written by 'station crt'. Hyprland reads shader and full_redraw when it (re)loads."
-        for k in preset last tint "${crt_keys[@]}" battery_subtle fullscreen_off shader full_redraw; do
+        echo "# The values are the last custom ones; the named presets are in the station script."
+        for k in preset last tint "${crt_keys[@]}" battery_subtle fullscreen_off boot_flicker shader full_redraw; do
             echo "$k=${C[$k]}"
         done
     } > "$state/crt.conf"
@@ -362,6 +366,17 @@ crt_values() {
     [[ -n ${crt_presets[$1]:-} ]] || die "unknown preset '$1' (off, work, subtle, full)"
     read -ra vals <<< "${crt_presets[$1]}"
     for k in "${crt_keys[@]}"; do V[$k]=${vals[i++]}; done
+}
+
+# Name of the preset that has exactly the values in V, or "custom"
+crt_match() {
+    local p k line
+    for p in off work subtle full; do
+        line=""
+        for k in "${crt_keys[@]}"; do line+="${line:+ }${V[$k]}"; done
+        if [[ $line == "${crt_presets[$p]}" ]]; then echo "$p"; return; fi
+    done
+    echo custom
 }
 
 frac() { printf '%d.%02d' $(( $1 / 100 )) $(( $1 % 100 )); }
@@ -412,10 +427,13 @@ crt_cleanup() {
     done
 }
 
-# Saves V as the current settings and applies them
+# Saves V as the current settings and applies them. Only custom values are
+# kept in crt.conf, so switching off and on again brings them back.
 crt_commit() {
     local k
-    for k in "${crt_keys[@]}"; do C[$k]=${V[$k]}; done
+    if [[ ${C[preset]} == custom ]]; then
+        for k in "${crt_keys[@]}"; do C[$k]=${V[$k]}; done
+    fi
     C[shader]=$(crt_render "${C[tint]}")
     C[full_redraw]=$(needs_redraw)
     crt_save
@@ -425,10 +443,11 @@ crt_commit() {
     crt_show
 }
 
+# Prints the preset and the values in V
 crt_show() {
     local k
     printf 'crt › preset=%s  tint=%s' "${C[preset]^^}" "${C[tint]^^}"
-    for k in "${crt_keys[@]}"; do printf '  %s=%s' "$k" "${C[$k]}"; done
+    for k in "${crt_keys[@]}"; do printf '  %s=%s' "$k" "${V[$k]}"; done
     printf '\n'
 }
 
@@ -437,7 +456,46 @@ crt_cmd() {
     local arg=${1:-}
     case $arg in
         "")
+            crt_values "${C[preset]}"
             crt_show ;;
+        write)
+            # Everything the CRT calibration app sends in one go:
+            #   station crt write scan=35 curve=0 ... tint=amber battery_subtle=on ...
+            # The values become a preset if they match one, "custom" otherwise.
+            local kv key val
+            shift
+            crt_values "${C[preset]}"
+            for kv in "$@"; do
+                key=${kv%%=*} val=${kv#*=}
+                case $key in
+                    scan|curve|glow|fringe|vig|noise|flick)
+                        [[ $val =~ ^[0-9]+$ ]] && (( val <= 100 )) || die "$key has to be 0-100"
+                        V[$key]=$val ;;
+                    tint)
+                        [[ -n ${crt_tints[$val]:-} ]] || die "unknown tint '$val'"
+                        C[tint]=$val ;;
+                    battery_subtle|fullscreen_off|boot_flicker)
+                        [[ $val == on || $val == off ]] || die "$key is either on or off"
+                        C[$key]=$val ;;
+                    *) die "unknown setting '$key'" ;;
+                esac
+            done
+            C[preset]=$(crt_match)
+            [[ ${C[preset]} != off ]] && C[last]=${C[preset]}
+            crt_commit ;;
+        boot)
+            # A tube warming up: strong flicker and grain for a moment, then
+            # the saved settings. Only with the boot_flicker option.
+            [[ ${C[boot_flicker]} == on ]] || exit 0
+            local shader
+            crt_values full
+            V[flick]=100 V[noise]=70
+            shader=$(crt_render "${C[tint]}")
+            crt_push "$shader" 1
+            sleep 1.6
+            crt_values "${C[preset]}"
+            crt_push "${C[shader]}" "${C[full_redraw]}"
+            crt_cleanup ;;
         off|work|subtle|full)
             crt_values "$arg"
             C[preset]=$arg
@@ -466,7 +524,7 @@ crt_cmd() {
             C[last]=custom
             crt_commit ;;
         option)
-            [[ ${2:-} == battery_subtle || ${2:-} == fullscreen_off ]] || die "usage: station crt option <battery_subtle|fullscreen_off> <on|off>"
+            [[ ${2:-} =~ ^(battery_subtle|fullscreen_off|boot_flicker)$ ]] || die "usage: station crt option <battery_subtle|fullscreen_off|boot_flicker> <on|off>"
             [[ ${3:-} == on || ${3:-} == off ]] || die "the option is either on or off"
             C[$2]=$3
             crt_save
@@ -521,8 +579,7 @@ open_app() {
                 if command -v "$f" >/dev/null; then exec "$f"; fi
             done
             die "no browser found" ;;
-        # Until the CRT calibration app exists, the PDA panel has the presets
-        crt) exec qs ipc call quick open ;;
+        crt) exec qs ipc call crt open ;;
         *) die "usage: station open <terminal|files|editor|monitor|music|player|browser|crt>" ;;
     esac
 }
