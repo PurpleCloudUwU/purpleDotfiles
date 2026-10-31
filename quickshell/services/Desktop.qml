@@ -56,7 +56,7 @@ Singleton {
 
     // From scripts:
     //   qs ipc call desktop move music 24 600
-    //   qs ipc call desktop show tasks false
+    //   qs ipc call desktop display tasks false
     //   qs ipc call desktop reset
     IpcHandler {
         target: "desktop"
@@ -66,7 +66,7 @@ Singleton {
                 root.update(name, { x: x, y: y });
         }
 
-        function show(name: string, on: bool): void {
+        function display(name: string, on: bool): void {
             if (root.defaults[name])
                 root.update(name, { visible: on });
         }
