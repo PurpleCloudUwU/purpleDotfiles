@@ -180,6 +180,8 @@ apply_settings() {
 enable_services() {
     info "Enabling services: NetworkManager, Bluetooth, TLP, ly (login on tty1)"
     sudo systemctl enable NetworkManager.service bluetooth.service tlp.service tlp-pd.service ly@tty1.service
+    # ly and the text login would fight over tty1
+    sudo systemctl disable getty@tty1.service 2>/dev/null || true
     local s
     for s in iwd systemd-networkd dhcpcd; do
         if systemctl is-enabled --quiet "$s.service" 2>/dev/null; then
