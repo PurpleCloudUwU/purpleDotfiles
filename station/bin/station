@@ -17,6 +17,7 @@
 #   station open <what>                 terminal, files, editor, monitor, music,
 #                                       player, browser, crt
 #   station shot <screen|region|window> screenshot to ~/Pictures/Screenshots
+#   station battery                     charge of all batteries together
 #   station power <lock|logout|suspend|reboot|off>
 #   station init                        write all generated files (install.sh)
 #
@@ -542,6 +543,17 @@ shot() {
     if command -v notify-send >/dev/null; then notify-send -a station "Screenshot saved" "${file/#"$HOME"/\~}"; fi
 }
 
+# The T580 has an internal and an external battery
+battery() {
+    local now=0 full=0 b
+    for b in /sys/class/power_supply/BAT*; do
+        [[ -r $b/energy_now && -r $b/energy_full ]] || continue
+        now=$(( now + $(<"$b/energy_now") ))
+        full=$(( full + $(<"$b/energy_full") ))
+    done
+    if (( full > 0 )); then echo "BAT $(( now * 100 / full )) %"; else echo "BAT --"; fi
+}
+
 bright() {
     local pct
     command -v brightnessctl >/dev/null || die "brightnessctl is not installed"
@@ -592,6 +604,7 @@ case ${1:-} in
     bright) shift; bright "$@" ;;
     open)   shift; open_app "$@" ;;
     shot)   shift; shot "$@" ;;
+    battery) battery ;;
     power)  shift; power "$@" ;;
     init)   init ;;
     ""|-h|--help|help) usage ;;

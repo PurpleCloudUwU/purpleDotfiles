@@ -33,7 +33,7 @@
         "title",
         "separator",
         { "type": "os", "key": "OS", "format": "{name} {arch}" },
-        { "type": "host", "key": "HOST", "format": "{name}" },
+        { "type": "host", "key": "HOST", "format": "{family}" },
         { "type": "kernel", "key": "KERNEL", "format": "{release}" },
         { "type": "uptime", "key": "UPTIME" },
         { "type": "packages", "key": "PACKAGES" },
