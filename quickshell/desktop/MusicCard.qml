@@ -106,7 +106,7 @@ Rectangle {
 
             PText {
                 Layout.fillWidth: true
-                text: [Player.artist, Player.album].filter(s => s).join(" · ") || "NO PLAYER RUNNING"
+                text: [Player.artist, Player.album].filter(s => s).join(" · ") || (Player.current ? "UNKNOWN ARTIST" : "NO PLAYER RUNNING")
                 color: Theme.muted
                 font.pixelSize: 22
                 elide: Text.ElideRight
