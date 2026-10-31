@@ -284,9 +284,11 @@ theme[process_end]="$accent"
 EOF
 }
 
-# The mission patch for fastfetch (fastfetch/patch.svg.in): drawn on a 96 px
-# grid without anti-aliasing, then scaled up 4x with hard pixel edges.
-# Needs resvg and ImageMagick; without them fastfetch keeps the text moon.
+# The fastfetch logo (fastfetch/patch.svg.in): drawn on a 70x56 px grid
+# without anti-aliasing, scaled up 5x with hard pixel edges to 350x280 px,
+# exactly 25x10 cells of foot's 14x28 px cells, and stored as sixel data.
+# fastfetch prints that as it is (file-raw): its own image scaling guesses
+# foot's cell size wrong. Needs resvg and ImageMagick, else the text moon.
 render_patch() {
     local tpl=$conf/fastfetch/patch.svg.in k
     local -a args=()
@@ -295,19 +297,21 @@ render_patch() {
         args+=(-e "s/@${k^^}@/${P[$k]}/g")
     done
     sed "${args[@]}" "$tpl" > "$state/patch.svg"
-    resvg --width 96 --height 96 "$state/patch.svg" "$state/patch-small.png" 2>/dev/null &&
-        magick "$state/patch-small.png" -filter point -resize 400% "$state/patch.png" || return 1
+    resvg --width 70 --height 56 "$state/patch.svg" "$state/patch-small.png" 2>/dev/null &&
+        magick "$state/patch-small.png" -filter point -resize 500% "$state/patch.png" &&
+        magick "$state/patch.png" sixel:"$state/patch.six" || return 1
     rm -f "$state/patch-small.png"
 }
 
 # fastfetch has no includes, so its config is made from config.jsonc.in
 render_fastfetch() {
-    local tpl=$conf/fastfetch/config.jsonc.in type=file source=$conf/fastfetch/moon.txt
+    local tpl=$conf/fastfetch/config.jsonc.in type=file source=$conf/fastfetch/moon.txt w=26 h=13
     [[ -f $tpl ]] || return 0
-    if render_patch; then type=sixel source=$state/patch.png; fi
+    if render_patch; then type=file-raw source=$state/patch.six w=25 h=10; fi
     sed -e "s/@FG@/${P[fg]}/g" -e "s/@FG2@/${P[fg2]}/g" -e "s/@MUTED@/${P[muted]}/g" \
         -e "s/@FAINT@/${P[faint]}/g" -e "s/@BORDER@/${P[border]}/g" -e "s/@ACCENT@/${P[accent]}/g" \
         -e "s/@FRAME@/${P[frame]}/g" -e "s|@LOGO_TYPE@|$type|" -e "s|@LOGO_SOURCE@|$source|" \
+        -e "s/@LOGO_WIDTH@/$w/" -e "s/@LOGO_HEIGHT@/$h/" \
         "$tpl" > "$conf/fastfetch/config.jsonc"
 }
 

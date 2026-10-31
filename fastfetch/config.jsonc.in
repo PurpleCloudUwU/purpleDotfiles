@@ -1,5 +1,5 @@
-// fastfetch with the mission patch (patch.svg.in, a sixel image in foot) or,
-// without resvg/ImageMagick, the text moon (moon.txt).
+// fastfetch with the moon and the rocket (patch.svg.in, sixel image in foot)
+// or, without resvg/ImageMagick, the text moon (moon.txt).
 // Template: `station theme` writes config.jsonc from it with the theme's
 // colours and the logo (@...@). Edit this file, not config.jsonc.
 {
@@ -7,8 +7,8 @@
     "logo": {
         "type": "@LOGO_TYPE@",
         "source": "@LOGO_SOURCE@",
-        "width": 26,
-        "preserveAspectRatio": true,
+        "width": @LOGO_WIDTH@,
+        "height": @LOGO_HEIGHT@,
         "color": {
             "1": "@FG@",
             "2": "@FG2@",
