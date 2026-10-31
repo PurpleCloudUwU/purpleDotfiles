@@ -18,6 +18,7 @@
 #                                       player, browser, crt
 #   station shot <screen|region|window> screenshot to ~/Pictures/Screenshots
 #   station battery                     charge of all batteries together
+#   station reload                      reload Hyprland and Quickshell (after git pull)
 #   station power <lock|logout|suspend|reboot|off>
 #   station init                        write all generated files (install.sh)
 #
@@ -605,6 +606,11 @@ case ${1:-} in
     open)   shift; open_app "$@" ;;
     shot)   shift; shot "$@" ;;
     battery) battery ;;
+    reload)
+        init >/dev/null
+        if in_hyprland; then hyprctl reload >/dev/null; fi
+        command -v qs >/dev/null && qs ipc call station reload >/dev/null 2>&1
+        echo "reloaded" ;;
     power)  shift; power "$@" ;;
     init)   init ;;
     ""|-h|--help|help) usage ;;

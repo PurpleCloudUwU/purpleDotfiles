@@ -82,6 +82,12 @@ Singleton {
             Theme.refresh();
             crtFile.reload();
         }
+
+        // `station reload`: QML files replaced by "git pull" are not always
+        // noticed by the file watcher
+        function reload(): void {
+            Quickshell.reload(true);
+        }
     }
 
     IpcHandler {
