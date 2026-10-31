@@ -16,7 +16,7 @@ PanelWindow {
         right: true
     }
     margins {
-        top: 88
+        top: Theme.barBottom + 24
         right: 24
     }
     exclusionMode: ExclusionMode.Ignore

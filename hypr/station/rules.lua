@@ -2,12 +2,13 @@
 
 -- The file manager floats in the right column (canvas board 01). On
 -- workspace 1 that column is kept free, elsewhere it floats over the tiles.
+-- y 72 is the window top: bar bottom (48 with Theme.barScale 0.75) + 24.
 hl.window_rule({
     name  = "files-column",
     match = { class = "^station\\.files$" },
     float = true,
     size  = { 756, 420 },
-    move  = { "monitor_w-780", 88 },
+    move  = { "monitor_w-780", 72 },
 })
 
 -- STATION SETUP (Quickshell: CRT calibration, desktop widgets) floats in the middle

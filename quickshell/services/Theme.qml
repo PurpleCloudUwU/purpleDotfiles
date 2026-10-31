@@ -46,6 +46,15 @@ Singleton {
     readonly property color accent2: p.accent2 ?? "#5b8cff"
     readonly property color select: p.select ?? "#9b7bff"
 
+    // Size of the top bar. 1.0 is the canvas (48 px high, 26 px text, 16 px
+    // from the top edge); everything below the bar follows barBottom.
+    // Hyprland's file manager rule (hypr/station/rules.lua) uses the window
+    // top: barBottom + 24.
+    readonly property real barScale: 0.75
+    readonly property int barTop: Math.round(16 * barScale)
+    readonly property int barHeight: Math.round(48 * barScale)
+    readonly property int barBottom: barTop + barHeight
+
     // Swatches for the theme buttons (each theme's signature colour)
     readonly property var swatches: ({ amber: "#e9dca0", red: "#ff5b3a", green: "#c2f0c2", violet: "#9b7bff" })
 

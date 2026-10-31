@@ -83,6 +83,11 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 After a `git pull` in the repo, `station reload` reloads Hyprland and
 Quickshell.
 
+The bar is 0.75 of the canvas size; `barScale` in
+`quickshell/services/Theme.qml` makes it bigger or smaller (1.0 is the
+canvas). With another value, also adjust the yazi position in
+`hypr/station/rules.lua` (bar bottom + 24).
+
 Workspace 1 (TERM) keeps the right column free for the floating file
 manager and the desktop widgets, like on the canvas. Change it in
 `hypr/station/look.lua`.

@@ -1,6 +1,7 @@
 -- Look: square pixel frames, no blur or shadows, the theme's colours and
--- the CRT shader. Layout numbers follow the canvas (1920x1080): the bar ends
--- at y 64, windows start at y 88 and sit 24 px apart.
+-- the CRT shader. Layout numbers follow the canvas (1920x1080): the bar
+-- (Quickshell, Theme.barScale 0.75) ends at y 48, windows start at y 72 and
+-- sit 24 px apart.
 
 local s = require("station.state")
 

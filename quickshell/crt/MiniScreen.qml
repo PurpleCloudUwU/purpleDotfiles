@@ -11,6 +11,8 @@ Rectangle {
     readonly property real screenW: Wm.primaryScreen?.width ?? 1920
     readonly property real screenH: Wm.primaryScreen?.height ?? 1080
     readonly property real s: width / screenW
+    // Where windows start: below the bar plus Hyprland's gaps_out
+    readonly property real windowTop: Theme.barBottom + 24
 
     color: Theme.bg
     border.width: 2
@@ -52,15 +54,15 @@ Rectangle {
     // Bar
     Rectangle {
         x: 24 * root.s
-        y: 16 * root.s
+        y: Theme.barTop * root.s
         width: (root.screenW - 48) * root.s
-        height: 48 * root.s
+        height: Theme.barHeight * root.s
         color: "transparent"
         border.width: 1
         border.color: Theme.border
 
         Rectangle {
-            width: 140 * root.s
+            width: 140 * Theme.barScale * root.s
             height: parent.height
             color: Theme.frame
         }
@@ -76,9 +78,9 @@ Rectangle {
     // Windows on workspace 1
     Rectangle {
         x: 24 * root.s
-        y: 88 * root.s
+        y: root.windowTop * root.s
         width: (Desktop.column ? 1092 : root.screenW - 48) * root.s
-        height: (root.screenH - 112) * root.s
+        height: (root.screenH - root.windowTop - 24) * root.s
         color: "transparent"
         border.width: 1
         border.color: Theme.faint
@@ -97,9 +99,9 @@ Rectangle {
     Item {
         visible: Desktop.column
         x: (root.screenW - 780) * root.s
-        y: 88 * root.s
+        y: root.windowTop * root.s
         width: 756 * root.s
-        height: (root.screenH - 112) * root.s
+        height: (root.screenH - root.windowTop - 24) * root.s
 
         Hatch {
             anchors.fill: parent

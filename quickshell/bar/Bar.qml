@@ -8,11 +8,17 @@ import qs.widgets
 
 // Top bar (canvas boards 01-04): STATION, workspaces, the focused window,
 // and the status box with WIFI, VOL, BAT, clock and the OFF button.
+// All sizes are the canvas sizes times Theme.barScale.
 PanelWindow {
     id: bar
 
     required property var modelData
     screen: modelData
+
+    // Canvas pixels to bar pixels
+    function px(v) {
+        return Math.max(1, Math.round(v * Theme.barScale));
+    }
 
     anchors {
         top: true
@@ -20,13 +26,18 @@ PanelWindow {
         right: true
     }
     margins {
-        top: 16
+        top: Theme.barTop
         left: 24
         right: 24
     }
-    implicitHeight: 48
+    implicitHeight: Theme.barHeight
     color: "transparent"
     WlrLayershell.namespace: "station-bar"
+
+    // Text in the bar's size
+    component BarText: PText {
+        font.pixelSize: Math.round(26 * Theme.barScale)
+    }
 
     SystemClock {
         id: clock
@@ -35,36 +46,36 @@ PanelWindow {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: bar.px(12)
 
         // STATION: opens the program select
         Rectangle {
             Layout.fillHeight: true
-            implicitWidth: station.implicitWidth + 32
+            implicitWidth: station.implicitWidth + bar.px(32)
             color: Theme.frame
 
             Row {
                 id: station
                 anchors.centerIn: parent
-                spacing: 10
+                spacing: bar.px(10)
 
                 Rectangle {
-                    width: 18
-                    height: 18
+                    width: bar.px(18)
+                    height: bar.px(18)
                     anchors.verticalCenter: parent.verticalCenter
                     color: "transparent"
-                    border.width: 3
+                    border.width: bar.px(3)
                     border.color: Theme.bg
 
                     Rectangle {
-                        width: 4
-                        height: 4
+                        width: bar.px(4)
+                        height: bar.px(4)
                         anchors.centerIn: parent
                         color: Theme.bg
                     }
                 }
 
-                PText {
+                BarText {
                     text: "STATION"
                     color: Theme.bg
                     font.letterSpacing: 1
@@ -81,7 +92,7 @@ PanelWindow {
         // Workspaces
         Row {
             Layout.fillHeight: true
-            spacing: 6
+            spacing: bar.px(6)
 
             Repeater {
                 model: Wm.workspaceIds
@@ -93,8 +104,10 @@ PanelWindow {
                     readonly property bool used: (ws?.toplevels.values.length ?? 0) > 0
                     readonly property string label: Wm.names[String(modelData)] ?? ""
 
-                    height: 48
-                    padding: focused ? 14 : 0
+                    height: Theme.barHeight
+                    minWidth: Theme.barHeight
+                    fontSize: Math.round(26 * Theme.barScale)
+                    padding: focused ? bar.px(14) : 0
                     active: focused
                     text: focused && label ? modelData + " " + label : String(modelData)
                     ink: focused ? Theme.bg : used ? Theme.fg : Theme.muted
@@ -113,25 +126,25 @@ PanelWindow {
 
             Row {
                 anchors.centerIn: parent
-                spacing: 12
+                spacing: bar.px(12)
 
-                PText {
+                BarText {
                     text: "WINDOW:"
                     color: Theme.muted
                 }
 
-                PText {
+                BarText {
                     id: title
                     text: Wm.title
-                    width: Math.min(implicitWidth, 640)
+                    width: Math.min(implicitWidth, bar.px(640))
                     elide: Text.ElideMiddle
 
                     Rectangle {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        anchors.leftMargin: -6
-                        anchors.rightMargin: -6
+                        anchors.leftMargin: -bar.px(6)
+                        anchors.rightMargin: -bar.px(6)
                         height: 2
                         color: Theme.accent
                     }
@@ -142,7 +155,7 @@ PanelWindow {
         // Status box
         Rectangle {
             Layout.fillHeight: true
-            implicitWidth: status.implicitWidth + 18
+            implicitWidth: status.implicitWidth + bar.px(18)
             color: "transparent"
             border.width: 2
             border.color: Theme.line
@@ -150,37 +163,37 @@ PanelWindow {
             Row {
                 id: status
                 anchors.left: parent.left
-                anchors.leftMargin: 18
+                anchors.leftMargin: bar.px(18)
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 24
+                spacing: bar.px(24)
 
                 // WIFI: opens the PDA quick access
                 Item {
                     implicitWidth: wifi.implicitWidth
-                    implicitHeight: 44
+                    implicitHeight: Theme.barHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
                     Row {
                         id: wifi
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 8
+                        spacing: bar.px(8)
 
-                        PText {
+                        BarText {
                             text: Net.enabled ? "WIFI" : "WIFI OFF"
                             color: Theme.muted
                         }
 
                         Row {
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
+                            spacing: bar.px(3)
 
                             Repeater {
                                 model: 4
 
                                 Rectangle {
                                     required property int index
-                                    width: 5
-                                    height: [6, 10, 15, 20][index]
+                                    width: bar.px(5)
+                                    height: bar.px([6, 10, 15, 20][index])
                                     anchors.bottom: parent.bottom
                                     color: index < Net.bars ? Theme.fg : Theme.line
                                 }
@@ -200,20 +213,20 @@ PanelWindow {
                 // VOL: the wheel changes it, a click mutes
                 Item {
                     implicitWidth: vol.implicitWidth
-                    implicitHeight: 44
+                    implicitHeight: Theme.barHeight - 4
                     anchors.verticalCenter: parent.verticalCenter
 
                     Row {
                         id: vol
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 8
+                        spacing: bar.px(8)
 
-                        PText {
+                        BarText {
                             text: "VOL"
                             color: Theme.muted
                         }
 
-                        PText {
+                        BarText {
                             text: Sys.muted ? "--" : Sys.volume
                         }
                     }
@@ -231,9 +244,9 @@ PanelWindow {
                 Row {
                     visible: Sys.hasBattery
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 8
+                    spacing: bar.px(8)
 
-                    PText {
+                    BarText {
                         text: Sys.charging ? "CHG" : "BAT"
                         color: Theme.muted
                     }
@@ -242,8 +255,8 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
 
                         Rectangle {
-                            width: cells.implicitWidth + 8
-                            height: 22
+                            width: cells.implicitWidth + bar.px(8)
+                            height: bar.px(22)
                             color: "transparent"
                             border.width: 2
                             border.color: Theme.fg
@@ -251,15 +264,15 @@ PanelWindow {
                             Row {
                                 id: cells
                                 anchors.centerIn: parent
-                                spacing: 2
+                                spacing: bar.px(2)
 
                                 Repeater {
                                     model: 5
 
                                     Rectangle {
                                         required property int index
-                                        width: 7
-                                        height: 14
+                                        width: bar.px(7)
+                                        height: bar.px(14)
                                         color: index < Math.ceil(Sys.batPct / 20) ? (Sys.batPct <= 15 ? Theme.accent : Theme.fg) : Theme.off
                                     }
                                 }
@@ -267,26 +280,26 @@ PanelWindow {
                         }
 
                         Rectangle {
-                            width: 3
-                            height: 8
+                            width: bar.px(3)
+                            height: bar.px(8)
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.fg
                         }
                     }
 
-                    PText {
+                    BarText {
                         text: Sys.batPct + " %"
                         color: Sys.batPct <= 15 && !Sys.charging ? Theme.accent : Theme.fg
                     }
                 }
 
-                PText {
+                BarText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDateTime(clock.date, "hh:mm")
-                    font.pixelSize: 30
+                    font.pixelSize: bar.px(30)
                 }
 
-                PText {
+                BarText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: clock.date.toLocaleDateString(Qt.locale("en_US"), "ddd dd.MM.").toUpperCase()
                     color: Theme.muted
@@ -294,7 +307,10 @@ PanelWindow {
 
                 Btn {
                     anchors.verticalCenter: parent.verticalCenter
-                    height: 44
+                    height: Theme.barHeight - 4
+                    minWidth: Theme.barHeight
+                    padding: bar.px(16)
+                    fontSize: Math.round(26 * Theme.barScale)
                     text: "OFF"
                     active: true
                     fill: Theme.accent

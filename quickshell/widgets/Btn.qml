@@ -12,10 +12,11 @@ Rectangle {
     property color outline: Theme.border
     property int fontSize: 26
     property int padding: 14
+    property int minWidth: 48
     readonly property bool hovered: mouse.containsMouse
     signal clicked
 
-    implicitWidth: Math.max(48, label.implicitWidth + padding * 2)
+    implicitWidth: Math.max(minWidth, label.implicitWidth + padding * 2)
     implicitHeight: 48
     color: active ? fill : "transparent"
     border.width: active ? 0 : 2
