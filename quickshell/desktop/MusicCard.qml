@@ -42,7 +42,10 @@ Rectangle {
             Row {
                 id: levels
 
-                property var heights: [0.35, 0.6, 0.85, 0.7, 0.5, 0.95, 0.75, 0.45, 0.6, 0.3]
+                // Real levels from cava while it runs; a resting skyline
+                // otherwise, which hops at random if cava is missing
+                property var resting: [0.35, 0.6, 0.85, 0.7, 0.5, 0.95, 0.75, 0.45, 0.6, 0.3]
+                readonly property var heights: Cava.levels.length === 10 ? Cava.levels.map(v => 0.06 + v * 0.94) : resting
 
                 anchors.fill: parent
                 anchors.margins: 10
@@ -78,8 +81,8 @@ Rectangle {
                 Timer {
                     interval: 250
                     repeat: true
-                    running: Player.playing
-                    onTriggered: levels.heights = levels.heights.map(() => 0.15 + Math.random() * 0.85)
+                    running: Player.playing && !Cava.available && Desktop.music.visualizer
+                    onTriggered: levels.resting = levels.resting.map(() => 0.15 + Math.random() * 0.85)
                 }
             }
         }

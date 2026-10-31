@@ -35,8 +35,8 @@ pacman_pkgs=(
     foot yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
     # yazi previews
     chafa resvg ffmpegthumbnailer poppler imagemagick
-    # Audio and media keys
-    pipewire pipewire-pulse pipewire-alsa wireplumber playerctl pavucontrol
+    # Audio, media keys, the music levels in the MUSIC widget
+    pipewire pipewire-pulse pipewire-alsa wireplumber playerctl pavucontrol cava
     # WiFi, Bluetooth, battery, power profiles, brightness
     networkmanager bluez bluez-utils upower tlp tlp-pd brightnessctl
     # Screenshots, clipboard, notifications, helpers of the station script

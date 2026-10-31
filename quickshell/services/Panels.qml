@@ -13,8 +13,10 @@ Singleton {
     property bool launcher: false
     property bool quick: false
     property bool power: false
-    // The CRT calibration window is a normal window, closeAll() leaves it alone
+    // STATION SETUP is a normal window, closeAll() leaves it alone
     property bool crt: false
+    // Its page: "crt" or "desktop"
+    property string setupPage: "crt"
 
     // A panel closed by clicking outside must not reopen from the same click
     // on its bar button
@@ -128,6 +130,16 @@ Singleton {
         function open(): void {
             root.closeAll();
             root.quick = true;
+        }
+    }
+
+    IpcHandler {
+        target: "setup"
+
+        // qs ipc call setup open desktop
+        function open(page: string): void {
+            root.setupPage = page === "desktop" ? "desktop" : "crt";
+            root.crt = true;
         }
     }
 

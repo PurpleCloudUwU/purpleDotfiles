@@ -36,17 +36,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component {
-            Console {}
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-        delegate: Component {
             Bar {}
         }
     }
 
+    Console {}
     Launcher {}
     QuickAccess {}
     PowerMenu {}

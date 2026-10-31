@@ -42,6 +42,7 @@ if not M.palette.bg then
 end
 
 M.crt = read_kv(M.dir .. "/crt.conf")
+M.desktop = read_kv(M.dir .. "/desktop.conf")
 
 -- Palette colour as a Hyprland colour string, e.g. color("frame") or
 -- color("bg", "cc") with alpha

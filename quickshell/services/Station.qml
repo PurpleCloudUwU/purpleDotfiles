@@ -114,8 +114,9 @@ Singleton {
             root.setPreset(name);
         }
 
-        // The CRT calibration window
+        // STATION SETUP on its CRT CALIBRATION page
         function open(): void {
+            Panels.setupPage = "crt";
             Panels.crt = true;
         }
 

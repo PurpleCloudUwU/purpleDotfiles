@@ -3,59 +3,77 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 
-// Desktop widgets in the right column (canvas board 01). They sit below the
-// windows: on workspace 1 Hyprland keeps this column free (hypr/station/
-// look.lua), the floating file manager takes its top, the widgets the rest.
+// The desktop widgets (canvas board 01), below the windows. Where they sit
+// and which are shown is set on the DESKTOP WIDGETS page of STATION SETUP
+// (services/Desktop.qml). By default they fill the right column that
+// Hyprland keeps free on workspace 1.
 PanelWindow {
     id: win
 
-    required property var modelData
-    screen: modelData
-
+    screen: Wm.primaryScreen
     anchors {
         top: true
         bottom: true
+        left: true
         right: true
     }
-    margins {
-        top: 88
-        bottom: 24
-        right: 24
-    }
     exclusionMode: ExclusionMode.Ignore
-    implicitWidth: 756
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "station-desktop"
 
-    // Only the cards take clicks
+    // Only the shown cards take clicks, the rest goes to the desktop
     mask: Region {
-        item: music
+        Region {
+            x: music.x
+            y: music.y
+            width: music.visible ? music.width : 0
+            height: music.visible ? music.height : 0
+        }
 
-        Region { item: tasks }
-        Region { item: pda }
+        Region {
+            x: tasks.x
+            y: tasks.y
+            width: tasks.visible ? tasks.width : 0
+            height: tasks.visible ? tasks.height : 0
+        }
+
+        Region {
+            x: pda.x
+            y: pda.y
+            width: pda.visible ? pda.width : 0
+            height: pda.visible ? pda.height : 0
+        }
+    }
+
+    // Keeps a card on screen, also on smaller screens than the layout's
+    function place(pos, size, limit) {
+        return Math.max(0, Math.min(pos, limit - size));
     }
 
     MusicCard {
         id: music
-        x: 0
-        y: pda.y - 24 - height
+        visible: Desktop.music.visible
         width: 448
         height: 284
+        x: win.place(Desktop.music.x, width, win.width)
+        y: win.place(Desktop.music.y, height, win.height)
     }
 
     TasksCard {
         id: tasks
-        x: 472
-        y: music.y
+        visible: Desktop.tasks.visible
         width: 284
+        x: win.place(Desktop.tasks.x, width, win.width)
+        y: win.place(Desktop.tasks.y, height, win.height)
     }
 
     PdaCard {
         id: pda
-        x: 0
-        y: win.height - height
+        visible: Desktop.pda.visible
         width: 756
         height: 208
+        x: win.place(Desktop.pda.x, width, win.width)
+        y: win.place(Desktop.pda.y, height, win.height)
     }
 }

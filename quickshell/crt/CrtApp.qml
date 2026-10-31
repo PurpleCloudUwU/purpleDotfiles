@@ -4,14 +4,17 @@ import Quickshell
 import qs.services
 import qs.widgets
 
-// CRT CALIBRATION (canvas board 03): try the effects on the test picture,
-// then APPLY writes them with `station crt write`. The colour world switches
-// right away. Open with Super+Shift+F12, the program select or
-// `qs ipc call crt open`.
+// STATION SETUP with two pages:
+// - CRT CALIBRATION (canvas board 03): try the effects on the test picture,
+//   then APPLY writes them with `station crt write`. The colour world
+//   switches right away.
+// - DESKTOP WIDGETS (DesktopPage.qml): move, hide and set up the widgets.
+// Open with Super+Shift+F12, the program select, `qs ipc call crt open` or
+// `qs ipc call setup open desktop`.
 FloatingWindow {
     id: win
 
-    title: "CRT CALIBRATION"
+    title: "STATION SETUP"
     visible: Panels.crt
     implicitWidth: 1320
     implicitHeight: 900
@@ -108,34 +111,11 @@ FloatingWindow {
     }
     readonly property string gpuLabel: draftPreset === "off" ? "OFF" : gpuCells <= 2 ? "VERY LOW" : gpuCells <= 4 ? "LOW" : gpuCells <= 6 ? "MEDIUM" : "HIGH"
 
-    // Heading with a line under it
-    component Section: Item {
-        property alias text: label.text
-
-        Layout.fillWidth: true
-        implicitHeight: 22
-
-        Caps {
-            id: label
-            anchors.left: parent.left
-            anchors.top: parent.top
-            font.letterSpacing: 2
-        }
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 2
-            color: Theme.line
-        }
-    }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // CRT CALIBRATION  ////////  Qt 6 · QML  [X]
+        // [CRT CALIBRATION] DESKTOP WIDGETS  ////////  Qt 6 · QML  [X]
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 42
@@ -155,10 +135,42 @@ FloatingWindow {
                     color: Theme.bg
                 }
 
-                PText {
-                    text: "CRT CALIBRATION"
-                    color: Theme.bg
-                    font.pixelSize: 28
+                Repeater {
+                    model: [
+                        { key: "crt", label: "CRT CALIBRATION" },
+                        { key: "desktop", label: "DESKTOP WIDGETS" }
+                    ]
+
+                    Rectangle {
+                        id: tab
+
+                        required property var modelData
+                        readonly property bool current: (Panels.setupPage === "desktop" ? "desktop" : "crt") === modelData.key
+
+                        width: tabLabel.implicitWidth + 24
+                        height: 42
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: current ? Theme.bg : "transparent"
+                        Accessible.role: Accessible.PageTab
+                        Accessible.name: modelData.label
+
+                        PText {
+                            id: tabLabel
+                            anchors.centerIn: parent
+                            text: tab.modelData.label
+                            color: tab.current ? Theme.frame : Theme.bg
+                            font.pixelSize: 28
+                            font.underline: !tab.current && tabMouse.containsMouse
+                        }
+
+                        MouseArea {
+                            id: tabMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Panels.setupPage = tab.modelData.key
+                        }
+                    }
                 }
             }
 
@@ -210,319 +222,334 @@ FloatingWindow {
             }
         }
 
-        RowLayout {
-            id: body
-
+        // One page per topic, picked with the tabs in the header
+        StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: 32
-            Layout.rightMargin: 32
-            Layout.topMargin: 26
-            Layout.bottomMargin: 26
-            spacing: 40
-            focus: true
-            Keys.onEscapePressed: Panels.crt = false
+            currentIndex: Panels.setupPage === "desktop" ? 1 : 0
 
-            // Preview, preset, GPU load, colour world
+            // CRT CALIBRATION
             ColumnLayout {
-                Layout.preferredWidth: 520
-                Layout.fillWidth: false
-                Layout.alignment: Qt.AlignTop
-                spacing: 12
-
-                Section {
-                    text: "PREVIEW"
-                }
-
-                CrtScreen {
-                    Layout.preferredWidth: 520
-                    Layout.preferredHeight: 360
-                    values: win.draft
-                    phosphor: win.tints[win.draft.tint] ?? Theme.fg
-                }
-
-                Section {
-                    Layout.topMargin: 6
-                    text: "PRESET"
-                }
+                spacing: 0
 
                 RowLayout {
+                    id: body
+
                     Layout.fillWidth: true
-                    spacing: 8
+                    Layout.fillHeight: true
+                    Layout.leftMargin: 32
+                    Layout.rightMargin: 32
+                    Layout.topMargin: 26
+                    Layout.bottomMargin: 26
+                    spacing: 40
+                    focus: true
+                    Keys.onEscapePressed: Panels.crt = false
 
-                    Repeater {
-                        model: ["off", "work", "subtle", "full"]
+                    // Preview, preset, GPU load, colour world
+                    ColumnLayout {
+                        Layout.preferredWidth: 520
+                        Layout.fillWidth: false
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 12
 
-                        Btn {
-                            required property string modelData
-                            Layout.fillWidth: true
-                            implicitHeight: 52
-                            text: Station.presetNames[modelData]
-                            fontSize: 24
-                            active: win.draftPreset === modelData
-                            outline: Theme.line
-                            onClicked: win.pickPreset(modelData)
+                        Section {
+                            text: "PREVIEW"
                         }
-                    }
-                }
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.topMargin: 6
-
-                    Caps {
-                        text: "ESTIMATED GPU LOAD"
-                        font.letterSpacing: 2
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
-                    PText {
-                        text: win.gpuLabel
-                        color: win.gpuCells >= 6 ? Theme.accent : Theme.frame
-                        font.pixelSize: 24
-                    }
-                }
-
-                Segments {
-                    Layout.fillWidth: true
-                    implicitHeight: 20
-                    count: 10
-                    gap: 4
-                    value: win.gpuCells
-                    on: win.gpuCells >= 6 ? Theme.accent : Theme.frame
-                }
-
-                PText {
-                    text: "Intel UHD Graphics 620 · estimate"
-                    color: Theme.muted
-                    font.pixelSize: 22
-                }
-
-                Section {
-                    Layout.topMargin: 6
-                    text: "COLOR WORLD"
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-
-                    Repeater {
-                        model: ["amber", "red", "green", "violet"]
-
-                        Choice {
-                            required property string modelData
-                            Layout.fillWidth: true
-                            text: modelData.toUpperCase()
-                            swatch: Theme.swatches[modelData]
-                            active: Theme.name === modelData
-                            onClicked: Station.setTheme(modelData)
+                        CrtScreen {
+                            Layout.preferredWidth: 520
+                            Layout.preferredHeight: 360
+                            values: win.draft
+                            phosphor: win.tints[win.draft.tint] ?? Theme.fg
                         }
-                    }
-                }
-            }
 
-            // Parameters, phosphor colour, behaviour
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                spacing: 10
+                        Section {
+                            Layout.topMargin: 6
+                            text: "PRESET"
+                        }
 
-                Section {
-                    text: "PARAMETERS"
-                }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
 
-                Repeater {
-                    model: Station.keys
+                            Repeater {
+                                model: ["off", "work", "subtle", "full"]
 
-                    RowLayout {
-                        id: param
+                                Btn {
+                                    required property string modelData
+                                    Layout.fillWidth: true
+                                    implicitHeight: 52
+                                    text: Station.presetNames[modelData]
+                                    fontSize: 24
+                                    active: win.draftPreset === modelData
+                                    outline: Theme.line
+                                    onClicked: win.pickPreset(modelData)
+                                }
+                            }
+                        }
 
-                        required property string modelData
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
 
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 38
-                        spacing: 16
+                            Caps {
+                                text: "ESTIMATED GPU LOAD"
+                                font.letterSpacing: 2
+                            }
 
-                        PText {
-                            Layout.preferredWidth: 180
-                            text: win.labels[param.modelData]
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            PText {
+                                text: win.gpuLabel
+                                color: win.gpuCells >= 6 ? Theme.accent : Theme.frame
+                                font.pixelSize: 24
+                            }
                         }
 
                         Segments {
                             Layout.fillWidth: true
-                            implicitHeight: 26
-                            count: 20
+                            implicitHeight: 20
+                            count: 10
                             gap: 4
-                            value: (win.draft[param.modelData] ?? 0) / 5
-                            interactive: true
-                            onPicked: cells => win.set(param.modelData, cells * 5)
+                            value: win.gpuCells
+                            on: win.gpuCells >= 6 ? Theme.accent : Theme.frame
                         }
 
                         PText {
-                            Layout.preferredWidth: 76
-                            horizontalAlignment: Text.AlignRight
-                            text: (win.draft[param.modelData] ?? 0) + " %"
+                            text: "Intel UHD Graphics 620 · estimate"
+                            color: Theme.muted
+                            font.pixelSize: 22
+                        }
+
+                        Section {
+                            Layout.topMargin: 6
+                            text: "COLOR WORLD"
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            Repeater {
+                                model: ["amber", "red", "green", "violet"]
+
+                                Choice {
+                                    required property string modelData
+                                    Layout.fillWidth: true
+                                    text: modelData.toUpperCase()
+                                    swatch: Theme.swatches[modelData]
+                                    active: Theme.name === modelData
+                                    onClicked: Station.setTheme(modelData)
+                                }
+                            }
+                        }
+                    }
+
+                    // Parameters, phosphor colour, behaviour
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 10
+
+                        Section {
+                            text: "PARAMETERS"
+                        }
+
+                        Repeater {
+                            model: Station.keys
+
+                            RowLayout {
+                                id: param
+
+                                required property string modelData
+
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 38
+                                spacing: 16
+
+                                PText {
+                                    Layout.preferredWidth: 180
+                                    text: win.labels[param.modelData]
+                                }
+
+                                Segments {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 26
+                                    count: 20
+                                    gap: 4
+                                    value: (win.draft[param.modelData] ?? 0) / 5
+                                    interactive: true
+                                    onPicked: cells => win.set(param.modelData, cells * 5)
+                                }
+
+                                PText {
+                                    Layout.preferredWidth: 76
+                                    horizontalAlignment: Text.AlignRight
+                                    text: (win.draft[param.modelData] ?? 0) + " %"
+                                }
+                            }
+                        }
+
+                        Section {
+                            Layout.topMargin: 8
+                            text: "PHOSPHOR COLOR"
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            Repeater {
+                                model: ["neutral", "amber", "green", "red"]
+
+                                Choice {
+                                    required property string modelData
+                                    Layout.fillWidth: true
+                                    implicitHeight: 50
+                                    fontSize: 24
+                                    text: modelData.toUpperCase()
+                                    swatch: win.tints[modelData]
+                                    active: win.draft.tint === modelData
+                                    onClicked: win.set("tint", modelData)
+                                }
+                            }
+                        }
+
+                        Section {
+                            Layout.topMargin: 8
+                            text: "BEHAVIOR"
+                        }
+
+                        Repeater {
+                            model: win.options
+
+                            Item {
+                                id: option
+
+                                required property var modelData
+                                readonly property bool on: win.draft[modelData.key] ?? false
+
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 44
+                                Accessible.role: Accessible.CheckBox
+                                Accessible.name: modelData.label
+                                Accessible.checked: on
+
+                                Rectangle {
+                                    id: box
+                                    width: 22
+                                    height: 22
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: "transparent"
+                                    border.width: 2
+                                    border.color: Theme.frame
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        anchors.margins: 5
+                                        color: option.on ? Theme.frame : "transparent"
+                                    }
+                                }
+
+                                PText {
+                                    anchors.left: box.right
+                                    anchors.leftMargin: 14
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: option.modelData.label
+                                    font.pixelSize: 25
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: win.set(option.modelData.key, !option.on)
+                                }
+                            }
+                        }
+
+                        Row {
+                            Layout.topMargin: 4
+                            spacing: 10
+
+                            PText {
+                                text: "TOGGLE"
+                                color: Theme.muted
+                                font.pixelSize: 25
+                                rightPadding: 6
+                            }
+
+                            Repeater {
+                                model: ["SUPER", "+", "F12"]
+
+                                Rectangle {
+                                    required property string modelData
+                                    readonly property bool key: modelData !== "+"
+
+                                    width: keyText.implicitWidth + (key ? 20 : 0)
+                                    height: 34
+                                    color: "transparent"
+                                    border.width: key ? 2 : 0
+                                    border.color: Theme.muted
+
+                                    PText {
+                                        id: keyText
+                                        anchors.centerIn: parent
+                                        text: parent.modelData
+                                        color: parent.key ? Theme.fg : Theme.muted
+                                        font.pixelSize: 25
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                Section {
-                    Layout.topMargin: 8
-                    text: "PHOSPHOR COLOR"
+                // Status, RESET, APPLY
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 2
+                    color: Theme.line
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
-
-                    Repeater {
-                        model: ["neutral", "amber", "green", "red"]
-
-                        Choice {
-                            required property string modelData
-                            Layout.fillWidth: true
-                            implicitHeight: 50
-                            fontSize: 24
-                            text: modelData.toUpperCase()
-                            swatch: win.tints[modelData]
-                            active: win.draft.tint === modelData
-                            onClicked: win.set("tint", modelData)
-                        }
-                    }
-                }
-
-                Section {
-                    Layout.topMargin: 8
-                    text: "BEHAVIOR"
-                }
-
-                Repeater {
-                    model: win.options
-
-                    Item {
-                        id: option
-
-                        required property var modelData
-                        readonly property bool on: win.draft[modelData.key] ?? false
-
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 44
-                        Accessible.role: Accessible.CheckBox
-                        Accessible.name: modelData.label
-                        Accessible.checked: on
-
-                        Rectangle {
-                            id: box
-                            width: 22
-                            height: 22
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: "transparent"
-                            border.width: 2
-                            border.color: Theme.frame
-
-                            Rectangle {
-                                anchors.fill: parent
-                                anchors.margins: 5
-                                color: option.on ? Theme.frame : "transparent"
-                            }
-                        }
-
-                        PText {
-                            anchors.left: box.right
-                            anchors.leftMargin: 14
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: option.modelData.label
-                            font.pixelSize: 25
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: win.set(option.modelData.key, !option.on)
-                        }
-                    }
-                }
-
-                Row {
-                    Layout.topMargin: 4
+                    Layout.preferredHeight: 74
+                    Layout.leftMargin: 32
+                    Layout.rightMargin: 32
                     spacing: 10
 
                     PText {
-                        text: "TOGGLE"
-                        color: Theme.muted
-                        font.pixelSize: 25
-                        rightPadding: 6
+                        Layout.fillWidth: true
+                        font.pixelSize: 23
+                        elide: Text.ElideRight
+                        text: win.applied && !win.unsaved ? "APPLIED · " + (Station.presetNames[Station.preset] ?? "") + " IS ON SCREEN"
+                            : win.unsaved ? "NOT APPLIED · writes ~/.local/state/station/crt/"
+                            : "ON SCREEN · " + (Station.presetNames[Station.shown] ?? "") + (Station.temporary ? " (SAVED: " + Station.presetNames[Station.preset] + ")" : "")
+                        color: win.unsaved ? Theme.muted : Theme.frame
                     }
 
-                    Repeater {
-                        model: ["SUPER", "+", "F12"]
+                    Btn {
+                        implicitHeight: 48
+                        text: "RESET"
+                        padding: 20
+                        outline: Theme.muted
+                        onClicked: win.reset()
+                    }
 
-                        Rectangle {
-                            required property string modelData
-                            readonly property bool key: modelData !== "+"
-
-                            width: keyText.implicitWidth + (key ? 20 : 0)
-                            height: 34
-                            color: "transparent"
-                            border.width: key ? 2 : 0
-                            border.color: Theme.muted
-
-                            PText {
-                                id: keyText
-                                anchors.centerIn: parent
-                                text: parent.modelData
-                                color: parent.key ? Theme.fg : Theme.muted
-                                font.pixelSize: 25
-                            }
-                        }
+                    Btn {
+                        implicitHeight: 48
+                        text: "APPLY"
+                        padding: 26
+                        active: true
+                        onClicked: win.apply()
                     }
                 }
             }
-        }
 
-        // Status, RESET, APPLY
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 2
-            color: Theme.line
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 74
-            Layout.leftMargin: 32
-            Layout.rightMargin: 32
-            spacing: 10
-
-            PText {
-                Layout.fillWidth: true
-                font.pixelSize: 23
-                elide: Text.ElideRight
-                text: win.applied && !win.unsaved ? "APPLIED · " + (Station.presetNames[Station.preset] ?? "") + " IS ON SCREEN"
-                    : win.unsaved ? "NOT APPLIED · writes ~/.local/state/station/crt/"
-                    : "ON SCREEN · " + (Station.presetNames[Station.shown] ?? "") + (Station.temporary ? " (SAVED: " + Station.presetNames[Station.preset] + ")" : "")
-                color: win.unsaved ? Theme.muted : Theme.frame
-            }
-
-            Btn {
-                implicitHeight: 48
-                text: "RESET"
-                padding: 20
-                outline: Theme.muted
-                onClicked: win.reset()
-            }
-
-            Btn {
-                implicitHeight: 48
-                text: "APPLY"
-                padding: 26
-                active: true
-                onClicked: win.apply()
-            }
+            // DESKTOP WIDGETS
+            DesktopPage {}
         }
     }
 }

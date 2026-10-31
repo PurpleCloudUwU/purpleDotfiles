@@ -11,7 +11,7 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 | Part | What it does |
 |---|---|
 | `hypr/` | Hyprland (Lua config, 0.55+), hyprlock, hypridle |
-| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper, and the CRT CALIBRATION window (Super+Shift+F12) |
+| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper, and STATION SETUP (Super+Shift+F12) |
 | `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
@@ -67,7 +67,7 @@ CRT settings and shaders, terminal colours, prompt, hyprlock colours),
 | Super+Shift+E | Power menu |
 | Super+Escape | Lock |
 | Super+F12 | CRT on/off |
-| Super+Shift+F12 | CRT calibration window |
+| Super+Shift+F12 | STATION SETUP: CRT calibration and desktop widgets |
 | Super+F11 | Next theme |
 | Super+Shift+Q | Close window |
 | Super+F / Super+Shift+F | Fullscreen / maximise |
@@ -98,8 +98,8 @@ station crt set scan 50       # single values 0-100, the preset becomes "custom"
 station crt option battery_subtle off
 ```
 
-The **CRT CALIBRATION** window (Super+Shift+F12, or CRT CALIBRATION in the
-program select) shows the effects on a test picture first: presets, the seven
+The **CRT CALIBRATION** page of STATION SETUP (Super+Shift+F12, or CRT
+CALIBRATION in the program select) shows the effects on a test picture first: presets, the seven
 values, phosphor colour, the behaviour options and an estimate of the GPU
 load. APPLY sends everything to `station crt write`; the colour world row
 switches the theme right away. From scripts: `qs ipc call crt open`,
@@ -118,6 +118,22 @@ frame, so only FULL TUBE switches Hyprland's damage tracking off. Two
 options, both on by default: on battery FULL TUBE drops to SUBTLE, and the
 shader goes off while a window is fullscreen. A third one, off by default,
 lets the tube flicker for a moment at login.
+
+## Desktop widgets
+
+MUSIC, TASKS and the PDA panel sit below the windows. The **DESKTOP
+WIDGETS** page of STATION SETUP shows the screen in small: drag a widget
+there and the real one moves along (8 px grid). The page also shows or
+hides each widget, switches the music visualizer and the done tasks, and
+decides whether Hyprland keeps the right column of workspace 1 free for
+them (`station desktop column on|off`). The layout is kept in
+`~/.local/state/station/desktop.json`; RESET LAYOUT brings back the one
+from the canvas.
+
+The level bars in MUSIC show the real music through
+[cava](https://github.com/karlstav/cava) (PipeWire). cava only runs while
+something plays, the widget is shown and the visualizer is on
+(`quickshell/scripts/cava.conf`: 10 bars, 25 frames a second).
 
 ## Fonts
 

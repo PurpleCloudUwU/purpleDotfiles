@@ -20,6 +20,8 @@
 #   station open <what>                 terminal, files, editor, monitor, music,
 #                                       player, browser, crt
 #   station shot <screen|region|window> screenshot to ~/Pictures/Screenshots
+#   station desktop column <on|off>     keep the right column of workspace 1 free
+#                                       for the desktop widgets (STATION SETUP)
 #   station battery                     charge of all batteries together
 #   station reload                      reload Hyprland and Quickshell (after git pull)
 #   station power <lock|logout|suspend|reboot|off>
@@ -601,6 +603,14 @@ shot() {
     if command -v notify-send >/dev/null; then notify-send -a station "Screenshot saved" "${file/#"$HOME"/\~}"; fi
 }
 
+# Whether Hyprland keeps workspace 1's right column free (hypr/station/look.lua)
+desktop() {
+    [[ ${1:-} == column && ( ${2:-} == on || ${2:-} == off ) ]] || die "usage: station desktop column <on|off>"
+    echo "column=$2" > "$state/desktop.conf"
+    if in_hyprland; then hyprctl reload >/dev/null; fi
+    echo "desktop › column=$2"
+}
+
 # The T580 has an internal and an external battery
 battery() {
     local now=0 full=0 b
@@ -663,6 +673,7 @@ case ${1:-} in
     open)   shift; open_app "$@" ;;
     shot)   shift; shot "$@" ;;
     battery) battery ;;
+    desktop) shift; desktop "$@" ;;
     reload)
         init >/dev/null
         if in_hyprland; then hyprctl reload >/dev/null; fi

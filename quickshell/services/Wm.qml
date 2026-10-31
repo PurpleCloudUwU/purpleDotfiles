@@ -39,6 +39,16 @@ Singleton {
         return list.length > 0 ? list[0] : null;
     }
 
+    // The laptop's own panel (the desktop widgets live there)
+    readonly property var primaryScreen: {
+        const list = Quickshell.screens;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].name === "eDP-1")
+                return list[i];
+        }
+        return list.length > 0 ? list[0] : null;
+    }
+
     readonly property var active: ToplevelManager.activeToplevel
     readonly property bool emptyWorkspace: (Hyprland.focusedWorkspace?.toplevels.values.length ?? 0) === 0
 

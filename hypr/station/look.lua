@@ -54,11 +54,14 @@ hl.window_rule({
 
 -- Workspace 1 (TERM) keeps the right column free for the floating file
 -- manager and the desktop widgets, like on canvas board 01: tiled windows
--- end at x 1116, the column runs from 1140 to 1896.
-hl.workspace_rule({
-    workspace = "1",
-    gaps_out  = { top = 24, left = 24, bottom = 24, right = 804 },
-})
+-- end at x 1116, the column runs from 1140 to 1896. Switch it off on the
+-- DESKTOP WIDGETS page of STATION SETUP (station desktop column off).
+if s.desktop.column ~= "off" then
+    hl.workspace_rule({
+        workspace = "1",
+        gaps_out  = { top = 24, left = 24, bottom = 24, right = 804 },
+    })
+end
 
 -- Short, linear animations. Nothing bounces on a CRT.
 hl.curve("step", { type = "bezier", points = { {0.2, 0}, {0, 1} } })

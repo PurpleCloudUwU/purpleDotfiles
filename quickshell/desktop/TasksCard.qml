@@ -57,23 +57,26 @@ Rectangle {
         anchors.topMargin: 10
         spacing: 4
 
+        // Done tasks can be hidden in STATION SETUP
+        readonly property var shown: Desktop.tasks.showDone ? Tasks.items : Tasks.items.filter(t => !t.done)
+        // The first open task is marked like on the canvas
+        readonly property int firstOpen: Tasks.items.find(t => !t.done)?.line ?? -1
+
         PText {
-            visible: Tasks.items.length === 0
-            text: "NO TASKS · CLICK THE HEADER"
+            visible: list.shown.length === 0
+            text: Tasks.items.length === 0 ? "NO TASKS · CLICK THE HEADER" : "ALL DONE"
             color: Theme.muted
             font.pixelSize: 20
         }
 
         Repeater {
-            model: Tasks.items
+            model: list.shown
 
             Item {
                 id: task
 
                 required property var modelData
-                required property int index
-                // The first open task is marked like on the canvas
-                readonly property bool next: !modelData.done && Tasks.items.findIndex(t => !t.done) === index
+                readonly property bool next: !modelData.done && modelData.line === list.firstOpen
 
                 width: list.width
                 height: 30
