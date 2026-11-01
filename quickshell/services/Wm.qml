@@ -62,15 +62,26 @@ Singleton {
         return t && t.toUpperCase() !== app ? app + " — " + t : app;
     }
 
-    // The workspaces that exist (Hyprland removes empty ones you leave);
-    // special workspaces like the scratchpad have negative ids and stay out
+    // The focused workspace's id, 0 before Hyprland told us
+    readonly property int focusedId: Hyprland.focusedWorkspace?.id ?? 0
+
+    // The workspaces to show: the ones with windows plus the focused one.
+    // Hyprland reports a switch in several events (create the new
+    // workspace, focus it, destroy the empty old one) and the bar would
+    // draw each step for a frame. Showing the state those events end in
+    // right away keeps the switch seamless: an empty workspace you left is
+    // gone at once, the new one is there at once. Special workspaces like
+    // the scratchpad have negative ids and stay out.
     readonly property var workspaceIds: {
         const ids = [];
         const all = Hyprland.workspaces.values;
         for (let i = 0; i < all.length; i++) {
-            if (all[i].id > 0)
-                ids.push(all[i].id);
+            const ws = all[i];
+            if (ws.id > 0 && (ws.id === focusedId || ws.toplevels.values.length > 0))
+                ids.push(ws.id);
         }
+        if (focusedId > 0 && ids.indexOf(focusedId) < 0)
+            ids.push(focusedId);
         return ids.sort((a, b) => a - b);
     }
 

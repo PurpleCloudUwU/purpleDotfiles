@@ -56,7 +56,7 @@ Singleton {
     readonly property int barBottom: barTop + barHeight
 
     // Swatches for the theme buttons (each theme's signature colour)
-    readonly property var swatches: ({ amber: "#e9dca0", red: "#ff5b3a", mono: "#e6e6e6", violet: "#9b7bff" })
+    readonly property var swatches: ({ amber: "#e9dca0", red: "#e2231a", mono: "#e6e6e6", violet: "#9b7bff" })
 
     // Pocket, the game's display font, when it is installed; VT323 otherwise
     readonly property string font: Qt.fontFamilies().indexOf("Pocket") >= 0 ? "Pocket" : "VT323"

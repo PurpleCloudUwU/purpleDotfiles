@@ -163,6 +163,9 @@ apply_settings() {
         if [[ ! -e ~/.config/$gtk/settings.ini ]]; then
             printf '%s\n' '[Settings]' 'gtk-theme-name=adw-gtk3-dark' 'gtk-application-prefer-dark-theme=1' > ~/.config/$gtk/settings.ini
         fi
+        # No animations in GTK apps
+        grep -q '^gtk-enable-animations' ~/.config/$gtk/settings.ini \
+            || echo 'gtk-enable-animations=0' >> ~/.config/$gtk/settings.ini
     done
     note "GTK: adw-gtk3-dark"
 

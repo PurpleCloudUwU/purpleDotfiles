@@ -13,4 +13,7 @@ hl.on("hyprland.start", function()
     -- Dark GTK and libadwaita apps
     hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme prefer-dark")
     hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark")
+    -- No GTK animations (menus, switches, scrolling); browsers read this
+    -- as "reduce motion" too
+    hl.exec_cmd("gsettings set org.gnome.desktop.interface enable-animations false")
 end)

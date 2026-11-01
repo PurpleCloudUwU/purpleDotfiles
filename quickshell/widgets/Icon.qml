@@ -35,7 +35,16 @@ Item {
         prev: "M5 4h3v16H5Z M20 4L9 12l11 8Z",
         next: "M16 4h3v16h-3Z M4 4l11 8-11 8Z",
         play: "M6 4l14 8-14 8Z",
-        pause: "M5 4h5v16H5Z M14 4h5v16h-5Z"
+        pause: "M5 4h5v16H5Z M14 4h5v16h-5Z",
+        // Weather (WEATHER widget)
+        sun: "M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9L7 7 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1",
+        moon: "M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z",
+        partly: "M6 3v2 M2 8h2 M3 5l1.4 1.4 M9.6 6.4L11 5 M4.2 10.5A3 3 0 0 1 9.8 7 M8 20h9a3.5 3.5 0 0 0 0-7a5 5 0 0 0-9.6 1.2A2.9 2.9 0 0 0 8 20Z",
+        cloud: "M7 18h10a4 4 0 0 0 0-8a6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18Z",
+        rain: "M7 14h10a4 4 0 0 0 0-8a6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14Z M8 17l-1 4 M12 17l-1 4 M16 17l-1 4",
+        snow: "M7 13h10a4 4 0 0 0 0-8a6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 13Z M7 16v5 M4.5 18.5h5 M17 16v5 M14.5 18.5h5",
+        fog: "M3 6h18 M5 10h14 M3 14h18 M5 18h14",
+        storm: "M7 14h10a4 4 0 0 0 0-8a6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14Z M13 14l-3 4h4l-3 4"
     })
     readonly property bool filled: ["left", "right", "down", "prev", "next", "play", "pause"].indexOf(name) >= 0
 

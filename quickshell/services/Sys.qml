@@ -54,12 +54,30 @@ Singleton {
             sink.audio.muted = !sink.audio.muted;
     }
 
-    // --- CPU, temperature, brightness (scripts/sysinfo.sh prints a line
-    // every 3 seconds: cpu_total cpu_idle temp_millideg brightness max)
+    // --- CPU, temperature, brightness, memory, uptime and disk
+    // (scripts/sysinfo.sh prints a line every 3 seconds: cpu_total cpu_idle
+    // temp_millideg brightness max mem_total mem_avail uptime disk_pct)
     property int cpu: 0
     property int temp: 0
     property int brightness: 0
+    property real memTotal: 0
+    property real memUsed: 0
+    readonly property int memPct: memTotal > 0 ? Math.round(memUsed / memTotal * 100) : 0
+    property int uptime: 0
+    property int disk: 0
+    // The last 40 CPU readings (two minutes) for the SYSTEM graph
+    property var cpuHistory: []
     property var last: null
+
+    // 1.4 G, 512 M
+    function gib(kb) {
+        return kb >= 1048576 ? (kb / 1048576).toFixed(1) + " G" : Math.round(kb / 1024) + " M";
+    }
+
+    readonly property string uptimeText: {
+        const d = Math.floor(uptime / 86400), h = Math.floor(uptime % 86400 / 3600), m = Math.floor(uptime % 3600 / 60);
+        return (d > 0 ? d + " D " : "") + h + " H " + m + " MIN";
+    }
 
     function parse(line) {
         const f = line.trim().split(/\s+/).map(Number);
@@ -68,13 +86,26 @@ Singleton {
         if (last) {
             const total = f[0] - last[0];
             const idle = f[1] - last[1];
-            if (total > 0)
+            if (total > 0) {
                 cpu = Math.round((1 - idle / total) * 100);
+                cpuHistory = cpuHistory.concat([cpu]).slice(-40);
+            }
         }
         last = [f[0], f[1]];
         temp = Math.round(f[2] / 1000);
         if (f[4] > 0)
             brightness = Math.round(f[3] / f[4] * 100);
+        if (f.length >= 9) {
+            memTotal = f[5];
+            memUsed = f[5] - f[6];
+            uptime = f[7];
+            disk = f[8];
+        }
+    }
+
+    // btop in a terminal (the SYSTEM widget's header)
+    function monitor() {
+        Quickshell.execDetached(["foot", "--app-id=station.monitor", "btop"]);
     }
 
     function setBrightness(pct) {

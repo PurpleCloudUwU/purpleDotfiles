@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.services
 import qs.widgets
@@ -29,110 +30,132 @@ PanelWindow {
     readonly property real sy: height / 1080
     readonly property bool dots: Theme.name === "mono"
 
-    Canvas {
-        id: chart
+    // Everything in one item, so `qs ipc call wallpaper save` can write it
+    // as a picture (the window colour itself is not part of a grab)
+    Rectangle {
+        id: scene
 
         anchors.fill: parent
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
+        color: Theme.bg
 
-        Connections {
-            target: Theme
+        Canvas {
+            id: chart
 
-            function onPChanged() {
-                chart.requestPaint();
+            anchors.fill: parent
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+
+            Connections {
+                target: Theme
+
+                function onPChanged() {
+                    chart.requestPaint();
+                }
+            }
+
+            onPaint: {
+                const ctx = getContext("2d");
+                const w = width, h = height, sx = win.sx, sy = win.sy;
+                ctx.reset();
+
+                // Grid
+                if (win.dots) {
+                    ctx.fillStyle = String(Theme.grid);
+                    for (let x = 16; x < w; x += 32)
+                        for (let y = 16; y < h; y += 32)
+                            ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+                } else {
+                    ctx.strokeStyle = String(Theme.grid);
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for (let x = 0.5; x < w; x += 48) {
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, h);
+                    }
+                    for (let y = 0.5; y < h; y += 48) {
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(w, y);
+                    }
+                    ctx.stroke();
+                }
+
+                // Orbit rings in the bottom right
+                const cx = 1640 * sx, cy = 1240 * sy;
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = String(Theme.border);
+                ctx.beginPath();
+                ctx.arc(cx, cy, 620 * sy, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.strokeStyle = String(Theme.line);
+                for (let a = 0; a < Math.PI * 2; a += 14 / (560 * sy)) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 560 * sy, a, a + 4 / (560 * sy));
+                    ctx.stroke();
+                }
+
+                // Crosshair with the marker ring
+                const tx = 1200 * sx, ty = 640 * sy;
+                ctx.strokeStyle = String(Theme.fg);
+                ctx.globalAlpha = 0.75;
+                ctx.beginPath();
+                ctx.moveTo(tx - 28, ty);
+                ctx.lineTo(tx + 28, ty);
+                ctx.moveTo(tx, ty - 28);
+                ctx.lineTo(tx, ty + 28);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = String(Theme.accent);
+                ctx.beginPath();
+                ctx.arc(tx, ty, 14, 0, Math.PI * 2);
+                ctx.stroke();
             }
         }
 
-        onPaint: {
-            const ctx = getContext("2d");
-            const w = width, h = height, sx = win.sx, sy = win.sy;
-            ctx.reset();
+        Caps {
+            x: 1236 * win.sx
+            y: 626 * win.sy - height
+            text: "SECTOR 7 · OBSERVATORY"
+            color: Theme.fg2
+            font.pixelSize: 13
+        }
 
-            // Grid
-            if (win.dots) {
-                ctx.fillStyle = String(Theme.grid);
-                for (let x = 16; x < w; x += 32)
-                    for (let y = 16; y < h; y += 32)
-                        ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
-            } else {
-                ctx.strokeStyle = String(Theme.grid);
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                for (let x = 0.5; x < w; x += 48) {
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, h);
-                }
-                for (let y = 0.5; y < h; y += 48) {
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(w, y);
-                }
-                ctx.stroke();
-            }
+        PText {
+            x: 1236 * win.sx
+            y: 640 * win.sy
+            text: "0°41′N  23°26′E"
+            font.pixelSize: 30
+        }
 
-            // Orbit rings in the bottom right
-            const cx = 1640 * sx, cy = 1240 * sy;
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = String(Theme.border);
-            ctx.beginPath();
-            ctx.arc(cx, cy, 620 * sy, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.strokeStyle = String(Theme.line);
-            for (let a = 0; a < Math.PI * 2; a += 14 / (560 * sy)) {
-                ctx.beginPath();
-                ctx.arc(cx, cy, 560 * sy, a, a + 4 / (560 * sy));
-                ctx.stroke();
-            }
+        Caps {
+            x: 1168 * win.sx
+            y: 796 * win.sy
+            text: "MARE TRANQUILLITATIS / MAP 03-B"
+            color: Theme.faint
+            font.letterSpacing: 2
+        }
 
-            // Crosshair with the marker ring
-            const tx = 1200 * sx, ty = 640 * sy;
-            ctx.strokeStyle = String(Theme.fg);
-            ctx.globalAlpha = 0.75;
-            ctx.beginPath();
-            ctx.moveTo(tx - 28, ty);
-            ctx.lineTo(tx + 28, ty);
-            ctx.moveTo(tx, ty - 28);
-            ctx.lineTo(tx, ty + 28);
-            ctx.stroke();
-            ctx.globalAlpha = 1;
-            ctx.strokeStyle = String(Theme.accent);
-            ctx.beginPath();
-            ctx.arc(tx, ty, 14, 0, Math.PI * 2);
-            ctx.stroke();
+        Caps {
+            visible: win.dots
+            x: 40
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 36
+            text: "HYDROPONICS · LEVEL 3 · HUMIDITY 64 %"
+            color: Theme.faint
+            font.pixelSize: 13
+            font.letterSpacing: 2
         }
     }
 
-    Caps {
-        x: 1236 * win.sx
-        y: 626 * win.sy - height
-        text: "SECTOR 7 · OBSERVATORY"
-        color: Theme.fg2
-        font.pixelSize: 13
-    }
+    // From scripts, for the laptop panel:
+    //   qs ipc call wallpaper save ~/Pictures/station-violet.png
+    IpcHandler {
+        target: "wallpaper"
+        enabled: win.screen === Wm.primaryScreen
 
-    PText {
-        x: 1236 * win.sx
-        y: 640 * win.sy
-        text: "0°41′N  23°26′E"
-        font.pixelSize: 30
-    }
-
-    Caps {
-        x: 1168 * win.sx
-        y: 796 * win.sy
-        text: "MARE TRANQUILLITATIS / MAP 03-B"
-        color: Theme.faint
-        font.letterSpacing: 2
-    }
-
-    Caps {
-        visible: win.dots
-        x: 40
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 36
-        text: "HYDROPONICS · LEVEL 3 · HUMIDITY 64 %"
-        color: Theme.faint
-        font.pixelSize: 13
-        font.letterSpacing: 2
+        function save(path: string): string {
+            const file = path.replace(/^~/, Theme.home);
+            const ok = scene.grabToImage(result => result.saveToFile(file));
+            return ok ? "saved " + file : "failed";
+        }
     }
 }

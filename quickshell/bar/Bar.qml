@@ -84,7 +84,8 @@ PanelWindow {
             }
         }
 
-        // Workspaces that exist right now, just their numbers
+        // Workspaces with windows plus the focused one, just their numbers
+        // (Wm.workspaceIds)
         Row {
             id: workspaces
 
@@ -97,7 +98,7 @@ PanelWindow {
                 Btn {
                     required property int modelData
                     readonly property var ws: Wm.workspace(modelData)
-                    readonly property bool focused: Hyprland.focusedWorkspace?.id === modelData
+                    readonly property bool focused: Wm.focusedId === modelData
                     readonly property bool used: (ws?.toplevels.values.length ?? 0) > 0
 
                     height: Theme.barHeight

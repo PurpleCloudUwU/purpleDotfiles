@@ -11,7 +11,7 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 | Part | What it does |
 |---|---|
 | `hypr/` | Hyprland (Lua config, 0.55+), hyprlock, hypridle |
-| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (tasks, music, PDA panel), notifications, volume/brightness OSD, wallpaper, and STATION SETUP (Super+Shift+F12) |
+| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (clock, calendar, weather, system, music, tasks, PDA panel), notifications, volume/brightness OSD, wallpaper, and STATION SETUP (Super+Shift+F12) |
 | `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
@@ -133,19 +133,51 @@ lets the tube flicker for a moment at login.
 
 ## Desktop widgets
 
-MUSIC, TASKS and the PDA panel sit below the windows. The **DESKTOP
-WIDGETS** page of STATION SETUP shows the screen in small: drag a widget
-there and the real one moves along (8 px grid). The page also shows or
-hides each widget, switches the music visualizer and the done tasks, and
-decides whether Hyprland keeps the right column free for
-them (`station desktop column on|off`). The layout is kept in
-`~/.local/state/station/desktop.json`; RESET LAYOUT brings back the one
-from the canvas.
+Seven widgets sit below the windows, in the right column:
+
+| Widget | Shows | Options |
+|---|---|---|
+| CLOCK | Time, date, ISO week | 24 hours, seconds, week number |
+| CALENDAR | The month, today marked; arrows or the wheel change the month, a click on its name goes back | Week starts on Monday, week numbers |
+| WEATHER | Now and the next three days from [Open-Meteo](https://open-meteo.com) (no key); a click on the header fetches again | Place, °C or °F |
+| SYSTEM | CPU graph of the last two minutes, memory, disk, temperature, uptime; a click on the header opens btop | CPU graph |
+| MUSIC | The MPRIS player | Visualizer |
+| TASKS | `tasks.txt` | Done tasks |
+| PDA PANEL | Battery and system info | |
+
+The **DESKTOP WIDGETS** page of STATION SETUP shows the screen in small:
+drag a widget there and the real one moves along (8 px grid). The page also
+shows or hides each widget, sets them up as in the table and decides whether
+Hyprland keeps the right column free for them (`station desktop column
+on|off`). The layout is kept in `~/.local/state/station/desktop.json`;
+RESET LAYOUT brings back the one from the canvas. From scripts:
+
+```sh
+qs ipc call desktop option clock seconds true
+qs ipc call desktop display weather false
+qs ipc call weather city Hamburg     # looked up once, then kept
+```
+
+The weather is fetched every 20 minutes while the widget is shown (every
+minute after a failure) and cached in `~/.local/state/station/weather.json`.
 
 The level bars in MUSIC show the real music through
 [cava](https://github.com/karlstav/cava) (PipeWire). cava only runs while
 something plays, the widget is shown and the visualizer is on
 (`quickshell/scripts/cava.conf`: 10 bars, 25 frames a second).
+
+## Wallpaper and motion
+
+The wallpaper is drawn by Quickshell in the colours of the theme. To save
+it as a picture:
+
+```sh
+qs ipc call wallpaper save ~/Pictures/station-violet.png
+```
+
+There are no animations: Hyprland's are off (`hypr/station/look.lua`),
+hyprlock appears at once, and GTK apps get `enable-animations false` on
+every start (browsers read that as "reduce motion" too).
 
 ## Fonts
 

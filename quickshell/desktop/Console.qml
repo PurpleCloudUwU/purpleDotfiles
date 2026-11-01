@@ -24,31 +24,54 @@ PanelWindow {
 
     // Only the shown cards take clicks, the rest goes to the desktop
     mask: Region {
-        Region {
-            x: music.x
-            y: music.y
-            width: music.visible ? music.width : 0
-            height: music.visible ? music.height : 0
-        }
-
-        Region {
-            x: tasks.x
-            y: tasks.y
-            width: tasks.visible ? tasks.width : 0
-            height: tasks.visible ? tasks.height : 0
-        }
-
-        Region {
-            x: pda.x
-            y: pda.y
-            width: pda.visible ? pda.width : 0
-            height: pda.visible ? pda.height : 0
-        }
+        Region { item: clock.visible ? clock : null }
+        Region { item: calendar.visible ? calendar : null }
+        Region { item: weather.visible ? weather : null }
+        Region { item: system.visible ? system : null }
+        Region { item: music.visible ? music : null }
+        Region { item: tasks.visible ? tasks : null }
+        Region { item: pda.visible ? pda : null }
     }
 
     // Keeps a card on screen, also on smaller screens than the layout's
     function place(pos, size, limit) {
         return Math.max(0, Math.min(pos, limit - size));
+    }
+
+    ClockCard {
+        id: clock
+        visible: Desktop.clock.visible
+        width: Desktop.sizes.clock.width
+        height: Desktop.sizes.clock.height
+        x: win.place(Desktop.clock.x, width, win.width)
+        y: win.place(Desktop.clock.y, height, win.height)
+    }
+
+    CalendarCard {
+        id: calendar
+        visible: Desktop.calendar.visible
+        width: Desktop.sizes.calendar.width
+        height: Desktop.sizes.calendar.height
+        x: win.place(Desktop.calendar.x, width, win.width)
+        y: win.place(Desktop.calendar.y, height, win.height)
+    }
+
+    WeatherCard {
+        id: weather
+        visible: Desktop.weather.visible
+        width: Desktop.sizes.weather.width
+        height: Desktop.sizes.weather.height
+        x: win.place(Desktop.weather.x, width, win.width)
+        y: win.place(Desktop.weather.y, height, win.height)
+    }
+
+    SystemCard {
+        id: system
+        visible: Desktop.system.visible
+        width: Desktop.sizes.system.width
+        height: Desktop.sizes.system.height
+        x: win.place(Desktop.system.x, width, win.width)
+        y: win.place(Desktop.system.y, height, win.height)
     }
 
     MusicCard {

@@ -3,7 +3,7 @@ import qs.services
 import qs.widgets
 
 // The screen in small: bar, the windows of workspace 1, the free column and
-// the three desktop widgets. Drag a widget and its real twin moves along;
+// the desktop widgets. Drag a widget and its real twin moves along;
 // positions snap to an 8 px grid on the real screen.
 Rectangle {
     id: root
@@ -121,7 +121,7 @@ Rectangle {
     }
 
     Repeater {
-        model: ["pda", "music", "tasks"]
+        model: Desktop.order
 
         Rectangle {
             id: box
