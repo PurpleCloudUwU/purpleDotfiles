@@ -121,6 +121,18 @@ FloatingWindow {
             Layout.preferredHeight: 42
             color: Theme.frame
 
+            // Grab the header anywhere outside the tabs and the close button
+            // to move the window; Hyprland does the moving (system move).
+            DragHandler {
+                id: moveHandler
+                target: null
+                grabPermissions: PointerHandler.CanTakeOverFromAnything
+                onActiveChanged: {
+                    if (active)
+                        moveHandler.parent.Window.window?.startSystemMove();
+                }
+            }
+
             Row {
                 id: titleRow
                 anchors.left: parent.left
