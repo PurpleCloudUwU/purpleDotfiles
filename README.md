@@ -16,7 +16,7 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
 | `nvim/` | Neovim without plugins: station colours and the statusline from the canvas |
-| `fastfetch/` | System info with the moon and a rocket around it (pixel image, drawn by the `fastfetch` shell function) |
+| `fastfetch/` | Minimal system info: a pixel moon and nine lines next to it, including the theme (image drawn by the `fastfetch` shell function) |
 | `btop/` | System monitor |
 | `fingerprint/` | Fingerprint login for the T580's sensor (not part of `install.sh`) |
 

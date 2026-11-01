@@ -19,27 +19,36 @@ __station_prompt() {
 }
 PROMPT_COMMAND+=(__station_prompt)
 
-# fastfetch with the moon and the rocket: fastfetch leaves a blank 30x10
+# fastfetch with the moon: fastfetch leaves a blank 18x9
 # logo area (station writes it with the image, ~/.local/state/station/
 # patch.six), this draws the sixel image into it afterwards. Narrow
 # terminals get the logo on top of the info.
 fastfetch() {
-    local six=$station_state/patch.six out lines
+    local six=$station_state/patch.six out lines rows=9
     local -a pos=()
-    ((COLUMNS < 76)) && pos=(--logo-position top)
+    ((COLUMNS < 60)) && pos=(--logo-position top)
     if (($#)) || [[ ! -t 1 || ! -f $six ]]; then
         command fastfetch "${pos[@]}" "$@"
         return
     fi
-    out=$(command fastfetch --pipe false "${pos[@]}")
+    # Without the empty lines fastfetch leaves after the colour bar, so the
+    # output is exactly as tall as the image
+    out=$(command fastfetch --pipe false "${pos[@]}" | awk '
+        { l[NR] = $0 }
+        END {
+            n = NR
+            while (n > 0) { s = l[n]; gsub(/\033\[[0-9;]*m/, "", s); if (s != "") break; n-- }
+            for (i = 1; i < n; i++) print l[i]
+            printf "%s\033[m", l[n]
+        }')
     lines=$(printf '%s\n' "$out" | wc -l)
     printf '%s\n' "$out"
     # Up to the logo area, one column in (its padding), draw; the cursor
     # then sits below the image, so go down the rest of the way
-    if ((lines >= 10 && lines < LINES)); then
+    if ((lines >= rows && lines < LINES)); then
         printf '\e[%dA\r\e[1C' "$lines"
         cat "$six"
-        if ((lines > 10)); then printf '\e[%dB' "$((lines - 10))"; fi
+        if ((lines > rows)); then printf '\e[%dB' "$((lines - rows))"; fi
         printf '\r'
     fi
 }
