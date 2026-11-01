@@ -10,8 +10,8 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 
 | Part | What it does |
 |---|---|
-| `hypr/` | Hyprland (Lua config, 0.55+), hyprlock, hypridle |
-| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (clock, calendar, weather, system, music, tasks, PDA panel), notifications, volume/brightness OSD, wallpaper, and STATION SETUP (Super+Shift+F12) |
+| `hypr/` | Hyprland (Lua config, 0.55+), hypridle, hyprlock (fallback lock screen) |
+| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (clock, calendar, weather, system, music, tasks, PDA panel), notifications, volume/brightness OSD, wallpaper, lock screen, and STATION SETUP (Super+Shift+F12) |
 | `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
@@ -176,8 +176,23 @@ qs ipc call wallpaper save ~/Pictures/station-violet.png
 ```
 
 There are no animations: Hyprland's are off (`hypr/station/look.lua`),
-hyprlock appears at once, and GTK apps get `enable-animations false` on
+the lock screen appears at once, and GTK apps get `enable-animations false` on
 every start (browsers read that as "reduce motion" too).
+
+## Lock screen
+
+Super+Escape, the power menu and hypridle (after 5 minutes, before sleep)
+all end up in `station lock`, which shows Quickshell's lock screen
+(`quickshell/lock/`): the wallpaper's star chart, a STATION: LOCKED window
+with the clock and the password, and on the laptop panel the WEATHER,
+SYSTEM, MUSIC and TASKS widgets. The orbit and the crosshair of the chart
+stay free. The music buttons work while locked, the task list is read only.
+
+The password goes through PAM's `login` stack, like hyprlock. If Quickshell
+isn't running, `station lock` starts hyprlock instead (`hypr/hyprlock.conf`).
+Should Quickshell die while the screen is locked, Hyprland keeps it locked:
+switch to a TTY (Ctrl+Alt+F2), log in and run
+`hyprctl --instance 0 dispatch exec hyprlock`.
 
 ## Fonts
 
@@ -205,4 +220,5 @@ open-fprintd (not part of `install.sh`). The script:
 - starts enrolling a finger
 
 While a finger is wanted, Quickshell shows a "FINGER REQUESTED"
-notification. hyprlock unlocks with the finger too.
+notification. The lock screen unlocks with the finger too (password and
+finger work at the same time).

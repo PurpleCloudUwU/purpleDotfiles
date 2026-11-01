@@ -8,6 +8,7 @@
 //   crt/       CRT CALIBRATION window (Super+Shift+F12)
 //   desktop/   wallpaper and the widgets in the right column
 //   launcher/  STATION: PROGRAM SELECT (Super+D)
+//   lock/      STATION: LOCKED, the lock screen (qs ipc call lock lock)
 //   pda/       PDA quick access (Super+N) and the power menu (Super+Shift+E)
 //   notify/    notifications
 //   osd/       volume and brightness
@@ -20,6 +21,7 @@ import qs.bar
 import qs.crt
 import qs.desktop
 import qs.launcher
+import qs.lock
 import qs.notify
 import qs.osd
 import qs.pda
@@ -42,6 +44,7 @@ ShellRoot {
 
     Console {}
     Launcher {}
+    LockScreen {}
     QuickAccess {}
     PowerMenu {}
     CrtApp {}

@@ -58,9 +58,29 @@ for f in /etc/pam.d/sudo /etc/pam.d/polkit-1; do
     grep -q pam_fprintd "$f" || sudo sed -i "1a $line" "$f"
 done
 
+info "Waiting for the sensor to register"
+# python-validity needs a few seconds to start the sensor; enrolling right
+# after the restart only gets "No devices available"
+for _ in {1..30}; do
+    fprintd-list "$USER" 2>&1 | grep -q 'No devices' || break
+    sleep 1
+done
+if fprintd-list "$USER" 2>&1 | grep -q 'No devices'; then
+    echo "The sensor did not register within 30 seconds. Try first:"
+    echo "  sudo systemctl restart python3-validity    (or reboot the laptop)"
+    echo "If it still doesn't show up, a factory reset helps. It ERASES the"
+    echo "fingers stored on the sensor:"
+    echo "  sudo systemctl stop python3-validity open-fprintd"
+    echo "  sudo python3 /usr/share/python-validity/playground/factory-reset.py"
+    echo "  sudo systemctl start open-fprintd python3-validity"
+    echo "then run this script again."
+    exit 1
+fi
+
 info "Enrolling a finger (swipe it a few times when asked)"
 if ! fprintd-enroll; then
-    echo "Enrolling failed. A factory reset of the sensor usually helps:"
+    echo "Enrolling failed. A factory reset of the sensor usually helps"
+    echo "(it ERASES the fingers stored on the sensor):"
     echo "  sudo python3 /usr/share/python-validity/playground/factory-reset.py"
     echo "  sudo systemctl restart python3-validity open-fprintd"
     echo "then run: fprintd-enroll"

@@ -25,6 +25,8 @@
 #   station battery                     charge of all batteries together
 #   station reload                      reload Hyprland and Quickshell (after git pull)
 #   station power <lock|logout|suspend|reboot|off>
+#   station lock                        the lock screen now (Quickshell, hyprlock if
+#                                       Quickshell doesn't answer); hypridle calls this
 #   station init                        write all generated files (install.sh)
 #
 # Palettes come from ~/.config/station/palettes/<name>.conf, everything this
@@ -672,6 +674,12 @@ bright() {
     command -v qs >/dev/null && qs ipc call osd brightness "${pct%\%}" >/dev/null 2>&1 || true
 }
 
+# Quickshell's lock screen (quickshell/lock/), hyprlock as the fallback
+lock() {
+    if command -v qs >/dev/null && qs ipc call lock lock >/dev/null 2>&1; then return; fi
+    pidof hyprlock >/dev/null || hyprlock
+}
+
 power() {
     case ${1:-} in
         lock)    loginctl lock-session ;;
@@ -717,6 +725,7 @@ case ${1:-} in
         command -v qs >/dev/null && qs ipc call station reload >/dev/null 2>&1
         echo "reloaded" ;;
     power)  shift; power "$@" ;;
+    lock)   lock ;;
     init)   init ;;
     ""|-h|--help|help) usage ;;
     *) die "unknown command '$1' (see station --help)" ;;
