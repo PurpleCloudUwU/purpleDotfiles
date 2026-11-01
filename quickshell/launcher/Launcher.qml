@@ -36,8 +36,36 @@ PanelWindow {
         { name: "SYSTEM MONITOR", hint: "btop", icon: "bars", cmd: ["station", "open", "monitor"] },
         { name: "CRT CALIBRATION", hint: "qs crt", icon: "tube", cmd: ["station", "open", "crt"] },
         { name: "MUSIC PLAYER", hint: "kew", icon: "music", cmd: ["station", "open", "player"] },
-        { name: "DESKTOP WIDGETS", hint: "qs setup", icon: "app", cmd: ["qs", "ipc", "call", "setup", "open", "desktop"] }
+        { name: "DESKTOP WIDGETS", hint: "qs setup", icon: "layout", cmd: ["qs", "ipc", "call", "setup", "open", "desktop"] }
     ]
+
+    // The icon for a desktop entry: from its categories, first match wins
+    // (specific kinds before the broad Settings/AudioVideo ones). Programs
+    // that fit none keep the plain app tiles.
+    readonly property var categoryIcons: [
+        ["TerminalEmulator", "terminal"],
+        ["WebBrowser", "globe"],
+        ["FileManager", "folder"],
+        ["FileTransfer", "send"],
+        ["TextEditor", "pencil"],
+        ["Monitor", "bars"],
+        ["Printing", "printer"],
+        ["Mixer", "volume"],
+        ["Music", "music"],
+        ["Audio", "music"],
+        ["Development", "code"],
+        ["Settings", "sliders"],
+        ["Video", "camera"],
+        ["AudioVideo", "camera"]
+    ]
+
+    function iconFor(entry) {
+        const cats = Array.from(entry.categories ?? []);
+        for (const [cat, icon] of categoryIcons)
+            if (cats.indexOf(cat) >= 0)
+                return icon;
+        return "app";
+    }
     readonly property var apps: Array.from(DesktopEntries.applications.values)
         .filter(e => !e.noDisplay)
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -45,7 +73,7 @@ PanelWindow {
             name: e.name.toUpperCase(),
             hint: (e.command[0] ?? "").split("/").pop(),
             keywords: [e.genericName, e.comment].concat(Array.from(e.keywords ?? [])).join(" ").toLowerCase(),
-            icon: "app",
+            icon: iconFor(e),
             entry: e
         }))
 
