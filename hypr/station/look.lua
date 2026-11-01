@@ -50,6 +50,13 @@ hl.config({
 
 -- All windows keep the same border width; a thicker frame on the focused
 -- window resized it by a pixel on every focus change. Focus shows by colour.
+-- The old rule was called "focus-frame" and a config reload does not drop a
+-- named rule, so it is set again here with the normal 2 px.
+hl.window_rule({
+    name  = "focus-frame",
+    match = { focus = true },
+    border_size = 2,
+})
 
 -- Every workspace on the laptop panel keeps the right column free for the
 -- floating file manager and the desktop widgets, like on canvas board 01:
