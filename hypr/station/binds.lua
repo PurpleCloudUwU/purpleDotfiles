@@ -35,41 +35,18 @@ hl.bind(mod .. " + B",             hl.dsp.layout("togglesplit"))
 hl.bind(mod .. " + W",             hl.dsp.group.toggle())
 hl.bind(mod .. " + Tab",           hl.dsp.group.next())
 
--- Super+G: one window big, but not fullscreen. It keeps its place and height
--- and only grows to the right, over the widget column, to the same 24 px
--- edge (plus the 3 px focus frame) as on the left. Pressed again, it goes
--- back: into the tiles, or to its old floating spot. (Maximising would not
--- help: it stays inside the gaps, so the column would stay free.)
-local big = {}
-local frame = 3
+-- Super+G: frees the right widget column for windows, so they tile side by
+-- side over the full width; pressed again, the column is kept free again.
+-- Same switch as on the DESKTOP WIDGETS page (station desktop column), so it
+-- stays across restarts. The state is read on every press, not at load time.
 hl.bind(mod .. " + G", function()
-    local w = hl.get_active_window()
-    if not w then return end
-
-    local before = big[w.address]
-    if before then
-        big[w.address] = nil
-        if before.floating then
-            hl.dispatch(hl.dsp.window.resize({ x = before.size.x, y = before.size.y }))
-            hl.dispatch(hl.dsp.window.move({ x = before.at.x, y = before.at.y }))
-        elseif w.floating then
-            hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
-        end
-        return
-    end
-
-    local m = w.monitor
-    if not m then return end
-    -- w is live: read the place before floating changes it
-    local x, y, height = w.at.x, w.at.y, w.size.y
-    local right = m.x + m.width - 24 - frame
-    big[w.address] = { floating = w.floating, at = { x = x, y = y }, size = { x = w.size.x, y = height } }
-    if not w.floating then
-        hl.dispatch(hl.dsp.window.float({ action = "toggle" }))
-    end
-    hl.dispatch(hl.dsp.window.resize({ x = right - x, y = height }))
-    hl.dispatch(hl.dsp.window.move({ x = x, y = y }))
-end, { description = "Big window (not fullscreen)" })
+    local s = require("station.state")
+    local f = io.open(s.dir .. "/desktop.conf", "r")
+    local now = f and f:read("*a") or ""
+    if f then f:close() end
+    local next = now:match("column=off") and "on" or "off"
+    hl.dispatch(hl.dsp.exec_cmd("station desktop column " .. next))
+end, { description = "Widget column free/kept for windows" })
 
 -- Focus, move and resize with hjkl or the arrow keys
 local directions = {
