@@ -17,6 +17,18 @@ hl.env("GDK_BACKEND", "wayland,x11,*")
 hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
+-- Qt in the station look: qt6ct with the palette and the stylesheet that
+-- `station theme` writes (~/.config/qt6ct). Without qt6ct, Qt takes colours
+-- and fonts from the GTK 3 theme (Station) and Fusion draws the widgets.
+local qt6ct = io.open("/usr/lib/qt6/plugins/platformthemes/libqt6ct.so", "r")
+if qt6ct then
+    qt6ct:close()
+    hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+else
+    hl.env("QT_QPA_PLATFORMTHEME", "gtk3")
+    hl.env("QT_STYLE_OVERRIDE", "Fusion")
+end
+
 hl.env("EDITOR", "nvim")
 hl.env("VISUAL", "nvim")
 hl.env("TERMINAL", "foot")

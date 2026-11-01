@@ -12,12 +12,13 @@ The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
 |---|---|
 | `hypr/` | Hyprland (Lua config, 0.55+), hypridle, hyprlock (fallback lock screen) |
 | `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (clock, calendar, weather, system, music, tasks, PDA panel), notifications, volume/brightness OSD, wallpaper, lock screen, and STATION SETUP (Super+Shift+F12) |
-| `station/` | Palettes, the CRT shader template and the `station` script that switches theme and CRT |
+| `station/` | Palettes, the CRT shader template, the GTK/Qt look (`gtk/`, `qt/`) and the `station` script that switches theme and CRT |
 | `foot/` | Terminal (Departure Mono) |
 | `yazi/` | File manager, floats in the right column (Super+E) |
 | `nvim/` | Neovim without plugins: station colours and the statusline from the canvas |
 | `fastfetch/` | Minimal system info: a pixel moon and nine lines next to it, including the theme (image drawn by the `fastfetch` shell function) |
 | `btop/` | System monitor |
+| `spicetify/` | Spotify theme "Station" for Spicetify: square panels with header strips, segment bars, pixel fonts, the shell's icons, colours from the palette |
 | `fingerprint/` | Fingerprint login for the T580's sensor (not part of `install.sh`) |
 
 The interface is English, the keyboard layout German without dead keys
@@ -46,13 +47,16 @@ choose Hyprland in ly. Options: `--copy`, `--no-packages`, `--no-services`,
 |---|---|
 | `hypr`, `quickshell`, `station`, `foot`, `yazi`, `nvim`, `fastfetch` | `~/.config/<name>` (symlink) |
 | `station/bin/station` | `~/.local/bin/station` |
+| `spicetify/Station` | `~/.config/spicetify/Themes/Station` (symlink) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
 | `station/tasks.txt` | `~/.local/share/station/tasks.txt` (only the first time) |
 | `station/shell.bash` | sourced from `~/.bashrc` (prompt, aliases, `y` for yazi) |
 
 Generated, not in git: everything in `~/.local/state/station/` (theme,
 CRT settings and shaders, terminal colours, prompt, hyprlock colours),
-`yazi/theme.toml`, `fastfetch/config.jsonc` and btop's `themes/station.theme`.
+`yazi/theme.toml`, `fastfetch/config.jsonc`, btop's `themes/station.theme`,
+`spicetify/Station/color.ini`, the GTK theme `~/.local/share/themes/Station`,
+`~/.config/gtk-3.0/gtk.css`, `~/.config/gtk-4.0/gtk.css` and `~/.config/qt6ct/`.
 
 ## Keys
 
@@ -130,6 +134,55 @@ frame, so only FULL TUBE switches Hyprland's damage tracking off. Two
 options, both on by default: on battery FULL TUBE drops to SUBTLE, and the
 shader goes off while a window is fullscreen. A third one, off by default,
 lets the tube flicker for a moment at login.
+
+## GTK and Qt
+
+Other programs follow the colour world too. `station theme` writes:
+
+| Toolkit | File | Live switch |
+|---|---|---|
+| GTK 3 | theme `Station` (`~/.local/share/themes`): adw-gtk3-dark with the palette as its named colours; the shapes (`station/gtk/station.css`) in `~/.config/gtk-3.0/gtk.css` | yes: the theme name is switched away and back, running apps reload it |
+| GTK 4, libadwaita | `~/.config/gtk-4.0/gtk.css`: colours (also as libadwaita's variables) and shapes | no, read when an app starts |
+| Qt 6 | qt6ct (`~/.config/qt6ct`): palette, Fusion, `station/qt/station.qss` with the palette filled in | yes: qt6ct watches its folder |
+
+The shapes are the shell's: square corners, 2 px lines, header bars as the
+frame-coloured strip with hatching (dim when the window is not focused),
+outlined buttons that fill when active, segmented progress bars, framed
+popups. Fonts: Departure Mono 10 for GTK and Qt (`gtk_font` in the station
+script). Without qt6ct, `env.lua` lets Qt follow the GTK 3 theme instead
+(`QT_QPA_PLATFORMTHEME=gtk3`, Fusion).
+
+## Spotify
+
+Spotify (from spotify-launcher) gets the **Station** theme through
+[Spicetify](https://spicetify.app):
+
+- `user.css`: shapes and fonts. Square framed panels with header strips,
+  segment bars for progress and volume, Departure Mono / VT323 / Silkscreen.
+  The colours Spotify takes from covers (page tops, action bar, lyrics, full
+  screen view) are replaced by the palette, Liked Songs gets a pixel heart.
+- `theme.js`: Spotify's icons redrawn in the style of
+  `quickshell/widgets/Icon.qml` (24 px grid, flat strokes, filled transport
+  icons). It finds each icon by the start of its path data and swaps the
+  shape with the CSS `d` property; unknown icons stay Spotify's own.
+- `color.ini`: written by `station theme` with every palette as a colour
+  scheme (Spicetify's keys plus all palette keys as `--spice-<key>`).
+
+A theme switch (`station theme`, Super+F11) reaches an open Spotify within
+about two seconds: Spicetify rewrites `colors.css`, and `theme.js` checks
+that file every two seconds and loads it again when it changed.
+
+```sh
+station spotify               # patch Spotify (first time, or after an update); restarts it
+```
+
+A Spotify update from spotify-launcher removes the patch. `station open
+music` (Super+Shift+M) notices that and patches again before it starts
+Spotify.
+
+Spotify keeps its font rules in `@layer fonts` with `!important`, which beats
+any unlayered rule; that is why the font variables in `user.css` sit in a
+`@layer fonts` block of their own.
 
 ## Desktop widgets
 

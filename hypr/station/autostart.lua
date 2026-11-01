@@ -10,9 +10,10 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     -- Password and fingerprint dialogs for apps that need root
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
-    -- Dark GTK and libadwaita apps
+    -- Dark GTK and libadwaita apps in the station colours (the Station GTK
+    -- theme and the fonts come from `station theme`, see render_gtk)
     hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme prefer-dark")
-    hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark")
+    hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme Station")
     -- No GTK animations (menus, switches, scrolling); browsers read this
     -- as "reduce motion" too
     hl.exec_cmd("gsettings set org.gnome.desktop.interface enable-animations false")

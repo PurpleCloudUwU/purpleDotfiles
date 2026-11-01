@@ -1,0 +1,455 @@
+/*
+ * Station look for GTK 3 and GTK 4 / libadwaita: shapes only.
+ *
+ * `station theme` copies this file to ~/.config/gtk-3.0/gtk.css (the colours
+ * @st_<key> and adw-gtk3's named colours come from the "Station" theme) and,
+ * after the colours, into ~/.config/gtk-4.0/gtk.css (GTK 4, libadwaita).
+ * Qt apps follow the GTK 3 theme through QT_QPA_PLATFORMTHEME=gtk3.
+ *
+ * Like the Quickshell widgets: square corners, 2 px lines, header strips in
+ * the frame colour with hatching, outlined buttons that fill when active.
+ */
+
+/* --- Square, flat ----------------------------------------------------------- */
+
+* {
+    border-radius: 0;
+    -gtk-icon-shadow: none;
+}
+
+window,
+window.csd,
+window.solid-csd,
+dialog,
+.background {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Hyprland draws the window border, so no rounded CSD frame */
+window.csd decoration,
+decoration {
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+}
+
+/* --- Header bars: the strip of a framed panel (widgets/Header.qml) ---------- */
+
+/* Frame colour with dark ink, hatching in the padding band; the title and
+   the buttons sit on plain frame colour so the hatching shows between them */
+headerbar,
+.titlebar:not(headerbar) {
+    background-color: @st_frame;
+    background-image: repeating-linear-gradient(-45deg,
+        transparent 0, transparent 5px,
+        alpha(@st_bg, 0.45) 5px, alpha(@st_bg, 0.45) 8px);
+    color: @st_bg;
+    border: none;
+    box-shadow: none;
+    min-height: 40px;
+}
+
+headerbar .title,
+headerbar .subtitle,
+headerbar label,
+headerbar button,
+headerbar entry,
+headerbar switch,
+headerbar spinbutton {
+    background-color: @st_frame;
+}
+
+headerbar .title,
+.titlebar .title,
+windowtitle .title {
+    font-family: "Pocket", "VT323", monospace;
+    font-size: 22px;
+    font-weight: normal;
+    padding: 0 8px;
+}
+
+headerbar .subtitle {
+    font-family: "Silkscreen", monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+}
+
+headerbar button,
+headerbar menubutton > button,
+headerbar splitbutton > button {
+    color: @st_bg;
+    border: 2px solid transparent;
+    box-shadow: none;
+    background-image: none;
+}
+
+headerbar button:hover,
+headerbar menubutton > button:hover,
+headerbar splitbutton > button:hover {
+    border-color: @st_bg;
+}
+
+headerbar button:active,
+headerbar button:checked,
+headerbar menubutton > button:checked {
+    background-color: @st_bg;
+    color: @st_frame;
+}
+
+headerbar button:disabled {
+    background-color: @st_frame;
+    border-color: transparent;
+    color: alpha(@st_bg, 0.45);
+}
+
+/* Window controls (close, maximize) as small squares */
+headerbar windowcontrols button,
+headerbar .titlebutton {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+    background-color: @st_frame;
+}
+
+headerbar windowcontrols button image,
+headerbar .titlebutton image {
+    background: none;
+    box-shadow: none;
+    color: @st_bg;
+}
+
+/* Unfocused window: the dim header of the canvas, no hatching */
+headerbar:backdrop,
+.titlebar:backdrop {
+    background-color: @st_surface2;
+    background-image: none;
+    color: @st_muted;
+}
+
+headerbar:backdrop .title,
+headerbar:backdrop label,
+headerbar:backdrop button,
+headerbar:backdrop windowcontrols button,
+headerbar:backdrop .titlebutton {
+    background-color: @st_surface2;
+    color: @st_muted;
+}
+
+headerbar:backdrop windowcontrols button image,
+headerbar:backdrop .titlebutton image {
+    color: @st_muted;
+}
+
+/* --- Buttons: outlined, filled when active (widgets/Btn.qml) --------------- */
+
+button {
+    border: 2px solid @st_border;
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    outline-offset: -2px;
+}
+
+button:hover {
+    border-color: @st_frame;
+    background-color: alpha(@st_frame, 0.08);
+}
+
+button:active,
+button:checked {
+    background-color: @st_frame;
+    border-color: @st_frame;
+    color: @st_bg;
+}
+
+button:disabled {
+    border-color: @st_line;
+    color: @st_faint;
+}
+
+button.flat,
+button.image-button.flat,
+.toolbar button,
+popover button.model,
+list button.flat {
+    border-color: transparent;
+}
+
+button.flat:hover,
+.toolbar button:hover {
+    border-color: @st_border;
+}
+
+button.suggested-action,
+button.default {
+    background-color: @st_frame;
+    border-color: @st_frame;
+    color: @st_bg;
+}
+
+button.suggested-action:hover {
+    background-color: @st_fg;
+    border-color: @st_fg;
+}
+
+button.destructive-action {
+    background-color: transparent;
+    border-color: @st_color1;
+    color: @st_color1;
+}
+
+button.destructive-action:hover {
+    background-color: @st_color1;
+    color: @st_bg;
+}
+
+/* --- Fields ------------------------------------------------------------------- */
+
+entry,
+spinbutton,
+searchbar entry,
+.entry,
+textview,
+dropdown > button,
+combobox > box > button {
+    background-color: @st_bg;
+    border: 2px solid @st_line;
+    box-shadow: none;
+    outline: none;
+}
+
+entry:hover,
+spinbutton:hover {
+    border-color: @st_border;
+}
+
+entry:focus,
+spinbutton:focus {
+    border-color: @st_frame;
+    box-shadow: none;
+    outline: none;
+}
+
+/* --- Selection ------------------------------------------------------------------ */
+
+selection,
+*:selected,
+row:selected,
+treeview.view:selected,
+flowboxchild:selected,
+iconview:selected {
+    background-color: @st_frame;
+    color: @st_bg;
+}
+
+row:hover:not(:selected),
+treeview.view:hover:not(:selected) {
+    background-color: @st_surface2;
+}
+
+/* --- Check boxes, radios, switches ----------------------------------------------- */
+
+check,
+radio {
+    border: 2px solid @st_border;
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+check:checked,
+radio:checked,
+check:indeterminate {
+    background-color: @st_frame;
+    border-color: @st_frame;
+    color: @st_bg;
+}
+
+switch {
+    border: 2px solid @st_border;
+    background-color: @st_off;
+    background-image: none;
+    box-shadow: none;
+}
+
+switch:checked {
+    background-color: @st_accent;
+    border-color: @st_accent;
+}
+
+switch slider {
+    background-color: @st_fg;
+    border: none;
+    box-shadow: none;
+    min-width: 20px;
+    min-height: 20px;
+    margin: 0;
+}
+
+/* --- Bars: segments like widgets/Segments.qml ------------------------------------- */
+
+progressbar trough,
+scale trough,
+levelbar trough {
+    background-color: @st_off;
+    border: none;
+    box-shadow: none;
+    min-height: 10px;
+}
+
+progressbar progress,
+levelbar block.filled {
+    background-color: @st_frame;
+    background-image: repeating-linear-gradient(90deg,
+        transparent 0, transparent 9px,
+        @st_bg 9px, @st_bg 12px);
+    border: none;
+    box-shadow: none;
+}
+
+progressbar trough {
+    background-image: repeating-linear-gradient(90deg,
+        transparent 0, transparent 9px,
+        @st_bg 9px, @st_bg 12px);
+}
+
+scale highlight {
+    background-color: @st_frame;
+    border: none;
+}
+
+/* The round knob becomes a block cursor; it reaches 4 px over the trough */
+scale slider {
+    background-color: @st_fg;
+    border: none;
+    box-shadow: none;
+    min-width: 8px;
+    min-height: 18px;
+    margin: -4px 0;
+}
+
+scale.vertical slider {
+    min-width: 18px;
+    min-height: 8px;
+    margin: 0 -4px;
+}
+
+/* --- Popovers, menus, tooltips: framed like the shell's popups --------------------- */
+
+popover > contents,
+popover.background > contents,
+popover.menu > contents,
+menu,
+.menu,
+.context-menu,
+.popup,
+tooltip,
+tooltip.background {
+    background-color: @st_surface;
+    border: 2px solid @st_frame;
+    box-shadow: none;
+    color: @st_fg;
+}
+
+popover > arrow,
+popover.background > arrow {
+    background-color: @st_surface;
+    border: 2px solid @st_frame;
+}
+
+popover modelbutton:hover,
+popover button.model:hover,
+menu menuitem:hover,
+.menu menuitem:hover,
+.context-menu menuitem:hover {
+    background-color: @st_frame;
+    color: @st_bg;
+}
+
+/* --- Lists, cards, sidebars ------------------------------------------------------------ */
+
+list,
+listview,
+columnview,
+treeview.view,
+.boxed-list,
+.card,
+frame > border,
+.frame {
+    border: 2px solid @st_line;
+    box-shadow: none;
+}
+
+.boxed-list > row,
+list.boxed-list > row {
+    border-bottom: 2px solid @st_line;
+}
+
+.navigation-sidebar,
+.sidebar,
+placessidebar {
+    border-right: 2px solid @st_line;
+}
+
+/* Column headers and small labels in Silkscreen, like the Caps widget */
+treeview.view header button,
+columnview > header > button,
+.heading.dim-label,
+preferencesgroup > box > box > label.heading {
+    font-family: "Silkscreen", monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+}
+
+/* --- Tabs ---------------------------------------------------------------------------------- */
+
+notebook > header,
+tabbar {
+    background-color: @st_surface;
+    border-bottom: 2px solid @st_line;
+    box-shadow: none;
+}
+
+notebook > header tab,
+tabbar tab {
+    border: 2px solid transparent;
+    box-shadow: none;
+}
+
+notebook > header tab:checked,
+tabbar tab:selected {
+    background-color: @st_frame;
+    color: @st_bg;
+}
+
+notebook > header tab:hover:not(:checked) {
+    border-color: @st_border;
+}
+
+/* --- Scrollbars ------------------------------------------------------------------------------- */
+
+scrollbar slider {
+    background-color: @st_line;
+    border: none;
+    min-width: 6px;
+    min-height: 6px;
+    margin: 0;
+}
+
+scrollbar slider:hover {
+    background-color: @st_border;
+}
+
+scrollbar slider:active {
+    background-color: @st_frame;
+}
+
+/* GTK 4 only (GTK 3 drops rules with :focus-visible / :focus-within) is in
+   station-gtk4.css */
+
+link,
+*:link {
+    color: @st_accent;
+}

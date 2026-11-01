@@ -43,20 +43,22 @@ pacman_pkgs=(
     grim slurp wl-clipboard libnotify xdg-utils xdg-user-dirs glib2
     # Browser and music (Spotify, kew for local files)
     librewolf spotify-launcher kew
-    # Fonts and dark GTK apps
-    noto-fonts noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme
+    # Fonts, GTK and Qt in the station colours (station theme writes both)
+    noto-fonts noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme qt6ct
     # Building AUR packages
     base-devel git curl unzip
 )
 # Pixel fonts from the AUR: Departure Mono (terminal), VT323 (displays,
-# stand-in for Pocket), Silkscreen (small labels)
-aur_pkgs=(otf-departure-mono-nerd ttf-vt323 ttf-silkscreen)
+# stand-in for Pocket), Silkscreen (small labels); Spicetify for Spotify's
+# Station theme
+aur_pkgs=(otf-departure-mono-nerd ttf-vt323 ttf-silkscreen spicetify-cli)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
 config_dirs=(hypr quickshell station foot yazi nvim fastfetch)
 # Single files: <path in repo>:<destination>
 config_files=(
     "station/bin/station:$HOME/.local/bin/station"
+    "spicetify/Station:$HOME/.config/spicetify/Themes/Station"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -156,18 +158,22 @@ apply_settings() {
     chmod +x "$repo/station/bin/station" "$repo/quickshell/scripts/sysinfo.sh"
     "$repo/station/bin/station" init | sed 's/^/  -> /'
 
-    # Dark GTK apps (Hyprland also sets the colour scheme on every start)
+    # GTK apps in the Station theme (station init has written it; Hyprland
+    # also sets theme and colour scheme on every start)
     local gtk
     for gtk in gtk-3.0 gtk-4.0; do
         mkdir -p ~/.config/$gtk
         if [[ ! -e ~/.config/$gtk/settings.ini ]]; then
-            printf '%s\n' '[Settings]' 'gtk-theme-name=adw-gtk3-dark' 'gtk-application-prefer-dark-theme=1' > ~/.config/$gtk/settings.ini
+            printf '%s\n' '[Settings]' 'gtk-theme-name=Station' 'gtk-application-prefer-dark-theme=1' > ~/.config/$gtk/settings.ini
         fi
+        sed -i 's/^gtk-theme-name=adw-gtk3-dark$/gtk-theme-name=Station/' ~/.config/$gtk/settings.ini
+        grep -q '^gtk-font-name' ~/.config/$gtk/settings.ini \
+            || echo 'gtk-font-name=DepartureMono Nerd Font 10' >> ~/.config/$gtk/settings.ini
         # No animations in GTK apps
         grep -q '^gtk-enable-animations' ~/.config/$gtk/settings.ini \
             || echo 'gtk-enable-animations=0' >> ~/.config/$gtk/settings.ini
     done
-    note "GTK: adw-gtk3-dark"
+    note "GTK: Station (adw-gtk3-dark in the palette), Qt: qt6ct"
 
     command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update
     if command -v xdg-settings >/dev/null && [[ -f /usr/share/applications/librewolf.desktop ]]; then

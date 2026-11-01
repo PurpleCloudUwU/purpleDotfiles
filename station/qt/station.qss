@@ -1,0 +1,429 @@
+/*
+ * Station look for Qt (qt6ct stylesheet on top of Fusion).
+ *
+ * `station theme` replaces the @key@ placeholders with the palette and writes
+ * the result to ~/.config/qt6ct/qss/station.qss; @dir@ is that folder (the
+ * arrow images). The same shapes as station/gtk/station.css: square corners,
+ * 2 px lines, outlined buttons that fill when active, segment bars.
+ */
+
+* {
+    outline: none;
+}
+
+QWidget {
+    selection-background-color: @frame@;
+    selection-color: @bg@;
+}
+
+/* --- Buttons (widgets/Btn.qml) --- */
+
+QPushButton,
+QToolButton {
+    border: 2px solid @border@;
+    border-radius: 0;
+    background: transparent;
+    color: @fg@;
+    padding: 4px 12px;
+}
+
+QToolButton {
+    padding: 3px;
+}
+
+QToolButton[autoRaise="true"] {
+    border-color: transparent;
+}
+
+QPushButton:hover,
+QToolButton:hover {
+    border-color: @frame@;
+}
+
+QPushButton:pressed,
+QPushButton:checked,
+QToolButton:pressed,
+QToolButton:checked,
+QPushButton:default {
+    background: @frame@;
+    border-color: @frame@;
+    color: @bg@;
+}
+
+QPushButton:default:hover {
+    background: @fg@;
+    border-color: @fg@;
+}
+
+QPushButton:disabled,
+QToolButton:disabled {
+    border-color: @line@;
+    color: @faint@;
+    background: transparent;
+}
+
+QPushButton:focus,
+QToolButton:focus {
+    border-color: @frame@;
+}
+
+/* --- Fields --- */
+
+QLineEdit,
+QAbstractSpinBox,
+QComboBox,
+QTextEdit,
+QPlainTextEdit {
+    background: @bg@;
+    color: @fg@;
+    border: 2px solid @line@;
+    border-radius: 0;
+    padding: 3px 5px;
+}
+
+QLineEdit:hover,
+QAbstractSpinBox:hover,
+QComboBox:hover {
+    border-color: @border@;
+}
+
+QLineEdit:focus,
+QAbstractSpinBox:focus,
+QComboBox:focus,
+QTextEdit:focus,
+QPlainTextEdit:focus {
+    border-color: @frame@;
+}
+
+QLineEdit:disabled,
+QAbstractSpinBox:disabled,
+QComboBox:disabled {
+    color: @faint@;
+    border-color: @line@;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 22px;
+}
+
+QComboBox::down-arrow {
+    image: url(@dir@/down.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background: @surface@;
+    border: 2px solid @frame@;
+    color: @fg@;
+    selection-background-color: @frame@;
+    selection-color: @bg@;
+    outline: none;
+}
+
+QAbstractSpinBox::up-button,
+QAbstractSpinBox::down-button {
+    border: none;
+    border-left: 2px solid @line@;
+    width: 18px;
+    background: transparent;
+}
+
+QAbstractSpinBox::up-button:hover,
+QAbstractSpinBox::down-button:hover {
+    background: @surface2@;
+}
+
+QAbstractSpinBox::up-arrow {
+    image: url(@dir@/up.svg);
+    width: 8px;
+    height: 8px;
+}
+
+QAbstractSpinBox::down-arrow {
+    image: url(@dir@/down.svg);
+    width: 8px;
+    height: 8px;
+}
+
+/* --- Check boxes and radios: squares, filled when on --- */
+
+QCheckBox,
+QRadioButton {
+    spacing: 8px;
+    color: @fg@;
+}
+
+QCheckBox::indicator,
+QRadioButton::indicator,
+QAbstractItemView::indicator,
+QGroupBox::indicator {
+    width: 12px;
+    height: 12px;
+    border: 2px solid @border@;
+    border-radius: 0;
+    background: transparent;
+}
+
+QCheckBox::indicator:hover,
+QRadioButton::indicator:hover {
+    border-color: @frame@;
+}
+
+QCheckBox::indicator:checked,
+QRadioButton::indicator:checked,
+QAbstractItemView::indicator:checked,
+QGroupBox::indicator:checked {
+    background: @frame@;
+    border-color: @frame@;
+    image: url(@dir@/check.svg);
+}
+
+QRadioButton::indicator:checked {
+    image: none;
+    background: @frame@;
+    border: 2px solid @frame@;
+}
+
+QCheckBox::indicator:indeterminate {
+    background: @border@;
+}
+
+QCheckBox::indicator:disabled,
+QRadioButton::indicator:disabled {
+    border-color: @line@;
+}
+
+/* --- Bars: segments (widgets/Segments.qml) --- */
+
+QProgressBar {
+    background: @off@;
+    border: none;
+    border-radius: 0;
+    color: @fg@;
+    text-align: center;
+    min-height: 12px;
+}
+
+QProgressBar::chunk {
+    background: @frame@;
+    width: 9px;
+    margin-right: 3px;
+}
+
+QSlider::groove:horizontal {
+    height: 10px;
+    background: @off@;
+    border: none;
+}
+
+QSlider::groove:vertical {
+    width: 10px;
+    background: @off@;
+    border: none;
+}
+
+QSlider::sub-page:horizontal,
+QSlider::add-page:vertical {
+    background: @frame@;
+}
+
+QSlider::handle:horizontal {
+    width: 8px;
+    margin: -4px 0;
+    background: @fg@;
+    border: none;
+}
+
+QSlider::handle:vertical {
+    height: 8px;
+    margin: 0 -4px;
+    background: @fg@;
+    border: none;
+}
+
+/* --- Menus, tooltips: framed popups --- */
+
+QMenuBar {
+    background: @surface@;
+    color: @fg@;
+}
+
+QMenuBar::item {
+    padding: 4px 10px;
+    background: transparent;
+}
+
+QMenuBar::item:selected,
+QMenuBar::item:pressed {
+    background: @frame@;
+    color: @bg@;
+}
+
+QMenu {
+    background: @surface@;
+    color: @fg@;
+    border: 2px solid @frame@;
+    padding: 2px;
+}
+
+QMenu::item {
+    padding: 5px 24px 5px 12px;
+    background: transparent;
+}
+
+QMenu::item:selected {
+    background: @frame@;
+    color: @bg@;
+}
+
+QMenu::item:disabled {
+    color: @faint@;
+}
+
+QMenu::separator {
+    height: 2px;
+    background: @line@;
+    margin: 4px 6px;
+}
+
+QToolTip {
+    background: @surface@;
+    color: @fg@;
+    border: 2px solid @frame@;
+    padding: 4px;
+}
+
+/* --- Views and headers --- */
+
+QAbstractItemView,
+QTreeView,
+QListView,
+QTableView {
+    background: @bg@;
+    alternate-background-color: @surface3@;
+    color: @fg@;
+    border: 2px solid @line@;
+    selection-background-color: @frame@;
+    selection-color: @bg@;
+}
+
+QAbstractItemView::item:hover {
+    background: @surface2@;
+}
+
+QAbstractItemView::item:selected {
+    background: @frame@;
+    color: @bg@;
+}
+
+/* Column headers in Silkscreen, like the Caps widget */
+QHeaderView::section {
+    background: @surface@;
+    color: @muted@;
+    border: none;
+    border-right: 2px solid @line@;
+    border-bottom: 2px solid @line@;
+    padding: 4px 6px;
+    font-family: "Silkscreen";
+    font-size: 8pt;
+}
+
+QGroupBox {
+    border: 2px solid @line@;
+    margin-top: 14px;
+    padding-top: 6px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 4px;
+    color: @frame@;
+}
+
+/* --- Tabs --- */
+
+QTabWidget::pane {
+    border: 2px solid @line@;
+    top: -2px;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: @muted@;
+    border: 2px solid transparent;
+    padding: 5px 14px;
+}
+
+QTabBar::tab:hover {
+    border-color: @border@;
+    color: @fg@;
+}
+
+QTabBar::tab:selected {
+    background: @frame@;
+    color: @bg@;
+}
+
+/* --- Scrollbars --- */
+
+QScrollBar:vertical {
+    background: @surface@;
+    width: 10px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar:horizontal {
+    background: @surface@;
+    height: 10px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: @line@;
+    min-height: 24px;
+}
+
+QScrollBar::handle:horizontal {
+    background: @line@;
+    min-width: 24px;
+}
+
+QScrollBar::handle:hover {
+    background: @border@;
+}
+
+QScrollBar::handle:pressed {
+    background: @frame@;
+}
+
+QScrollBar::add-line,
+QScrollBar::sub-line,
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+    border: none;
+    width: 0;
+    height: 0;
+}
+
+QSplitter::handle {
+    background: @line@;
+}
+
+QStatusBar {
+    background: @surface@;
+    color: @muted@;
+    border-top: 2px solid @line@;
+}
+
+QToolBar {
+    background: @surface@;
+    border: none;
+    border-bottom: 2px solid @line@;
+    spacing: 4px;
+}
