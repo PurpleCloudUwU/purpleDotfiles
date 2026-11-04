@@ -20,7 +20,6 @@ Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
 | `yazi/` | Terminal file manager, Violet theme |
 | `nvim/` | Neovim without plugins: Violet colours (`palette.conf`) and the statusline |
 | `btop/` | System monitor (yami writes its theme) |
-| `spicetify/` | Spotify theme "Station" for Spicetify |
 | `fingerprint/` | Fingerprint for sudo and polkit on the T580's sensor (not part of `install.sh`) |
 
 yami itself is not in this repo: `install.sh` builds it from source in
@@ -37,8 +36,8 @@ git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 ~/purpleDotfiles/install.sh
 ```
 
-The script installs the packages (official repos, plus Departure Mono and
-Spicetify from the AUR via paru), builds the newest yami release and runs
+The script installs the packages (official repos, plus Departure Mono from
+the AUR via paru), builds the newest yami release and runs
 its installer without root (palette ash, pixel font everywhere, packaged
 niri, no login screen), links the configs into `~/.config` (old ones go to
 `~/dotfiles-backup-<date>/`), sets GTK to the yami look and enables
@@ -67,7 +66,6 @@ power profile switch just as well).
 | `foot`, `yazi`, `nvim`, `bash`, `starship` | `~/.config/<name>` (symlink) |
 | `niri/user.kdl` | `~/.config/niri/user.kdl` (symlink; the rest of `~/.config/niri` is yami's) |
 | `niri/desk-term-size` | `~/.local/bin/desk-term-size` (symlink, started from `user.kdl`) |
-| `spicetify/Station` | `~/.config/spicetify/Themes/Station` (symlink) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
 
 Written by yami, not in git: `~/.config/niri/config.kdl` and `yami-*.kdl`,
@@ -139,19 +137,6 @@ before each prompt `bash/shell.bash` compares that file's date with
 again with yami's colours. The next prompt has the new palette; when nothing
 changed it costs two date checks. Edit `starship/starship.toml`, never the
 copy in `~/.cache`. The linux console keeps a plain prompt.
-
-## Spotify
-
-Spotify (from spotify-launcher) gets the **Station** theme through
-[Spicetify](https://spicetify.app): `user.css` for shapes and fonts,
-`theme.js` for the redrawn icons, `color.ini` with the old station palettes
-as colour schemes (Violet is selected in `~/.config/spicetify/config-xpui.ini`).
-
-A Spotify update from spotify-launcher removes the patch; put it back with
-
-```sh
-spicetify backup apply
-```
 
 ## Fingerprint (T580 only)
 

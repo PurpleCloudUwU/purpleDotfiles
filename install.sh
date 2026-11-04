@@ -59,9 +59,8 @@ pacman_pkgs=(
     # Fonts (yami brings its pixel fonts itself), GTK theme and icons
     noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme papirus-icon-theme
 )
-# From the AUR: Departure Mono (foot, Neovim), Spicetify for Spotify's
-# Station theme
-aur_pkgs=(otf-departure-mono-nerd spicetify-cli)
+# From the AUR: Departure Mono (foot, Neovim)
+aur_pkgs=(otf-departure-mono-nerd)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
 config_dirs=(foot yazi nvim bash starship)
@@ -70,7 +69,6 @@ config_dirs=(foot yazi nvim bash starship)
 config_files=(
     "niri/user.kdl:$HOME/.config/niri/user.kdl"
     "niri/desk-term-size:$HOME/.local/bin/desk-term-size"
-    "spicetify/Station:$HOME/.config/spicetify/Themes/Station"
 )
 # Links the old Hyprland setup left behind
 old_links=(
