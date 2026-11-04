@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""New terminals in yami's desk mode open at the size the last one had.
+
+niri opens every window tiled; in desk mode yami then makes it floating, and
+niri gives it half the screen. This listens to niri's event stream and, as
+soon as a new terminal has turned floating, sets it to the size a terminal
+had when one was last resized by hand. The size is kept in
+~/.local/state/desk-term-size.json, so it survives logging out; it is read
+again for every new terminal, so editing that file works too.
+
+A size counts only when a floating terminal is resized by hand: changes
+right after a window turned floating or tiled (desk ↔ tiling, Mod+G), the
+ones made here and a window as large as a screen (fullscreen) are left out.
+
+Started by niri (niri/user.kdl, spawn-sh-at-startup); ends with niri.
+"""
+import json
+import os
+import select
+import socket
+import sys
+import time
+from pathlib import Path
+
+APPS = {"kitty"}    # app ids that count as the terminal
+SETTLE = 1.0        # s after a floating change or a resize from here: not by hand
+PENDING = 5.0       # s a new terminal may take to turn floating
+SAVE_AFTER = 0.5    # s without further resizing before the size is written
+
+STATE = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
+SIZE_FILE = STATE / "desk-term-size.json"
+DESK_FILE = STATE / "yami/stacking"   # yami writes 1 in desk mode, 0 in tiling
+
+
+def request(req):
+    with socket.socket(socket.AF_UNIX) as s:
+        s.connect(os.environ["NIRI_SOCKET"])
+        s.sendall((json.dumps(req) + "\n").encode())
+        return json.loads(s.makefile().readline())
+
+
+def desk_mode():
+    try:
+        return DESK_FILE.read_text().strip() == "1"
+    except OSError:
+        return False
+
+
+def load_size():
+    try:
+        d = json.loads(SIZE_FILE.read_text())
+        return int(d["width"]), int(d["height"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def save_size(size):
+    tmp = SIZE_FILE.with_name(SIZE_FILE.name + ".tmp")
+    tmp.write_text(json.dumps({"width": size[0], "height": size[1]}) + "\n")
+    os.replace(tmp, SIZE_FILE)
+
+
+def screen_sized(size):
+    """As large as a screen in both directions: fullscreen, not a terminal size."""
+    outputs = request("Outputs").get("Ok", {}).get("Outputs", {}).values()
+    return any(o.get("logical") and size[0] >= o["logical"]["width"] and size[1] >= o["logical"]["height"]
+               for o in outputs)
+
+
+class Sizer:
+    def __init__(self):
+        self.size = load_size()
+        self.wins = {}      # id → (app id, floating)
+        self.pending = {}   # new terminals waiting to turn floating: id → deadline
+        self.quiet = {}     # id → until when its size changes are not by hand
+        self.save = None    # size to write once the resizing stops
+        self.save_at = 0.0
+
+    def apply(self, wid, now):
+        # from the file each time, so an edit by hand counts too
+        self.size = load_size() or self.size
+        if self.size:
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetFixed": self.size[0]}}}})
+            request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetFixed": self.size[1]}}}})
+        self.quiet[wid] = now + SETTLE
+
+    def event(self, ev, now):
+        kind, d = next(iter(ev.items()))
+        if kind == "WindowsChanged":
+            self.wins = {w["id"]: (w["app_id"], w["is_floating"]) for w in d["windows"]}
+        elif kind == "WindowOpenedOrChanged":
+            w = d["window"]
+            wid, app, floating = w["id"], w["app_id"], w["is_floating"]
+            before = self.wins.get(wid)
+            self.wins[wid] = (app, floating)
+            if app not in APPS:
+                return
+            if before is None:
+                if desk_mode():
+                    if floating:
+                        self.apply(wid, now)
+                    else:
+                        self.pending[wid] = now + PENDING
+            elif before[1] != floating:
+                self.quiet[wid] = now + SETTLE
+                if floating and self.pending.pop(wid, 0) >= now:
+                    self.apply(wid, now)
+        elif kind == "WindowClosed":
+            for m in (self.wins, self.pending, self.quiet):
+                m.pop(d["id"], None)
+        elif kind == "WindowLayoutsChanged":
+            for wid, layout in d["changes"]:
+                app, floating = self.wins.get(wid, ("", False))
+                if app in APPS and floating and wid not in self.pending and now >= self.quiet.get(wid, 0):
+                    size = tuple(layout["window_size"])
+                    if size != self.size:
+                        self.save, self.save_at = size, now + SAVE_AFTER
+
+    def flush(self):
+        size, self.save = self.save, None
+        if size and not screen_sized(size):
+            self.size = size
+            save_size(size)
+
+
+def main():
+    if not os.environ.get("NIRI_SOCKET"):
+        sys.exit("desk-term-size: NIRI_SOCKET is not set (run it from niri)")
+    sizer = Sizer()
+    with socket.socket(socket.AF_UNIX) as s:
+        s.connect(os.environ["NIRI_SOCKET"])
+        s.sendall(b'"EventStream"\n')
+        buf = b""
+        while True:
+            wait = max(0.0, sizer.save_at - time.monotonic()) if sizer.save else None
+            if not select.select([s], [], [], wait)[0]:
+                sizer.flush()
+                continue
+            chunk = s.recv(65536)
+            if not chunk:
+                return   # niri has ended
+            buf += chunk
+            *lines, buf = buf.split(b"\n")
+            for line in lines:
+                ev = json.loads(line)
+                if "Ok" not in ev:
+                    sizer.event(ev, time.monotonic())
+
+
+if __name__ == "__main__":
+    main()

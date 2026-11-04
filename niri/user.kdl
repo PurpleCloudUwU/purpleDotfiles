@@ -34,6 +34,11 @@ input {
     }
 }
 
+// ─── autostart ─────────────────────────────────────────────────────────────
+// In desk mode a new terminal opens at the size the last one was resized to
+// (niri/desk-term-size, linked to ~/.local/bin); started again if it crashes
+spawn-sh-at-startup "until desk-term-size; do sleep 1; done"
+
 // ─── keys ──────────────────────────────────────────────────────────────────
 // yami's keys stay as they are (settings → keys, `yami-shell binds list`);
 // these are the habits from the Hyprland setup on keys yami leaves free.

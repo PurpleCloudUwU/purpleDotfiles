@@ -13,6 +13,7 @@ Older setups: the Hyprland + Quickshell "Mondbasis" rice is on the branch
 | Part | What it does |
 |---|---|
 | `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
+| `niri/desk-term-size` | In desk mode new terminals open at the size the last one was resized to |
 | `bash/` | Aliases, `y` for yazi, zoxide, starship (sourced from `~/.bashrc`) |
 | `starship/` | The prompt in the yami look, its colours follow the yami palette |
 | `foot/` | Second terminal (Departure Mono, the old Violet colours) |
@@ -65,6 +66,7 @@ power profile switch just as well).
 |---|---|
 | `foot`, `yazi`, `nvim`, `bash`, `starship` | `~/.config/<name>` (symlink) |
 | `niri/user.kdl` | `~/.config/niri/user.kdl` (symlink; the rest of `~/.config/niri` is yami's) |
+| `niri/desk-term-size` | `~/.local/bin/desk-term-size` (symlink, started from `user.kdl`) |
 | `spicetify/Station` | `~/.config/spicetify/Themes/Station` (symlink) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
 
@@ -109,6 +111,18 @@ Mod+Shift+M, Mod+0 / Mod+Shift+0, volume up capped at 100 %, and German
 keys for the yami keys on `=`, `/`, `[`, `]` and `` ` `` (niri matches a key
 as it is without Shift, and those are Shift or AltGr keys on the German
 layout). Volume, brightness and media keys work as before.
+
+## Terminal size in desk mode
+
+niri opens every window tiled, and in desk mode yami then makes it floating
+at half the screen. `niri/desk-term-size` follows niri's event stream: as
+soon as a new kitty has turned floating, it gets the size a kitty was last
+resized to by hand (dragging, Mod+Minus/Plus). Only hand resizes of a
+floating kitty count; the changes when windows switch between floating and
+tiling, its own resizes and fullscreen are left out. The size is kept in
+`~/.local/state/desk-term-size.json` and read for every new terminal, so it
+can be set there by hand too. In tiling mode nothing changes. Other
+terminals: `APPS` at the top of the script.
 
 ## Prompt
 

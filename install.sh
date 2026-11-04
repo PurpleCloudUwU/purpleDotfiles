@@ -69,6 +69,7 @@ config_dirs=(foot yazi nvim bash starship)
 # to yami (the shell writes its files there), only user.kdl is ours.
 config_files=(
     "niri/user.kdl:$HOME/.config/niri/user.kdl"
+    "niri/desk-term-size:$HOME/.local/bin/desk-term-size"
     "spicetify/Station:$HOME/.config/spicetify/Themes/Station"
 )
 # Links the old Hyprland setup left behind
