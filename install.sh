@@ -224,8 +224,11 @@ apply_settings() {
     add_line ~/.bash_profile 'export PATH="$HOME/.local/bin:$PATH"'
     add_line ~/.bash_profile 'export EDITOR=nvim VISUAL=nvim'
     # tty1 logs in on its own (login/autologin.conf) and starts niri, which
-    # locks at once: the yami lock screen is the login screen
-    add_line ~/.bash_profile '[[ -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && exec niri-session'
+    # locks at once: the yami lock screen is the login screen. Only in an
+    # interactive shell: niri-session re-runs itself through a login shell,
+    # which reads this file again (without the check it loops forever)
+    sed -i '\|^\[\[ -z \$WAYLAND_DISPLAY .* exec niri-session$|d' ~/.bash_profile
+    add_line ~/.bash_profile '[[ $- == *i* && -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && exec niri-session'
     # the station line of the old setup goes
     sed -i '\|~/.config/station/shell.bash|d' ~/.bashrc 2>/dev/null || true
     add_line ~/.bashrc '[[ -f ~/.config/bash/shell.bash ]] && . ~/.config/bash/shell.bash'
