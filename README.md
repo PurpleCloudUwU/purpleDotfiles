@@ -5,8 +5,8 @@ compositor and the [yami](https://github.com/Trendorin/yami) desktop, a
 pixel-art shell written in Rust that draws the bar, launcher, dock,
 notifications, lock screen, widgets and settings itself. No Qt anywhere.
 
-Older setups: the Hyprland + Quickshell "Mondbasis" rice is on the branch
-`lockscreen-quickshell`, the Sway/Waybar/eww one is the git tag `sway-legacy`.
+Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
+`hyprland-quickshell`, the Sway/Waybar/eww one `sway-legacy`.
 
 ## What's inside
 
