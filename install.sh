@@ -43,8 +43,8 @@ pacman_pkgs=(
     # drives, phones and network shares in yami-files
     cliphist wl-clipboard grim slurp python python-pillow mpv libarchive
     udisks2 gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc gvfs-smb
-    # Terminals, file manager, editor, system info
-    kitty foot yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
+    # Terminals, prompt, file manager, editor, system info
+    kitty foot starship yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
     # yazi previews
     chafa resvg ffmpegthumbnailer poppler imagemagick
     # Audio, media keys, the equalizer in the music widget
@@ -64,7 +64,7 @@ pacman_pkgs=(
 aur_pkgs=(otf-departure-mono-nerd spicetify-cli)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(foot yazi nvim bash)
+config_dirs=(foot yazi nvim bash starship)
 # Single files: <path in repo>:<destination>. ~/.config/niri itself belongs
 # to yami (the shell writes its files there), only user.kdl is ours.
 config_files=(

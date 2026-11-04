@@ -1,0 +1,138 @@
+# purpleDotfiles · starship in the yami look
+#
+# Blocks like the chips in the yami bar: user and host on the accent, the
+# folder on a surface, git and languages on the panel colour, labels in faint
+# text ("git", "rust" like "cpu", "ram" in the bar), dots up to the clock.
+#
+# The colours are the palette at the end of this file. starship/palette.py
+# writes a copy with yami's current palette (~/.local/state/yami/palette.json)
+# to ~/.cache/starship/yami.toml, and bash/shell.bash points STARSHIP_CONFIG
+# there and renews it before a prompt whenever the palette or this file is
+# newer. So the prompt follows Mod+S → color from the next prompt on. The
+# values below are ash, used as they are when yami has not written a palette.
+
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = false
+palette = "yami"
+
+format = """
+$username$hostname $directory\
+($git_branch$git_state$git_status )\
+$rust$python$nodejs$golang$lua\
+$jobs$status$cmd_duration\
+$fill $time
+$character"""
+
+[fill]
+symbol = "·"
+style = "fg:border"
+
+[username]
+show_always = true
+style_user = "bg:accent fg:onaccent bold"
+style_root = "bg:warn fg:onaccent bold"
+format = "[ $user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bg:accent fg:onaccent"
+format = "[@$hostname ]($style)"
+
+[directory]
+style = "bg:surface fg:text"
+read_only = " ro"
+read_only_style = "bg:surface fg:warn"
+truncation_length = 4
+truncation_symbol = "…/"
+truncate_to_repo = false
+format = "[ $path]($style)[$read_only]($read_only_style)[ ]($style) "
+
+[git_branch]
+style = "bg:panel fg:bright"
+format = "[ [git](bg:panel fg:textfaint) $branch ]($style)"
+
+[git_state]
+style = "bg:panel fg:warn"
+format = '[\($state( $progress_current/$progress_total)\) ]($style)'
+
+[git_status]
+style = "bg:panel fg:glow"
+format = "([$all_status$ahead_behind ]($style))"
+
+[rust]
+style = "bg:panel fg:text"
+version_format = "${major}.${minor}"
+format = "[ [rust](bg:panel fg:textfaint) $version ]($style) "
+
+[python]
+style = "bg:panel fg:text"
+version_format = "${major}.${minor}"
+format = "[ [py](bg:panel fg:textfaint) $version( $virtualenv) ]($style) "
+
+[nodejs]
+style = "bg:panel fg:text"
+version_format = "${major}.${minor}"
+format = "[ [node](bg:panel fg:textfaint) $version ]($style) "
+
+[golang]
+style = "bg:panel fg:text"
+version_format = "${major}.${minor}"
+format = "[ [go](bg:panel fg:textfaint) $version ]($style) "
+
+[lua]
+style = "bg:panel fg:text"
+version_format = "${major}.${minor}"
+format = "[ [lua](bg:panel fg:textfaint) $version ]($style) "
+
+[jobs]
+symbol = ""
+number_threshold = 1
+symbol_threshold = 1
+style = "bg:panel fg:glow"
+format = "[ [jobs](bg:panel fg:textfaint) $number ]($style) "
+
+[status]
+disabled = false
+style = "bg:err fg:onaccent"
+format = "[ exit $status ]($style) "
+
+[cmd_duration]
+min_time = 2000
+style = "fg:textdim"
+format = "[[took](fg:textfaint) $duration]($style) "
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "fg:textdim"
+format = "[$time]($style)"
+
+[character]
+success_symbol = "[›](bold fg:accent)"
+error_symbol = "[›](bold fg:err)"
+vimcmd_symbol = "[‹](bold fg:glow)"
+format = "$symbol "
+
+# yami's palette keys in lower case (palette.py fills them in); err is not in
+# yami's palette, it is the red kitty uses for colour 1
+[palettes.yami]
+bg = "#0e0c0c"
+panel = "#161414"
+surface = "#221e1e"
+surfacehi = "#2f2b2a"
+codebg = "#080707"
+border = "#423f3d"
+dim = "#585451"
+accent = "#a8a29c"
+deep = "#696562"
+glow = "#928d88"
+bright = "#dad3cb"
+selection = "#635f5b"
+text = "#e8e2e0"
+textdim = "#8f8685"
+textfaint = "#645a59"
+onaccent = "#0b0909"
+ok = "#78c878"
+warn = "#ffaa28"
+err = "#d0352d"

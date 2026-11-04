@@ -13,7 +13,8 @@ Older setups: the Hyprland + Quickshell "Mondbasis" rice is on the branch
 | Part | What it does |
 |---|---|
 | `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
-| `bash/` | Prompt, aliases, `y` for yazi, zoxide (sourced from `~/.bashrc`) |
+| `bash/` | Aliases, `y` for yazi, zoxide, starship (sourced from `~/.bashrc`) |
+| `starship/` | The prompt in the yami look, its colours follow the yami palette |
 | `foot/` | Second terminal (Departure Mono, the old Violet colours) |
 | `yazi/` | Terminal file manager, Violet theme |
 | `nvim/` | Neovim without plugins: Violet colours (`palette.conf`) and the statusline |
@@ -52,7 +53,7 @@ power profile switch just as well).
 
 | Repo | Destination |
 |---|---|
-| `foot`, `yazi`, `nvim`, `bash` | `~/.config/<name>` (symlink) |
+| `foot`, `yazi`, `nvim`, `bash`, `starship` | `~/.config/<name>` (symlink) |
 | `niri/user.kdl` | `~/.config/niri/user.kdl` (symlink; the rest of `~/.config/niri` is yami's) |
 | `spicetify/Station` | `~/.config/spicetify/Themes/Station` (symlink) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
@@ -98,6 +99,22 @@ Mod+Shift+M, Mod+0 / Mod+Shift+0, volume up capped at 100 %, and German
 keys for the yami keys on `=`, `/`, `[`, `]` and `` ` `` (niri matches a key
 as it is without Shift, and those are Shift or AltGr keys on the German
 layout). Volume, brightness and media keys work as before.
+
+## Prompt
+
+[Starship](https://starship.rs) in the look of the yami bar: user and host
+on the accent, the folder on a surface, git and language versions on the
+panel colour with faint labels, a red `exit` block after a failed command,
+`took` for anything over two seconds, dots up to the clock, `›` below.
+
+The colours follow the yami palette. yami writes its palette to
+`~/.local/state/yami/palette.json` whenever it changes (Mod+S → color);
+before each prompt `bash/shell.bash` compares that file's date with
+`~/.cache/starship/yami.toml` and, when the palette (or
+`starship/starship.toml`) is newer, `starship/palette.py` writes the config
+again with yami's colours. The next prompt has the new palette; when nothing
+changed it costs two date checks. Edit `starship/starship.toml`, never the
+copy in `~/.cache`. The linux console keeps a plain prompt.
 
 ## Spotify
 
