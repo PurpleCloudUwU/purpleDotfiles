@@ -1,0 +1,24 @@
+yami v2.4.3: in desk mode the first window on an empty desktop opened tiled.
+
+niri.rs handle() toggles a new window to floating and remembers it in
+floated_by_us; in the same pass app.rs' login catch-up (window list went
+from empty to non-empty) calls set_stacking(true), which still sees the
+window as tiled (niri has not answered yet) and toggles it a second time,
+back into the tiling. set_stacking now skips windows already in
+floated_by_us.
+
+diff --git a/shell/src/niri.rs b/shell/src/niri.rs
+index a562f5f..b8bf47e 100644
+--- a/shell/src/niri.rs
++++ b/shell/src/niri.rs
+@@ -331,7 +331,9 @@ impl Niri {
+         self.stacking = on;
+         let _ = std::fs::write(crate::config::state_dir().join("stacking"), if on { "1\n" } else { "0\n" });
+         if on {
+-            let ids: Vec<u64> = self.wins.iter().filter(|w| !w.floating && !self.is_min(w)).map(|w| w.id).collect();
++            // уже ждущие Toggle (новое окно из handle) не трогаем: niri ещё не ответил, и второй
++            // Toggle вернул бы окно в ленту (первое окно на пустом столе в режиме «стол»)
++            let ids: Vec<u64> = self.wins.iter().filter(|w| !w.floating && !self.is_min(w) && !self.floated_by_us.contains(&w.id)).map(|w| w.id).collect();
+             for id in ids {
+                 self.floated_by_us.push(id);
+                 self.act(json!({"ToggleWindowFloating": {"id": id}}));

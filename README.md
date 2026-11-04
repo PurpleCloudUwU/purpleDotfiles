@@ -45,6 +45,16 @@ NetworkManager, Bluetooth and TLP. Then log in on a TTY and run
 `niri-session`. Options: `--copy`, `--no-packages`, `--no-services`,
 `--help`.
 
+Fixes of my own for yami live in `yami/patches/`. `install.sh` puts them
+into yami's source only for the build and takes them out again, so yami's
+updater keeps a clean checkout (settings → updates shows "with local edits").
+A patch that no longer applies is skipped. An update through yami itself
+builds without them, so after `yami update` run `install.sh --no-packages
+--no-services` again until the fix is in a yami release:
+
+- `0001-desk-mode-first-window.patch`: in desk mode the first window on an
+  empty desktop opened tiled (the shell toggled it to floating twice)
+
 yami's own package list is skipped on purpose: it would bring qt6ct and
 power-profiles-daemon, and the latter fights tlp-pd (which answers yami's
 power profile switch just as well).

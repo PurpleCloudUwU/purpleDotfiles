@@ -160,7 +160,26 @@ install_yami() {
     [[ -n $tag ]] || die "no yami release found in $yami_src"
     git -C "$yami_src" -c advice.detachedHead=false checkout -q --detach "$tag"
     note "yami $tag"
-    "$yami_src/install.sh" "${yami_opts[@]}"
+
+    # Our fixes on top (yami/patches/), in the tree only for the build and
+    # taken out again, so yami's own updater finds a clean checkout. A patch
+    # that does not apply any more (fixed upstream, code moved) is skipped.
+    local p ok=0 applied=()
+    for p in "$repo"/yami/patches/*.patch; do
+        [[ -e $p ]] || continue
+        if git -C "$yami_src" apply --check "$p" 2>/dev/null; then
+            git -C "$yami_src" apply "$p"
+            applied=("$p" "${applied[@]}")
+            note "patch: ${p##*/}"
+        else
+            note "patch skipped, it does not apply to $tag: ${p##*/}"
+        fi
+    done
+    "$yami_src/install.sh" "${yami_opts[@]}" && ok=1
+    for p in "${applied[@]}"; do
+        git -C "$yami_src" apply -R "$p"
+    done
+    ((ok)) || die "the yami installer failed, see ~/.cache/yami/install.log"
 
     # The layout lives in niri/user.kdl (de, nodeadkeys); the same here, so
     # the bar shows DE, and yami-binds.kdl written again with it
