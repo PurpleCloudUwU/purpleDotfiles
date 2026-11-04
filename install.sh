@@ -184,6 +184,12 @@ install_yami() {
     # the bar shows DE, and yami-binds.kdl written again with it
     ~/.local/bin/yami-shell config set kbLayout '"de"' >/dev/null
     ~/.local/bin/yami-shell binds write
+
+    # focus-follows-mouse only in tiling mode: desk-term-size sets it in
+    # ~/.local/state/desk-mode.kdl, and niri cannot switch it off in a later
+    # file, so it comes out of yami's config.kdl (written again by updates)
+    sed -i -E 's|^([[:space:]]*)(focus-follows-mouse\b.*)$|\1// \2   // purpleDotfiles: set by desk-term-size|' \
+        ~/.config/niri/config.kdl
 }
 
 install_configs() {

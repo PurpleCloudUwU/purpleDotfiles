@@ -13,7 +13,7 @@ Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
 | Part | What it does |
 |---|---|
 | `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
-| `niri/desk-term-size` | In desk mode new terminals open at the size the last one was resized to |
+| `niri/desk-term-size` | Desk mode helper: terminals open floating, centred, at the last size; click to focus; tidy switches between desk and tiling |
 | `bash/` | Aliases, `y` for yazi, zoxide, starship (sourced from `~/.bashrc`) |
 | `starship/` | The prompt in the yami look, its colours follow the yami palette |
 | `foot/` | Second terminal (Departure Mono, the old Violet colours) |
@@ -54,6 +54,13 @@ builds without them, so after `yami update` run `install.sh --no-packages
 
 - `0001-desk-mode-first-window.patch`: in desk mode the first window on an
   empty desktop opened tiled (the shell toggled it to floating twice)
+- `0002-desk-mode-window-order.patch`: switching tiling → desk floated the
+  windows in the order they were opened, so title bars lay over the windows
+  in front; now in focus order, as the title bars are drawn (needs 0001)
+
+`install.sh` also comments `focus-follows-mouse` out of yami's
+`niri/config.kdl`; `desk-term-size` sets it again in tiling mode only (see
+below).
 
 yami's own package list is skipped on purpose: it would bring qt6ct and
 power-profiles-daemon, and the latter fights tlp-pd (which answers yami's
@@ -110,17 +117,27 @@ keys for the yami keys on `=`, `/`, `[`, `]` and `` ` `` (niri matches a key
 as it is without Shift, and those are Shift or AltGr keys on the German
 layout). Volume, brightness and media keys work as before.
 
-## Terminal size in desk mode
+## Desk mode
 
-niri opens every window tiled, and in desk mode yami then makes it floating
-at half the screen. `niri/desk-term-size` follows niri's event stream: as
-soon as a new kitty has turned floating, it gets the size a kitty was last
-resized to by hand (dragging, Mod+Minus/Plus). Only hand resizes of a
-floating kitty count; the changes when windows switch between floating and
-tiling, its own resizes and fullscreen are left out. The size is kept in
-`~/.local/state/desk-term-size.json` and read for every new terminal, so it
-can be set there by hand too. In tiling mode nothing changes. Other
-terminals: `APPS` at the top of the script.
+`niri/desk-term-size` follows niri's event stream and the mode yami writes
+to `~/.local/state/yami/stacking`, and keeps `~/.local/state/desk-mode.kdl`
+(included at the end of `user.kdl`) in step with it:
+
+- **Terminals** open floating, centred, at the size a kitty was last resized
+  to by hand (dragging, Mod+Minus/Plus), through a window rule in desk mode,
+  so they never show up tiled first. Only hand resizes of a floating kitty
+  count; the size is kept in `~/.local/state/desk-term-size.json` and can be
+  set there by hand too. Other terminals: `APPS` at the top of the script.
+- **Focus**: in desk mode a click focuses and raises a window; in tiling mode
+  focus follows the mouse. (Hover focus without raising put yami's title
+  bars over the windows in front.)
+- **Tiling → desk**: windows that still have their tiled shape get a window
+  size (terminals the saved one, others 60 % × 70 % of the screen), centred
+  and staggered so every title bar shows. Windows that floated before keep
+  their size and place.
+- **Desk → tiling**: every window gets the default column width (50 %), the
+  view starts at the left edge, and terminals the rule opened floating are
+  tiled again.
 
 ## Prompt
 

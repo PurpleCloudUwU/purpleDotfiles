@@ -77,3 +77,9 @@ recent-windows {
         Alt+Shift+asciicircum  { previous-window filter="app-id"; }
     }
 }
+
+// ─── desk mode terminal ────────────────────────────────────────────────────
+// Written by desk-term-size: in desk mode a rule that opens kitty floating at
+// the last size (centred by niri); in tiling mode focus-follows-mouse, which
+// install.sh takes out of yami's config.kdl (in desk mode a click focuses).
+include optional=true "~/.local/state/desk-mode.kdl"
