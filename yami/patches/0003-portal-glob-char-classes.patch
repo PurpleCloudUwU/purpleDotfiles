@@ -1,0 +1,38 @@
+yami v2.4.3: Brave/Chromium file dialogs showed an empty folder.
+
+Chromium passes portal filters as case-insensitive globs like "*.[pP][nN][gG]".
+glob_match in yami-files only knew * and ?, so "[" was compared literally and
+no file matched. Add [...] character classes (ranges, ! / ^ negation).
+
+diff --git a/shell/files/src/fm.rs b/shell/files/src/fm.rs
+index 3a1b885..93cf115 100644
+--- a/shell/files/src/fm.rs
++++ b/shell/files/src/fm.rs
+@@ -1893,6 +1893,27 @@ fn glob_match(pat: &str, s: &str) -> bool {
+             None => s.is_empty(),
+             Some('*') => (0..=s.len()).any(|i| m(&p[1..], &s[i..])),
+             Some('?') => !s.is_empty() && m(&p[1..], &s[1..]),
++            // character class like [pP] or [a-z]; Chromium sends "*.[pP][nN][gG]" over the portal
++            Some('[') if p[1..].contains(&']') => {
++                let close = 1 + p[1..].iter().position(|&c| c == ']').unwrap();
++                let Some(&ch) = s.first() else { return false };
++                let (neg, set) = match p[1..close].split_first() {
++                    Some((&('!' | '^'), rest)) => (true, rest),
++                    _ => (false, &p[1..close]),
++                };
++                let mut hit = false;
++                let mut i = 0;
++                while i < set.len() {
++                    if i + 2 < set.len() && set[i + 1] == '-' {
++                        hit |= set[i] <= ch && ch <= set[i + 2];
++                        i += 3;
++                    } else {
++                        hit |= set[i] == ch;
++                        i += 1;
++                    }
++                }
++                hit != neg && m(&p[close + 1..], &s[1..])
++            }
+             Some(c) => s.first() == Some(c) && m(&p[1..], &s[1..]),
+         }
+     }
