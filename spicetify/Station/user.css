@@ -2,8 +2,8 @@
  * Station: Spotify in the Mondbasis look.
  *
  * Shapes and fonts only. The colours are in color.ini next to this file,
- * which `station theme` writes from station/palettes/*.conf (one section per
- * colour world, the active one is set as Spicetify's color_scheme). Every
+ * written once from the old station palettes (one section per colour
+ * world, the active one is set as Spicetify's color_scheme). Every
  * palette key is there, so var(--spice-frame), var(--spice-off) etc. work
  * as well as Spicetify's own keys.
  *

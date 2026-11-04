@@ -1,28 +1,29 @@
-# purpleDotfiles · Mondbasis
+# purpleDotfiles · yami on niri
 
-My ThinkPad T580 rice: Arch Linux, Hyprland and Quickshell, styled like the
-terminals of a moon base. Four colour worlds (Amber, Red, Mono, Violet),
-pixel fonts and an optional CRT screen shader.
+My ThinkPad T580 rice: Arch Linux, the [niri](https://github.com/YaLTeR/niri)
+compositor and the [yami](https://github.com/Trendorin/yami) desktop, a
+pixel-art shell written in Rust that draws the bar, launcher, dock,
+notifications, lock screen, widgets and settings itself. No Qt anywhere.
 
-The old Sway/Waybar/eww setup is kept as the git tag `sway-legacy`.
+Older setups: the Hyprland + Quickshell "Mondbasis" rice is on the branch
+`lockscreen-quickshell`, the Sway/Waybar/eww one is the git tag `sway-legacy`.
 
 ## What's inside
 
 | Part | What it does |
 |---|---|
-| `hypr/` | Hyprland (Lua config, 0.55+), hypridle, hyprlock (fallback lock screen) |
-| `quickshell/` | Everything on screen that isn't an app window: top bar, program select (Super+D), PDA quick access (Super+N), power menu, desktop widgets (clock, calendar, weather, system, music, tasks, PDA panel), notifications, volume/brightness OSD, wallpaper, lock screen, and STATION SETUP (Super+Shift+F12) |
-| `station/` | Palettes, the CRT shader template, the GTK/Qt look (`gtk/`, `qt/`) and the `station` script that switches theme and CRT |
-| `foot/` | Terminal (Departure Mono) |
-| `yazi/` | File manager, floats in the right column (Super+E) |
-| `nvim/` | Neovim without plugins: station colours and the statusline from the canvas |
-| `fastfetch/` | Minimal system info: a pixel moon and nine lines next to it, including the theme (image drawn by the `fastfetch` shell function) |
-| `btop/` | System monitor |
-| `spicetify/` | Spotify theme "Station" for Spicetify: square panels with header strips, segment bars, pixel fonts, the shell's icons, colours from the palette |
-| `fingerprint/` | Fingerprint login for the T580's sensor (not part of `install.sh`) |
+| `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
+| `bash/` | Prompt, aliases, `y` for yazi, zoxide (sourced from `~/.bashrc`) |
+| `foot/` | Second terminal (Departure Mono, the old Violet colours) |
+| `yazi/` | Terminal file manager, Violet theme |
+| `nvim/` | Neovim without plugins: Violet colours (`palette.conf`) and the statusline |
+| `btop/` | System monitor (yami writes its theme) |
+| `spicetify/` | Spotify theme "Station" for Spicetify |
+| `fingerprint/` | Fingerprint for sudo and polkit on the T580's sensor (not part of `install.sh`) |
 
-The interface is English, the keyboard layout German without dead keys
-(`hypr/station/input.lua`).
+yami itself is not in this repo: `install.sh` builds it from source in
+`~/.local/share/yami/src`, and its updater keeps it current from there.
+The interface is English, the keyboard layout German without dead keys.
 
 ## Setup
 
@@ -34,233 +35,82 @@ git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 ~/purpleDotfiles/install.sh
 ```
 
-The script installs the packages (official repos, plus three pixel fonts
-from the AUR via paru), symlinks the configs into `~/.config` (old ones go to
-`~/dotfiles-backup-<date>/`), writes the theme files for Violet and enables
-NetworkManager, Bluetooth, TLP and the ly login manager. Then reboot and
-choose Hyprland in ly. Options: `--copy`, `--no-packages`, `--no-services`,
+The script installs the packages (official repos, plus Departure Mono and
+Spicetify from the AUR via paru), builds the newest yami release and runs
+its installer without root (palette ash, pixel font everywhere, packaged
+niri, no login screen), links the configs into `~/.config` (old ones go to
+`~/dotfiles-backup-<date>/`), sets GTK to the yami look and enables
+NetworkManager, Bluetooth and TLP. Then log in on a TTY and run
+`niri-session`. Options: `--copy`, `--no-packages`, `--no-services`,
 `--help`.
+
+yami's own package list is skipped on purpose: it would bring qt6ct and
+power-profiles-daemon, and the latter fights tlp-pd (which answers yami's
+power profile switch just as well).
 
 ### Where the files go
 
 | Repo | Destination |
 |---|---|
-| `hypr`, `quickshell`, `station`, `foot`, `yazi`, `nvim`, `fastfetch` | `~/.config/<name>` (symlink) |
-| `station/bin/station` | `~/.local/bin/station` |
+| `foot`, `yazi`, `nvim`, `bash` | `~/.config/<name>` (symlink) |
+| `niri/user.kdl` | `~/.config/niri/user.kdl` (symlink; the rest of `~/.config/niri` is yami's) |
 | `spicetify/Station` | `~/.config/spicetify/Themes/Station` (symlink) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
-| `station/tasks.txt` | `~/.local/share/station/tasks.txt` (only the first time) |
-| `station/shell.bash` | sourced from `~/.bashrc` (prompt, aliases, `y` for yazi) |
 
-Generated, not in git: everything in `~/.local/state/station/` (theme,
-CRT settings and shaders, terminal colours, prompt, hyprlock colours),
-`yazi/theme.toml`, `fastfetch/config.jsonc`, btop's `themes/station.theme`,
-`spicetify/Station/color.ini`, the GTK theme `~/.local/share/themes/Station`,
-`~/.config/gtk-3.0/gtk.css`, `~/.config/gtk-4.0/gtk.css` and `~/.config/qt6ct/`.
+Written by yami, not in git: `~/.config/niri/config.kdl` and `yami-*.kdl`,
+`~/.config/yami-shell.json` (every setting from Mod+S), kitty, fastfetch,
+the btop theme, `gtk.css` for GTK 3/4 and the pixel cursor.
 
 ## Keys
 
+yami's keys (Mod is Super). All of them can be changed in settings → keys,
+`yami-shell binds list` prints the current set, Mod+? (Mod+Shift+ß) shows
+them.
+
 | Keys | Action |
 |---|---|
-| Super+Return | Terminal |
-| Super+D | Program select |
-| Super+E | Files (yazi) |
-| Super+Shift+W | Browser (LibreWolf) |
-| Super+Shift+M | Music (Spotify) |
-| Super+N | PDA quick access: WiFi, brightness, volume, toggles, theme, CRT |
-| Super+Shift+E | Power menu |
-| Super+Escape | Lock |
-| Super+F12 | CRT on/off |
-| Super+Shift+F12 | STATION SETUP: CRT calibration and desktop widgets |
-| Super+F11 | Next theme |
-| Super+Shift+Q | Close window |
-| Super+F | Fullscreen |
-| Super+G | Window grows to the right over the widget column, not fullscreen (again: back) |
-| Super+Shift+Space | Float |
-| Super+H J K L or arrows | Focus (with Shift: move, with Ctrl: resize) |
-| Super+1…0 | Workspace (with Shift: move the window there) |
-| Super+minus | Scratchpad (with Shift: move the window there) |
-| Super+W / Super+Tab | Tab group / next tab |
-| Print, Super+Print, Super+Shift+Print | Screenshot of the screen, window, region |
-| Super+Shift+N | Dismiss notifications |
-| Super+Shift+C | Reload Hyprland |
+| Mod+Space, Mod+D | launcher (Tab switches to the clipboard) |
+| Mod+V | clipboard |
+| Mod+S | yami settings (palette, wallpaper, bar, widgets, dock, keys, screens) |
+| Mod+T, Mod+Return | kitty |
+| Mod+E | yami-files |
+| Mod+Q, Mod+Shift+Q, Alt+F4 | close window |
+| Mod+F, Mod+Shift+F | maximize column, fullscreen |
+| Mod+G | floating on/off |
+| Mod+Shift+Space | desk mode (floating windows with title bars) ↔ tiling |
+| Mod+N, Mod+Shift+N | minimize, restore the last one |
+| Mod+Tab | overview |
+| Alt+Tab, Alt+^ | recent windows, windows of the same app |
+| Mod+arrows, Mod+HJKL | focus; with Ctrl: move |
+| Mod+1…0, Mod+Shift+1…0 | workspace, move the column there |
+| Mod+R, Mod+Minus, Mod+Plus | next column width, narrower, wider (with Shift: height) |
+| Mod+Comma, Mod+Period, Mod+Ü, Mod+Ä | window into the column, out of it, into/out of the left/right one |
+| Print, Mod+Shift+S | screenshot overlay; Ctrl+Print monitor, Alt+Print window |
+| Mod+Escape | lock |
+| Mod+Shift+E, Ctrl+Alt+Del | power menu |
+| Mod+B | hide the bar |
+| Mod+Shift+C | reload the niri config |
+| Mod+Shift+W | default browser |
+| Mod+Shift+M | Spotify |
 
-After a `git pull` in the repo, `station reload` reloads Hyprland and
-Quickshell.
-
-Only a new folder in `quickshell/` needs a real restart (`qs kill`, then
-`qs -n -d`). Quickshell 0.3.2 sometimes crashes while it shuts down and then
-shows its crash dialog; that is a Quickshell bug at exit, the restarted shell
-is fine.
-
-The bar is 0.75 of the canvas size; `barScale` in
-`quickshell/services/Theme.qml` makes it bigger or smaller (1.0 is the
-canvas). With another value, also adjust the yazi position in
-`hypr/station/rules.lua` (bar bottom + 24).
-
-Every workspace keeps the right column free for the floating file
-manager and the desktop widgets, like on the canvas; Super+G makes a window
-big over it. Switch the column off on the DESKTOP WIDGETS page of STATION
-SETUP.
-
-## Themes and CRT
-
-```sh
-station theme violet          # amber, red, mono, violet, next
-station crt subtle            # off, work, subtle, full
-station crt toggle            # Super+F12
-station crt tint amber        # phosphor tint: neutral, amber, green, red
-station crt set scan 50       # single values 0-100, the preset becomes "custom"
-station crt option battery_subtle off
-```
-
-The **CRT CALIBRATION** page of STATION SETUP (Super+Shift+F12, or CRT
-CALIBRATION in the program select) shows the effects on a test picture first: presets, the seven
-values, phosphor colour, the behaviour options and an estimate of the GPU
-load. APPLY sends everything to `station crt write`; the colour world row
-switches the theme right away. From scripts: `qs ipc call crt open`,
-`qs ipc call crt preset subtle`, `qs ipc call theme set amber`.
-
-| Preset | Effects | Cost on the UHD 620 |
-|---|---|---|
-| OFF | none | none |
-| WORK | scanlines, a little glow, vignette | barely measurable |
-| SUBTLE | plus colour fringe and static grain | small |
-| FULL TUBE | plus curvature and flicker | noticeable: full redraw every frame |
-
-The shader (`station/crt/crt.frag.in`) runs through Hyprland's
-`decoration.screen_shader`. Curvature and flicker need a full redraw on every
-frame, so only FULL TUBE switches Hyprland's damage tracking off. Two
-options, both on by default: on battery FULL TUBE drops to SUBTLE, and the
-shader goes off while a window is fullscreen. A third one, off by default,
-lets the tube flicker for a moment at login.
-
-## GTK and Qt
-
-Other programs follow the colour world too. `station theme` writes:
-
-| Toolkit | File | Live switch |
-|---|---|---|
-| GTK 3 | theme `Station` (`~/.local/share/themes`): adw-gtk3-dark with the palette as its named colours; the shapes (`station/gtk/station.css`) in `~/.config/gtk-3.0/gtk.css` | yes: the theme name is switched away and back, running apps reload it |
-| GTK 4, libadwaita | `~/.config/gtk-4.0/gtk.css`: colours (also as libadwaita's variables) and shapes | no, read when an app starts |
-| Qt 6 | qt6ct (`~/.config/qt6ct`): palette, Fusion, `station/qt/station.qss` with the palette filled in | yes: qt6ct watches its folder |
-
-The shapes are the shell's: square corners, 2 px lines, header bars as the
-frame-coloured strip with hatching (dim when the window is not focused),
-outlined buttons that fill when active, segmented progress bars, framed
-popups. Fonts: Departure Mono 10 for GTK and Qt (`gtk_font` in the station
-script). Without qt6ct, `env.lua` lets Qt follow the GTK 3 theme instead
-(`QT_QPA_PLATFORMTHEME=gtk3`, Fusion).
+From `niri/user.kdl`: Mod+Return, Mod+Shift+Q, Mod+Shift+C, Mod+Shift+W,
+Mod+Shift+M, Mod+0 / Mod+Shift+0, volume up capped at 100 %, and German
+keys for the yami keys on `=`, `/`, `[`, `]` and `` ` `` (niri matches a key
+as it is without Shift, and those are Shift or AltGr keys on the German
+layout). Volume, brightness and media keys work as before.
 
 ## Spotify
 
 Spotify (from spotify-launcher) gets the **Station** theme through
-[Spicetify](https://spicetify.app):
+[Spicetify](https://spicetify.app): `user.css` for shapes and fonts,
+`theme.js` for the redrawn icons, `color.ini` with the old station palettes
+as colour schemes (Violet is selected in `~/.config/spicetify/config-xpui.ini`).
 
-- `user.css`: shapes and fonts. Square framed panels with header strips,
-  segment bars for progress and volume, Departure Mono / VT323 / Silkscreen.
-  The colours Spotify takes from covers (page tops, action bar, lyrics, full
-  screen view) are replaced by the palette, Liked Songs gets a pixel heart.
-- `theme.js`: Spotify's icons redrawn in the style of
-  `quickshell/widgets/Icon.qml` (24 px grid, flat strokes, filled transport
-  icons). It finds each icon by the start of its path data and swaps the
-  shape with the CSS `d` property; unknown icons stay Spotify's own.
-- `color.ini`: written by `station theme` with every palette as a colour
-  scheme (Spicetify's keys plus all palette keys as `--spice-<key>`).
-
-A theme switch (`station theme`, Super+F11) reaches an open Spotify within
-about two seconds: Spicetify rewrites `colors.css`, and `theme.js` checks
-that file every two seconds and loads it again when it changed.
+A Spotify update from spotify-launcher removes the patch; put it back with
 
 ```sh
-station spotify               # patch Spotify (first time, or after an update); restarts it
+spicetify backup apply
 ```
-
-A Spotify update from spotify-launcher removes the patch. `station open
-music` (Super+Shift+M) notices that and patches again before it starts
-Spotify.
-
-Spotify keeps its font rules in `@layer fonts` with `!important`, which beats
-any unlayered rule; that is why the font variables in `user.css` sit in a
-`@layer fonts` block of their own.
-
-## Desktop widgets
-
-Seven widgets sit below the windows, in the right column:
-
-| Widget | Shows | Options |
-|---|---|---|
-| CLOCK | Time, date, ISO week | 24 hours, seconds, week number |
-| CALENDAR | The month, today marked; arrows or the wheel change the month, a click on its name goes back | Week starts on Monday, week numbers |
-| WEATHER | Now and the next three days from [Open-Meteo](https://open-meteo.com) (no key); a click on the header fetches again | Place, °C or °F |
-| SYSTEM | CPU graph of the last two minutes, memory, disk, temperature, uptime; a click on the header opens btop | CPU graph |
-| MUSIC | The MPRIS player | Visualizer |
-| TASKS | `tasks.txt` | Done tasks |
-| PDA PANEL | Battery and system info | |
-
-The **DESKTOP WIDGETS** page of STATION SETUP shows the screen in small:
-drag a widget there and the real one moves along (8 px grid). The page also
-shows or hides each widget, sets them up as in the table and decides whether
-Hyprland keeps the right column free for them (`station desktop column
-on|off`). The layout is kept in `~/.local/state/station/desktop.json`;
-RESET LAYOUT brings back the one from the canvas. From scripts:
-
-```sh
-qs ipc call desktop option clock seconds true
-qs ipc call desktop display weather false
-qs ipc call weather city Hamburg     # looked up once, then kept
-```
-
-The weather is fetched every 20 minutes while the widget is shown (every
-minute after a failure) and cached in `~/.local/state/station/weather.json`.
-
-The level bars in MUSIC show the real music through
-[cava](https://github.com/karlstav/cava) (PipeWire). cava only runs while
-something plays, the widget is shown and the visualizer is on
-(`quickshell/scripts/cava.conf`: 10 bars, 25 frames a second).
-
-## Wallpaper and motion
-
-The wallpaper is drawn by Quickshell in the colours of the theme. To save
-it as a picture:
-
-```sh
-qs ipc call wallpaper save ~/Pictures/station-violet.png
-```
-
-There are no animations: Hyprland's are off (`hypr/station/look.lua`),
-the lock screen appears at once, and GTK apps get `enable-animations false` on
-every start (browsers read that as "reduce motion" too).
-
-## Lock screen
-
-Super+Escape, the power menu and hypridle (after 5 minutes, before sleep)
-all end up in `station lock`, which shows Quickshell's lock screen
-(`quickshell/lock/`): the wallpaper's star chart, a STATION: LOCKED window
-with the clock and the password, and on the laptop panel the WEATHER,
-SYSTEM, MUSIC and TASKS widgets. The orbit and the crosshair of the chart
-stay free. The music buttons work while locked, the task list is read only.
-
-The password goes through PAM's `login` stack, like hyprlock. If Quickshell
-isn't running, `station lock` starts hyprlock instead (`hypr/hyprlock.conf`).
-Should Quickshell die while the screen is locked, Hyprland keeps it locked:
-switch to a TTY (Ctrl+Alt+F2), log in and run
-`hyprctl --instance 0 dispatch exec hyprlock`.
-
-## Fonts
-
-- **Departure Mono** (Nerd Font) in the terminal, **VT323** for the displays,
-  **Silkscreen** for small labels. All three come from the AUR.
-- **Pocket** by Aaron D. Chand is the font the game uses for its displays. It
-  isn't packaged and its licence isn't stated clearly, so check it on dafont
-  before you use it. Put the `.ttf` into `~/.local/share/fonts/` and run
-  `fc-cache -f`: Quickshell and hyprlock pick it up instead of VT323.
-
-## Tasks
-
-The task widget reads `~/.local/share/station/tasks.txt`, one `[ ] task` or
-`[x] task` per line. Click a task to tick it off, click the header to edit
-the file in nvim.
 
 ## Fingerprint (T580 only)
 
@@ -269,9 +119,7 @@ The T580's Synaptics sensor (`06cb:009a`) is not supported by libfprint, so
 open-fprintd (not part of `install.sh`). The script:
 - builds python-validity with the init fixes from upstream PR #290, without them the sensor doesn't start on Python 3.14
 - keeps the sensor out of USB autosuspend and its firmware in `/var/lib`
-- allows the finger for sudo and polkit
+- allows the finger for sudo and polkit (yami's password window shows the sensor's prompt)
 - starts enrolling a finger
 
-While a finger is wanted, Quickshell shows a "FINGER REQUESTED"
-notification. The lock screen unlocks with the finger too (password and
-finger work at the same time).
+The yami lock screen takes the password only.

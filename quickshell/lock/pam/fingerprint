@@ -1,5 +1,0 @@
-#%PAM-1.0
-# The finger on the lock screen (lock/LockScreen.qml). Only used when
-# pam_fprintd is installed (fingerprint/setup.sh); the password goes
-# through /etc/pam.d/login.
-auth       required     pam_fprintd.so

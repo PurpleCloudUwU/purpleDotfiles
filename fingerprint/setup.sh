@@ -5,9 +5,8 @@
 #
 # - python-validity + open-fprintd drive the sensor, libfprint can't
 # - sudo and polkit dialogs accept the finger (password still works: Ctrl+C
-#   in the terminal, or just type it in the dialog)
-# - fp-indicator.service tells Quickshell when a finger is wanted, which then
-#   shows a "FINGER REQUESTED" notification
+#   in the terminal, or just type it in the dialog). The yami polkit window
+#   shows the sensor's "swipe your finger" text itself.
 set -euo pipefail
 
 dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -43,12 +42,6 @@ for s in python3-validity open-fprintd-resume open-fprintd-suspend; do
     systemctl cat "$s.service" >/dev/null 2>&1 && sudo systemctl enable "$s.service"
 done
 sudo systemctl restart python3-validity.service open-fprintd.service
-
-info "Installing the indicator service"
-sudo install -Dm755 "$dir/fp-indicator-monitor" /usr/local/bin/fp-indicator-monitor
-sudo install -Dm644 "$dir/fp-indicator.service" /etc/systemd/system/fp-indicator.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now fp-indicator.service
 
 info "PAM: finger for sudo and polkit"
 line='auth       sufficient   pam_fprintd.so'

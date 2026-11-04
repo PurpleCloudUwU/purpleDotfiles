@@ -1,5 +1,5 @@
-# yazi, the file manager in the right column (Super+E).
-# Its colours (theme.toml next to this file) come from `station theme`.
+# yazi, the terminal file manager (`y` in bash).
+# Its colours (theme.toml next to this file) are the old station Violet.
 
 [mgr]
 ratio          = [1, 2, 3]

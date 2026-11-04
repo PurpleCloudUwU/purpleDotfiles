@@ -182,9 +182,9 @@
     style.textContent = css;
     (document.head || document.documentElement).appendChild(style);
 
-    // Live theme switch. `station theme` (Super+F11) makes Spicetify rewrite
-    // colors.css in Spotify's folder, and Spotify reads its files from disk on
-    // every request; so the page looks at colors.css every two seconds and,
+    // Live theme switch. `spicetify config color_scheme <name> && spicetify
+    // apply` rewrites colors.css in Spotify's folder, and Spotify reads its
+    // files from disk on every request; so the page looks at colors.css every two seconds and,
     // when it changed, loads it again. No restart of Spotify needed.
     let last = null;
     async function checkColors() {

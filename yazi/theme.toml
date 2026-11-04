@@ -1,0 +1,102 @@
+# The old station Violet, written once by `station theme` and kept as it is.
+
+[mgr]
+cwd = { fg = "#d9d6f2" }
+find_keyword  = { fg = "#9b7bff", bold = true }
+find_position = { fg = "#9b7bff", bg = "reset" }
+marker_copied   = { fg = "#a9c4ff", bg = "#a9c4ff" }
+marker_cut      = { fg = "#9b7bff", bg = "#9b7bff" }
+marker_marked   = { fg = "#c9bfff", bg = "#c9bfff" }
+marker_selected = { fg = "#9b7bff", bg = "#9b7bff" }
+count_copied   = { fg = "#0c0d14", bg = "#a9c4ff" }
+count_cut      = { fg = "#0c0d14", bg = "#9b7bff" }
+count_selected = { fg = "#0c0d14", bg = "#c9bfff" }
+border_symbol = "│"
+border_style  = { fg = "#2c2f47" }
+
+[tabs]
+active   = { fg = "#0c0d14", bg = "#c9bfff" }
+inactive = { fg = "#8a8daa", bg = "#1b1d2d" }
+
+[mode]
+normal_main = { fg = "#0c0d14", bg = "#c9bfff" }
+normal_alt  = { fg = "#d9d6f2", bg = "#1b1d2d" }
+select_main = { fg = "#0c0d14", bg = "#9b7bff" }
+select_alt  = { fg = "#d9d6f2", bg = "#1b1d2d" }
+unset_main  = { fg = "#0c0d14", bg = "#9b7bff" }
+unset_alt   = { fg = "#d9d6f2", bg = "#1b1d2d" }
+
+[indicator]
+parent  = { fg = "#d9d6f2", bg = "#1b1d2d" }
+current = { fg = "#0c0d14", bg = "#c9bfff" }
+preview = { underline = true }
+
+[status]
+perm_sep   = { fg = "#2c2f47" }
+perm_type  = { fg = "#d9d6f2" }
+perm_read  = { fg = "#8a8daa" }
+perm_write = { fg = "#9b7bff" }
+perm_exec  = { fg = "#a9c4ff" }
+progress_label  = { fg = "#d9d6f2", bold = true }
+progress_normal = { fg = "#c9bfff", bg = "#1b1d2d" }
+progress_error  = { fg = "#9b7bff", bg = "#1b1d2d" }
+
+[which]
+border = { fg = "#c9bfff" }
+cand   = { fg = "#c9bfff" }
+rest   = { fg = "#8a8daa" }
+desc   = { fg = "#d9d6f2" }
+separator_style = { fg = "#2c2f47" }
+
+[confirm]
+border = { fg = "#c9bfff" }
+title  = { fg = "#c9bfff" }
+
+[spot]
+border   = { fg = "#c9bfff" }
+title    = { fg = "#c9bfff" }
+tbl_col  = { fg = "#c9bfff" }
+tbl_cell = { fg = "#9b7bff", reversed = true }
+
+[notify]
+title_info  = { fg = "#c9bfff" }
+title_warn  = { fg = "#9b7bff" }
+title_error = { fg = "#9b7bff" }
+
+[pick]
+border = { fg = "#c9bfff" }
+active = { fg = "#9b7bff", bold = true }
+
+[input]
+border = { fg = "#c9bfff" }
+
+[cmp]
+border = { fg = "#c9bfff" }
+
+[tasks]
+border  = { fg = "#c9bfff" }
+hovered = { fg = "#9b7bff" }
+
+[help]
+border  = { fg = "#c9bfff" }
+chord   = { fg = "#9b7bff" }
+hovered = { fg = "#0c0d14", bg = "#c9bfff" }
+
+[filetype]
+rules = [
+    { url = "*", is = "orphan", fg = "#9b7bff" },
+    { url = "*", is = "exec", fg = "#a9c4ff" },
+    { url = "*/", fg = "#d9d6f2" },
+    { url = "*", fg = "#8a8daa" },
+]
+
+# One plain folder and one plain file glyph instead of the colourful icon set
+[icon]
+globs = []
+dirs  = []
+files = []
+exts  = []
+conds = [
+    { if = "dir", text = "" },
+    { if = "!dir", text = "" },
+]

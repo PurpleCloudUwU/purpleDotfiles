@@ -1,0 +1,74 @@
+// purpleDotfiles · personal niri settings on top of yami
+//
+// Linked to ~/.config/niri/user.kdl. yami's config.kdl includes this file
+// after the shell's own files (yami-binds.kdl, yami-fx.kdl, ...), so what is
+// set here wins; the shell never writes it. Only screens from the shell
+// (settings → screens, yami-outputs.kdl) are read after it.
+
+// ─── screen ────────────────────────────────────────────────────────────────
+// The T580's own panel at 1920x1080 and scale 1. Anything plugged in gets
+// niri's defaults; `niri msg outputs` lists the names.
+output "eDP-1" {
+    scale 1
+}
+
+// ─── input ─────────────────────────────────────────────────────────────────
+input {
+    keyboard {
+        // German without dead keys. yami's layout setting is "de" too, so the
+        // bar shows DE; the variant only exists here.
+        xkb {
+            layout "de"
+            variant "nodeadkeys"
+        }
+        repeat-delay 300
+        repeat-rate 40
+    }
+    // niri does not merge pointing device sections between files: this one
+    // replaces yami's, so its tap and natural-scroll are repeated here
+    touchpad {
+        tap
+        natural-scroll
+        dwt
+        middle-emulation
+    }
+}
+
+// ─── keys ──────────────────────────────────────────────────────────────────
+// yami's keys stay as they are (settings → keys, `yami-shell binds list`);
+// these are the habits from the Hyprland setup on keys yami leaves free.
+// Volume up is the one override: capped at 100 % as before, yami allows 150 %.
+binds {
+    Mod+Return hotkey-overlay-title="Terminal" { spawn "kitty"; }
+    Mod+Shift+Q repeat=false { close-window; }
+    // load-config-file is an IPC-only action in niri, so through niri msg
+    Mod+Shift+C repeat=false { spawn "niri" "msg" "action" "load-config-file"; }
+    Mod+Shift+W hotkey-overlay-title="Browser" { spawn-sh "gtk-launch \"$(xdg-settings get default-web-browser)\""; }
+    Mod+Shift+M hotkey-overlay-title="Music" { spawn "spotify-launcher"; }
+
+    Mod+0 { focus-workspace 10; }
+    Mod+Shift+0 { move-column-to-workspace 10; }
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"; }
+    XF86AudioPause allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+
+    // niri matches the key as it is without Shift, so yami's US keys for =, /,
+    // [ and ] never fire on the German layout. The same actions on German keys:
+    Mod+plus { set-column-width "+10%"; }
+    Mod+Shift+plus { set-window-height "+10%"; }
+    Mod+udiaeresis { consume-or-expel-window-left; }
+    Mod+adiaeresis { consume-or-expel-window-right; }
+    // Mod+? like Mod+Shift+/ on a US keyboard
+    Mod+Shift+ssharp { show-hotkey-overlay; }
+}
+
+// Alt+^ cycles the windows of the same app (Alt+` on a US keyboard). Alt+Tab
+// is repeated in case niri replaces this section instead of merging it.
+recent-windows {
+    binds {
+        Alt+Tab                { next-window; }
+        Alt+Shift+Tab          { previous-window; }
+        Alt+asciicircum        { next-window     filter="app-id"; }
+        Alt+Shift+asciicircum  { previous-window filter="app-id"; }
+    }
+}

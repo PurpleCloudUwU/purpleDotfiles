@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# purpleDotfiles installer: the Mondbasis rice (Hyprland + Quickshell) for a
-# fresh, minimal Arch Linux on the ThinkPad T580.
+# purpleDotfiles installer: niri with the yami desktop (bar, launcher, lock,
+# notifications, files) for a fresh, minimal Arch Linux on the ThinkPad T580.
+# No Qt anywhere: yami draws everything itself.
 #
-# Installs the programs, links the configs into place, writes the theme
-# files (Violet) and enables the services. Run it as your normal user (not
-# as root); sudo asks for your password where needed:
+# Installs the programs, builds yami from source (~/.local/share/yami/src),
+# links the configs into place and enables the services. Run it as your
+# normal user (not as root); sudo asks for your password where needed:
 #   git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 #   ~/purpleDotfiles/install.sh
 #
@@ -14,7 +15,7 @@
 # Options:
 #   --copy         copy the configs instead of symlinking them
 #   --no-packages  don't install packages (only configs and settings)
-#   --no-services  don't enable system services (NetworkManager, ly, ...)
+#   --no-services  don't enable system services (NetworkManager, TLP, ...)
 #   -h, --help     show this help
 set -euo pipefail
 
@@ -22,43 +23,58 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 backup="$HOME/dotfiles-backup-$(date +%Y-%m-%d_%H%M%S)"
 copy=0 packages=1 services=1
 
-# Programs from the official repos, grouped by what needs them
+# yami: where its updater keeps the source, and the look it starts with
+yami_src="$HOME/.local/share/yami/src"
+yami_url="https://github.com/Trendorin/yami"
+yami_opts=(--yes --no-sudo --lang en --palette ash --font pixel --no-fork --no-login --no-count --no-anim)
+
+# Programs from the official repos, grouped by what needs them. yami's own
+# installer runs with --no-sudo: its package list would bring qt6ct and
+# power-profiles-daemon (which fights tlp-pd), so the packages are here.
 pacman_pkgs=(
-    # Compositor and the Hypr tools (lock, idle, polkit, night light)
-    hyprland hyprlock hypridle hyprpolkitagent hyprsunset hyprshutdown
-    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xorg-xwayland
-    # Bar, program select, PDA panels, widgets, notifications, OSD
-    quickshell
-    # Login manager (starts Hyprland and unlocks GNOME Keyring)
-    ly gnome-keyring
-    # Terminal, file manager, editor, system info
-    foot yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
+    # Compositor, X11 apps, portals (yami answers file dialogs and screen
+    # sharing itself, gnome and gtk do the rest)
+    niri xwayland-satellite xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+    # Passwords for apps; polkit asks through the yami window
+    gnome-keyring polkit
+    # Building yami
+    rust base-devel git curl unzip
+    # What yami uses: clipboard history, screenshots, palette export, video,
+    # drives, phones and network shares in yami-files
+    cliphist wl-clipboard grim slurp python python-pillow mpv libarchive
+    udisks2 gvfs gvfs-mtp gvfs-gphoto2 gvfs-afc gvfs-smb
+    # Terminals, file manager, editor, system info
+    kitty foot yazi neovim fastfetch btop eza zoxide fzf fd ripgrep jq 7zip
     # yazi previews
     chafa resvg ffmpegthumbnailer poppler imagemagick
-    # Audio, media keys, the music levels in the MUSIC widget
-    pipewire pipewire-pulse pipewire-alsa wireplumber playerctl pavucontrol cava
-    # WiFi, Bluetooth, battery, power profiles, brightness
+    # Audio, media keys, the equalizer in the music widget
+    pipewire pipewire-pulse pipewire-alsa wireplumber libpulse playerctl pavucontrol cava
+    # WiFi, Bluetooth, battery, power profiles (tlp-pd answers yami's
+    # profile switch), brightness
     networkmanager bluez bluez-utils upower tlp tlp-pd brightnessctl
-    # Screenshots, clipboard, notifications, helpers of the station script
-    grim slurp wl-clipboard libnotify xdg-utils xdg-user-dirs glib2
+    # Helpers
+    libnotify xdg-utils xdg-user-dirs glib2
     # Browser and music (Spotify, kew for local files)
     librewolf spotify-launcher kew
-    # Fonts, GTK and Qt in the station colours (station theme writes both)
-    noto-fonts noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme qt6ct
-    # Building AUR packages
-    base-devel git curl unzip
+    # Fonts (yami brings its pixel fonts itself), GTK theme and icons
+    noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-nerd-fonts-symbols adw-gtk-theme papirus-icon-theme
 )
-# Pixel fonts from the AUR: Departure Mono (terminal), VT323 (displays,
-# stand-in for Pocket), Silkscreen (small labels); Spicetify for Spotify's
+# From the AUR: Departure Mono (foot, Neovim), Spicetify for Spotify's
 # Station theme
-aur_pkgs=(otf-departure-mono-nerd ttf-vt323 ttf-silkscreen spicetify-cli)
+aur_pkgs=(otf-departure-mono-nerd spicetify-cli)
 
 # Config folders: <repo>/<name> -> ~/.config/<name>
-config_dirs=(hypr quickshell station foot yazi nvim fastfetch)
-# Single files: <path in repo>:<destination>
+config_dirs=(foot yazi nvim bash)
+# Single files: <path in repo>:<destination>. ~/.config/niri itself belongs
+# to yami (the shell writes its files there), only user.kdl is ours.
 config_files=(
-    "station/bin/station:$HOME/.local/bin/station"
+    "niri/user.kdl:$HOME/.config/niri/user.kdl"
     "spicetify/Station:$HOME/.config/spicetify/Themes/Station"
+)
+# Links the old Hyprland setup left behind
+old_links=(
+    "$HOME/.config/hypr" "$HOME/.config/quickshell" "$HOME/.config/station"
+    "$HOME/.config/fastfetch" "$HOME/.local/bin/station"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -114,8 +130,42 @@ install_packages() {
         helper=paru
     fi
 
-    info "Installing the pixel fonts from the AUR: ${aur_pkgs[*]}"
+    info "Installing from the AUR: ${aur_pkgs[*]}"
     "$helper" -S --needed "${aur_pkgs[@]}"
+}
+
+drop_old_links() {
+    local l
+    for l in "${old_links[@]}"; do
+        if [[ -L $l && $(readlink "$l") == "$repo"/* ]]; then
+            rm "$l"
+            note "removed the old link ~/${l#"$HOME"/}"
+        fi
+    done
+}
+
+# yami from source, the newest release; its installer builds the shell,
+# yami-files, yami-view and yami-play into ~/.local/bin and writes the niri,
+# kitty and fastfetch configs. On later runs it updates and rebuilds.
+install_yami() {
+    info "Building and installing yami (a few minutes)"
+    if [[ -d $yami_src/.git ]]; then
+        git -C "$yami_src" fetch -q --tags origin
+    else
+        mkdir -p "$(dirname "$yami_src")"
+        git clone -q --filter=blob:none "$yami_url" "$yami_src"
+    fi
+    local tag
+    tag=$(git -C "$yami_src" tag -l 'v*' --sort=-v:refname | head -n1)
+    [[ -n $tag ]] || die "no yami release found in $yami_src"
+    git -C "$yami_src" -c advice.detachedHead=false checkout -q --detach "$tag"
+    note "yami $tag"
+    "$yami_src/install.sh" "${yami_opts[@]}"
+
+    # The layout lives in niri/user.kdl (de, nodeadkeys); the same here, so
+    # the bar shows DE, and yami-binds.kdl written again with it
+    ~/.local/bin/yami-shell config set kbLayout '"de"' >/dev/null
+    ~/.local/bin/yami-shell binds write
 }
 
 install_configs() {
@@ -135,45 +185,45 @@ install_configs() {
         cp "$repo/btop/btop.conf" ~/.config/btop/btop.conf
     fi
 
-    # The task list on the desktop (only the first time)
-    local tasks=${XDG_DATA_HOME:-$HOME/.local/share}/station/tasks.txt
-    if [[ ! -e $tasks ]]; then
-        mkdir -p "$(dirname "$tasks")"
-        cp "$repo/station/tasks.txt" "$tasks"
+    if command -v niri >/dev/null; then
+        niri validate -c ~/.config/niri/config.kdl
     fi
 }
 
 apply_settings() {
     info "Applying the settings"
 
-    # ~/.local/bin for the station script, the shell settings from the repo
     [[ -f ~/.bash_profile ]] || printf '%s\n' '[[ -f ~/.bashrc ]] && . ~/.bashrc' > ~/.bash_profile
     add_line ~/.bash_profile 'export PATH="$HOME/.local/bin:$PATH"'
     add_line ~/.bash_profile 'export EDITOR=nvim VISUAL=nvim'
-    add_line ~/.bashrc '[[ -f ~/.config/station/shell.bash ]] && . ~/.config/station/shell.bash'
+    # the station line of the old setup goes
+    sed -i '\|~/.config/station/shell.bash|d' ~/.bashrc 2>/dev/null || true
+    add_line ~/.bashrc '[[ -f ~/.config/bash/shell.bash ]] && . ~/.config/bash/shell.bash'
     note "~/.bash_profile and ~/.bashrc: PATH, EDITOR, prompt, aliases"
 
-    # Theme files (foot, yazi, btop, fastfetch, hyprlock, prompt) and the
-    # CRT shader. Violet and SUBTLE on the first run, the last choice after.
-    chmod +x "$repo/station/bin/station" "$repo/quickshell/scripts/sysinfo.sh"
-    "$repo/station/bin/station" init | sed 's/^/  -> /'
-
-    # GTK apps in the Station theme (station init has written it; Hyprland
-    # also sets theme and colour scheme on every start)
-    local gtk
-    for gtk in gtk-3.0 gtk-4.0; do
-        mkdir -p ~/.config/$gtk
-        if [[ ! -e ~/.config/$gtk/settings.ini ]]; then
-            printf '%s\n' '[Settings]' 'gtk-theme-name=Station' 'gtk-application-prefer-dark-theme=1' > ~/.config/$gtk/settings.ini
-        fi
-        sed -i 's/^gtk-theme-name=adw-gtk3-dark$/gtk-theme-name=Station/' ~/.config/$gtk/settings.ini
-        grep -q '^gtk-font-name' ~/.config/$gtk/settings.ini \
-            || echo 'gtk-font-name=DepartureMono Nerd Font 10' >> ~/.config/$gtk/settings.ini
-        # No animations in GTK apps
-        grep -q '^gtk-enable-animations' ~/.config/$gtk/settings.ini \
-            || echo 'gtk-enable-animations=0' >> ~/.config/$gtk/settings.ini
+    # GTK in the yami palette: the part of yami's tools/apply-theme.sh that
+    # does not need root (the rest of it is qt6ct). yami's installer has
+    # written gtk.css, the fonts and the pixel cursor already; this picks
+    # the base theme and the icons.
+    local v ini kv k
+    for v in 3.0 4.0; do
+        mkdir -p ~/.config/gtk-$v
+        ini=~/.config/gtk-$v/settings.ini
+        [[ -f $ini ]] || printf '[Settings]\n' > "$ini"
+        for kv in "gtk-theme-name=adw-gtk3-dark" "gtk-application-prefer-dark-theme=true" \
+            "gtk-icon-theme-name=Papirus-Dark" "gtk-enable-animations=0"; do
+            k=${kv%%=*}
+            if grep -q "^$k=" "$ini"; then sed -i "s|^$k=.*|$kv|" "$ini"; else printf '%s\n' "$kv" >> "$ini"; fi
+        done
     done
-    note "GTK: Station (adw-gtk3-dark in the palette), Qt: qt6ct"
+    if command -v gsettings >/dev/null; then
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+        gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
+        # No GTK animations; browsers read this as "reduce motion" too
+        gsettings set org.gnome.desktop.interface enable-animations false
+    fi
+    note "GTK: adw-gtk3-dark in the yami palette, Papirus icons"
 
     command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update
     if command -v xdg-settings >/dev/null && [[ -f /usr/share/applications/librewolf.desktop ]]; then
@@ -181,16 +231,11 @@ apply_settings() {
     fi
 
     fc-cache -f >/dev/null 2>&1 || true
-    if ! fc-list 2>/dev/null | grep -qi pocket; then
-        note "Pocket (the game's display font) is not installed, VT323 stands in. See the README."
-    fi
 }
 
 enable_services() {
-    info "Enabling services: NetworkManager, Bluetooth, TLP, ly (login on tty1)"
-    sudo systemctl enable NetworkManager.service bluetooth.service tlp.service tlp-pd.service ly@tty1.service
-    # ly and the text login would fight over tty1
-    sudo systemctl disable getty@tty1.service 2>/dev/null || true
+    info "Enabling services: NetworkManager, Bluetooth, TLP"
+    sudo systemctl enable NetworkManager.service bluetooth.service tlp.service tlp-pd.service
     local s
     for s in iwd systemd-networkd dhcpcd; do
         if systemctl is-enabled --quiet "$s.service" 2>/dev/null; then
@@ -216,11 +261,13 @@ if ((packages || services)) && ! command -v sudo >/dev/null; then
 fi
 
 ((packages)) && install_packages
+drop_old_links
+install_yami
 install_configs
 apply_settings
 ((services)) && enable_services
 
 info "Done"
 [[ -d $backup ]] && note "your old configs are in $backup"
-note "reboot, log in with ly and choose Hyprland"
+note "log in on a TTY and run: niri-session"
 note "fingerprint (T580 only): ~/purpleDotfiles/fingerprint/setup.sh"

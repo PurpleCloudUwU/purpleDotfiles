@@ -1,11 +1,10 @@
--- Colour scheme from the active station palette. Neovim reloads it when
--- it gets focus again after `station theme`, or with :StationTheme.
+-- Colour scheme from the Violet palette in palette.conf next to init.lua
+-- (kept from the station days). :StationTheme reloads it after an edit.
 
 local M = {}
 
 local home = vim.env.HOME
 local config = vim.env.XDG_CONFIG_HOME or (home .. "/.config")
-local state = (vim.env.XDG_STATE_HOME or (home .. "/.local/state")) .. "/station"
 
 local function read_kv(path)
     local t = {}
@@ -19,14 +18,6 @@ local function read_kv(path)
     return t
 end
 
-local function current_theme()
-    local f = io.open(state .. "/theme", "r")
-    if not f then return "violet" end
-    local name = (f:read("*l") or ""):match("%S+")
-    f:close()
-    return name or "violet"
-end
-
 -- Mixes colour a into b, t = share of a
 local function blend(a, b, t)
     local function ch(hex, i) return tonumber(hex:sub(i, i + 1), 16) end
@@ -37,18 +28,12 @@ local function blend(a, b, t)
     return out
 end
 
-M.theme = nil
 M.palette = {}
 
 function M.load()
-    local theme = current_theme()
-    local p = read_kv(config .. "/station/palettes/" .. theme .. ".conf")
-    if not p.bg then
-        theme = "violet"
-        p = read_kv(config .. "/station/palettes/violet.conf")
-    end
+    local p = read_kv(config .. "/nvim/palette.conf")
     if not p.bg then return end
-    M.theme, M.palette = theme, p
+    M.palette = p
 
     vim.cmd("highlight clear")
     vim.g.colors_name = "station"
@@ -142,12 +127,7 @@ end
 
 function M.setup()
     M.load()
-    vim.api.nvim_create_user_command("StationTheme", M.load, { desc = "Reload the station colours" })
-    vim.api.nvim_create_autocmd("FocusGained", {
-        callback = function()
-            if current_theme() ~= M.theme then M.load() end
-        end,
-    })
+    vim.api.nvim_create_user_command("StationTheme", M.load, { desc = "Reload the colours from palette.conf" })
 end
 
 return M
