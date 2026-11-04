@@ -22,6 +22,9 @@ input {
             variant "nodeadkeys"
         }
         repeat-delay 300
+        // numlock on from the start, so the lock screen (the login screen)
+        // takes numbers from the keypad right away
+        numlock
         repeat-rate 40
     }
     // niri does not merge pointing device sections between files: this one

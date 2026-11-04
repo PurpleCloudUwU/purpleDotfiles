@@ -272,6 +272,7 @@ enable_services() {
     # login screen: autologin on tty1, niri starts locked (see login/)
     sed "s/USER/$USER/" "$repo/login/autologin.conf" |
         sudo install -Dm644 /dev/stdin /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    touch ~/.hushlogin   # no motd or "Last login" on the tty before niri
     note "tty1 logs in on its own, the yami lock screen asks for the password"
     local s
     for s in iwd systemd-networkd dhcpcd; do
