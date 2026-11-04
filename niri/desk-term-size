@@ -85,7 +85,8 @@ CASCADE = 32        # px each further window moves down and right
 STEP = 0.01         # share of the screen each further new window opens up and right
 STEP_ROOM = 48      # px kept free above a stepped window (bar and yami's title bar)
 TILE_WIDTH = 50.0   # % column width a window gets when it turns tiled (yami's default-column-width)
-RETILE_AFTER = 0.08 # s after a window turned tiled before its width is looked at
+RETILE_AFTER = 0.3  # s after a window turned tiled before it gets the default width
+RETILE_DESK = 1.0   # the same in desk mode, where it may still turn out maximized (slow apps)
 MAXIMIZED = 0.95    # a tiled window this much of the screen wide counts as maximized
 REFIT_AFTER = 0.6   # s after desk → tiling before the view is scrolled to fit
 
@@ -269,8 +270,7 @@ class Sizer:
             w = wins.get(wid)
             if not w or w["is_floating"]:
                 continue
-            out = output_size(w["workspace_id"])
-            if out and w["layout"]["tile_size"][0] >= MAXIMIZED * out[0] and wid not in self.unmaxed:
+            if self.maximized(wid, w["layout"]):
                 if self.desk:
                     self.maximize_floating(wid, now)
                 continue   # maximized: stays as large as the screen
@@ -278,11 +278,22 @@ class Sizer:
             self.quiet[wid] = now + SETTLE
             request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": TILE_WIDTH}}}})
 
+    def maximized(self, wid, layout):
+        """A tiled window as wide as its screen, and not just a maxed one tiled by desk → tiling."""
+        if wid in self.unmaxed:
+            return False
+        out = output_size(self.ws.get(wid))
+        return bool(out) and layout["tile_size"][0] >= MAXIMIZED * out[0]
+
     def maximize_floating(self, wid, now):
         """Desk mode: a window niri maximized as a tile is floated again, as large as
         the screen; if it was maximized like that already, it gets its old size and place."""
         self.quiet[wid] = now + SETTLE
         back = self.maxed.pop(wid, None) if wid in self.maxed else False
+        g = self.geom.get(wid)
+        out = output_size(self.ws.get(wid))
+        if back is False and g and out and g[0][0] >= MAXIMIZED * out[0]:
+            back = None   # floated at full size already (maxed before a restart): make it small
         if back is False:
             self.maxed[wid] = self.geom.get(wid)
         request({"Action": {"ToggleWindowFloating": {"id": wid}}})
@@ -290,7 +301,16 @@ class Sizer:
             request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": 100.0}}}})
             request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetProportion": 100.0}}}})
             request({"Action": {"MoveFloatingWindow": {"id": wid, "x": {"SetFixed": 0.0}, "y": {"SetFixed": 0.0}}}})
-        elif back:
+        else:
+            if not back:
+                # old place unknown: the terminal size in the middle
+                size = self.size or (1038, 621)
+                request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetFixed": size[0]}}}})
+                request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetFixed": size[1]}}}})
+                self.centre(wid, (0, 0))
+                self.center[wid] = (now + CENTER, None, (0, 0))
+                request({"Action": {"FocusWindow": {"id": wid}}})
+                return
             (bw, bh), (bx, by) = back
             request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetFixed": bw}}}})
             request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetFixed": bh}}}})
@@ -364,6 +384,8 @@ class Sizer:
         if kind == "WindowsChanged":
             self.wins = {w["id"]: (w["app_id"], w["is_floating"]) for w in d["windows"]}
             self.ws = {w["id"]: w["workspace_id"] for w in d["windows"]}
+            for w in d["windows"]:
+                self.note_geom(w["id"], w["is_floating"], w["layout"])
         elif kind == "WindowOpenedOrChanged":
             w = d["window"]
             wid, app, floating = w["id"], w["app_id"], w["is_floating"]
@@ -372,7 +394,7 @@ class Sizer:
             self.ws[wid] = w["workspace_id"]
             self.note_geom(wid, floating, w["layout"])
             if before and before[1] and not floating:
-                self.retile[wid] = now + RETILE_AFTER
+                self.retile[wid] = now + (RETILE_DESK if self.desk else RETILE_AFTER)
             if before and not before[1] and floating:
                 self.poll()   # the mode file may be newer than this loop's look at it
                 if now < self.entering and wid not in self.pending:
@@ -407,6 +429,12 @@ class Sizer:
                 app, floating = self.wins.get(wid, ("", False))
                 size = tuple(layout["window_size"])
                 self.note_geom(wid, floating, layout)
+                if wid in self.retile and not floating and self.maximized(wid, layout):
+                    # it turned tiled to be maximized: as soon as niri has it at full width
+                    del self.retile[wid]
+                    if self.desk:
+                        self.maximize_floating(wid, now)
+                    continue
                 if wid in self.center:
                     until, centred, offset = self.center[wid]
                     if now >= until or not floating:
