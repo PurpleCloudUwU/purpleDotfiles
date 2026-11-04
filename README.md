@@ -13,7 +13,7 @@ Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
 | Part | What it does |
 |---|---|
 | `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
-| `niri/desk-term-size` | Desk mode helper: new windows open floating at the last terminal size, each one 1 % further up and right; click to focus; tidy switches between desk and tiling |
+| `niri/desk-term-size` | Desk mode helper: new windows open floating at the last terminal size, each one 1 % further up and right; maximized windows stay floating (on top); click to focus; tidy switches between desk and tiling |
 | `fontconfig/` | Brave (Origin) uses Noto Sans instead of the pixel font for its interface |
 | `bash/` | Aliases, `y` for yazi, zoxide, starship (sourced from `~/.bashrc`) |
 | `starship/` | The prompt in the yami look, its colours follow the yami palette |

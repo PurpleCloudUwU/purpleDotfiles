@@ -37,6 +37,13 @@ screen. A window that turns tiled gets the default column width instead,
 a moment later and only if it is not maximized: maximizing a floating
 window (yami's title bar button or double click, maximize-window-to-edges)
 turns it tiled too, and that one should stay as large as the screen.
+
+In desk mode a maximized window must not turn tiled, though: niri always
+draws floating windows above tiled ones, so the other windows lay on top
+of it. So it is floated again right away and made as large as the screen
+(below the bar), which keeps it in the floating layer, where focus raises
+it. Maximizing it again (title bar, Mod+F) tiles it once more; that is
+caught the same way and gives it back its old size and place.
 niri keeps the view scrolled as it was for the wider columns, so shortly
 after desk → tiling the focus goes to the last column, the first and back:
 niri scrolls only as far as needed each time, which leaves the view
@@ -78,7 +85,7 @@ CASCADE = 32        # px each further window moves down and right
 STEP = 0.01         # share of the screen each further new window opens up and right
 STEP_ROOM = 48      # px kept free above a stepped window (bar and yami's title bar)
 TILE_WIDTH = 50.0   # % column width a window gets when it turns tiled (yami's default-column-width)
-RETILE_AFTER = 0.3  # s after a window turned tiled before its width is looked at
+RETILE_AFTER = 0.08 # s after a window turned tiled before its width is looked at
 MAXIMIZED = 0.95    # a tiled window this much of the screen wide counts as maximized
 REFIT_AFTER = 0.6   # s after desk → tiling before the view is scrolled to fit
 
@@ -203,6 +210,9 @@ class Sizer:
         self.cascade = 0    # windows placed since then
         self.refit_at = None  # when to scroll the view after desk → tiling
         self.retile = {}    # windows that turned tiled: id → when to give them the default width
+        self.geom = {}      # floating windows: id → (window size, position on the screen)
+        self.maxed = {}     # desk mode, maximized as floating: id → (size, position) to go back to
+        self.unmaxed = set()  # maxed windows that turned tiled on desk → tiling: default width
         self.save = None    # size to write once the resizing stops
         self.save_at = 0.0
         self.write_rule()
@@ -233,6 +243,8 @@ class Sizer:
                     self.quiet[wid] = time.monotonic() + SETTLE
                     request({"Action": {"ToggleWindowFloating": {"id": wid}}})
             self.ruled.clear()
+            self.unmaxed |= set(self.maxed)
+            self.maxed.clear()
         self.desk = desk
         self.size = load_size() or self.size
         self.write_rule()
@@ -258,10 +270,37 @@ class Sizer:
             if not w or w["is_floating"]:
                 continue
             out = output_size(w["workspace_id"])
-            if out and w["layout"]["tile_size"][0] >= MAXIMIZED * out[0]:
+            if out and w["layout"]["tile_size"][0] >= MAXIMIZED * out[0] and wid not in self.unmaxed:
+                if self.desk:
+                    self.maximize_floating(wid, now)
                 continue   # maximized: stays as large as the screen
+            self.unmaxed.discard(wid)
             self.quiet[wid] = now + SETTLE
             request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": TILE_WIDTH}}}})
+
+    def maximize_floating(self, wid, now):
+        """Desk mode: a window niri maximized as a tile is floated again, as large as
+        the screen; if it was maximized like that already, it gets its old size and place."""
+        self.quiet[wid] = now + SETTLE
+        back = self.maxed.pop(wid, None) if wid in self.maxed else False
+        if back is False:
+            self.maxed[wid] = self.geom.get(wid)
+        request({"Action": {"ToggleWindowFloating": {"id": wid}}})
+        if back is False:
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": 100.0}}}})
+            request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetProportion": 100.0}}}})
+            request({"Action": {"MoveFloatingWindow": {"id": wid, "x": {"SetFixed": 0.0}, "y": {"SetFixed": 0.0}}}})
+        elif back:
+            (bw, bh), (bx, by) = back
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetFixed": bw}}}})
+            request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetFixed": bh}}}})
+            # positions over IPC are in the working area, the layout's on the screen:
+            # move by the difference to where it is now
+            wins = request("Windows").get("Ok", {}).get("Windows", [])
+            pos = next((w["layout"]["tile_pos_in_workspace_view"] for w in wins if w["id"] == wid), None)
+            if pos:
+                request({"Action": {"MoveFloatingWindow": {"id": wid, "x": {"AdjustFixed": bx - pos[0]}, "y": {"AdjustFixed": by - pos[1]}}}})
+        request({"Action": {"FocusWindow": {"id": wid}}})
 
     def apply(self, wid, now, size=None, offset=(0, 0)):
         """Size a window yami floated and centre it (then moved by offset px right and down)."""
@@ -331,6 +370,7 @@ class Sizer:
             before = self.wins.get(wid)
             self.wins[wid] = (app, floating)
             self.ws[wid] = w["workspace_id"]
+            self.note_geom(wid, floating, w["layout"])
             if before and before[1] and not floating:
                 self.retile[wid] = now + RETILE_AFTER
             if before and not before[1] and floating:
@@ -357,13 +397,16 @@ class Sizer:
                 if floating and self.pending.pop(wid, 0) >= now:
                     self.apply(wid, now, offset=self.step_offset(w))
         elif kind == "WindowClosed":
-            for m in (self.wins, self.ws, self.pending, self.quiet, self.center, self.retile):
+            for m in (self.wins, self.ws, self.pending, self.quiet, self.center, self.retile,
+                      self.geom, self.maxed):
                 m.pop(d["id"], None)
+            self.unmaxed.discard(d["id"])
             self.ruled.discard(d["id"])
         elif kind == "WindowLayoutsChanged":
             for wid, layout in d["changes"]:
                 app, floating = self.wins.get(wid, ("", False))
                 size = tuple(layout["window_size"])
+                self.note_geom(wid, floating, layout)
                 if wid in self.center:
                     until, centred, offset = self.center[wid]
                     if now >= until or not floating:
@@ -372,9 +415,16 @@ class Sizer:
                         # the new size has arrived: centre again with it
                         self.centre(wid, offset)
                         self.center[wid] = (until, size, offset)
-                if app in APPS and floating and wid not in self.pending and now >= self.quiet.get(wid, 0):
+                if (app in APPS and floating and wid not in self.pending and wid not in self.maxed
+                        and now >= self.quiet.get(wid, 0)):
                     if size != self.size:
                         self.save, self.save_at = size, now + SAVE_AFTER
+
+    def note_geom(self, wid, floating, layout):
+        """Keep where a floating window is, to put it back there after maximizing."""
+        pos = layout.get("tile_pos_in_workspace_view")
+        if floating and pos and wid not in self.maxed:
+            self.geom[wid] = (tuple(layout["window_size"]), tuple(pos))
 
     def flush(self):
         size, self.save = self.save, None
