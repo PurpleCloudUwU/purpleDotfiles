@@ -69,6 +69,8 @@ config_dirs=(foot yazi nvim bash starship)
 config_files=(
     "niri/user.kdl:$HOME/.config/niri/user.kdl"
     "niri/desk-term-size:$HOME/.local/bin/desk-term-size"
+    # next to yami's 50-yami-pixel.conf; the folder itself is yami's
+    "fontconfig/55-brave-no-pixel-font.conf:$HOME/.config/fontconfig/conf.d/55-brave-no-pixel-font.conf"
 )
 # Links the old Hyprland setup left behind
 old_links=(

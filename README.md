@@ -13,7 +13,8 @@ Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
 | Part | What it does |
 |---|---|
 | `niri/user.kdl` | My niri settings on top of yami: German keyboard without dead keys, touchpad, the T580 panel, a few keys from the Hyprland days |
-| `niri/desk-term-size` | Desk mode helper: terminals open floating, centred, at the last size; click to focus; tidy switches between desk and tiling |
+| `niri/desk-term-size` | Desk mode helper: new windows open floating at the last terminal size, each one 1 % further up and right; click to focus; tidy switches between desk and tiling |
+| `fontconfig/` | Brave (Origin) uses Noto Sans instead of the pixel font for its interface |
 | `bash/` | Aliases, `y` for yazi, zoxide, starship (sourced from `~/.bashrc`) |
 | `starship/` | The prompt in the yami look, its colours follow the yami palette |
 | `foot/` | Second terminal (Departure Mono, the old Violet colours) |
@@ -73,6 +74,7 @@ power profile switch just as well).
 | `foot`, `yazi`, `nvim`, `bash`, `starship` | `~/.config/<name>` (symlink) |
 | `niri/user.kdl` | `~/.config/niri/user.kdl` (symlink; the rest of `~/.config/niri` is yami's) |
 | `niri/desk-term-size` | `~/.local/bin/desk-term-size` (symlink, started from `user.kdl`) |
+| `fontconfig/55-brave-no-pixel-font.conf` | `~/.config/fontconfig/conf.d/` (symlink; the folder and `50-yami-pixel.conf` are yami's) |
 | `btop/btop.conf` | `~/.config/btop/btop.conf` (copied, btop rewrites it) |
 
 Written by yami, not in git: `~/.config/niri/config.kdl` and `yami-*.kdl`,
