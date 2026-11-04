@@ -95,7 +95,7 @@ them.
 | Mod+T, Mod+Return | kitty |
 | Mod+E | yami-files |
 | Mod+Q, Mod+Shift+Q, Alt+F4 | close window |
-| Mod+F, Mod+Shift+F | maximize column, fullscreen |
+| Mod+F, Mod+Shift+F | maximize window (also floating, in desk mode), fullscreen |
 | Mod+G | floating on/off |
 | Mod+Shift+Space | desk mode (floating windows with title bars) ↔ tiling |
 | Mod+N, Mod+Shift+N | minimize, restore the last one |

@@ -50,6 +50,11 @@ binds {
     Mod+Shift+C repeat=false { spawn "niri" "msg" "action" "load-config-file"; }
     Mod+Shift+W hotkey-overlay-title="Browser" { spawn-sh "gtk-launch \"$(xdg-settings get default-web-browser)\""; }
     Mod+Shift+M hotkey-overlay-title="Music" { spawn "spotify-launcher"; }
+    // yami's Mod+F (maximize-column) does nothing to a floating window, so in
+    // desk mode it never worked; this one maximizes floating windows too
+    // (to the edges: in tiling mode the column has no gaps around it). Like
+    // the title bar's double click; pressed again it gives the old size back.
+    Mod+F hotkey-overlay-title="Maximize window" { maximize-window-to-edges; }
 
     Mod+0 { focus-workspace 10; }
     Mod+Shift+0 { move-column-to-workspace 10; }

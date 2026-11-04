@@ -33,7 +33,10 @@ place. (The order yami floats them in is fixed by yami/patches/0002.)
 
 The other way round (desk → tiling, or Mod+G), niri makes the column as wide
 as the floating window was, so two terminals together were wider than the
-screen. A window that turns tiled gets the default column width instead.
+screen. A window that turns tiled gets the default column width instead,
+a moment later and only if it is not maximized: maximizing a floating
+window (yami's title bar button or double click, maximize-window-to-edges)
+turns it tiled too, and that one should stay as large as the screen.
 niri keeps the view scrolled as it was for the wider columns, so shortly
 after desk → tiling the focus goes to the last column, the first and back:
 niri scrolls only as far as needed each time, which leaves the view
@@ -75,6 +78,8 @@ CASCADE = 32        # px each further window moves down and right
 STEP = 0.01         # share of the screen each further new window opens up and right
 STEP_ROOM = 48      # px kept free above a stepped window (bar and yami's title bar)
 TILE_WIDTH = 50.0   # % column width a window gets when it turns tiled (yami's default-column-width)
+RETILE_AFTER = 0.3  # s after a window turned tiled before its width is looked at
+MAXIMIZED = 0.95    # a tiled window this much of the screen wide counts as maximized
 REFIT_AFTER = 0.6   # s after desk → tiling before the view is scrolled to fit
 
 STATE = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
@@ -197,6 +202,7 @@ class Sizer:
         self.entering = 0.0 # until when windows turning floating come from tiling → desk
         self.cascade = 0    # windows placed since then
         self.refit_at = None  # when to scroll the view after desk → tiling
+        self.retile = {}    # windows that turned tiled: id → when to give them the default width
         self.save = None    # size to write once the resizing stops
         self.save_at = 0.0
         self.write_rule()
@@ -239,6 +245,23 @@ class Sizer:
             request({"Action": {"FocusColumnLast": {}}})
             request({"Action": {"FocusColumnFirst": {}}})
             request({"Action": {"FocusWindow": {"id": w["id"]}}})
+
+    def retile_due(self, now):
+        """Default column width for windows that turned tiled, unless they were maximized."""
+        due = [wid for wid, t in self.retile.items() if now >= t]
+        if not due:
+            return
+        wins = {w["id"]: w for w in request("Windows").get("Ok", {}).get("Windows", [])}
+        for wid in due:
+            del self.retile[wid]
+            w = wins.get(wid)
+            if not w or w["is_floating"]:
+                continue
+            out = output_size(w["workspace_id"])
+            if out and w["layout"]["tile_size"][0] >= MAXIMIZED * out[0]:
+                continue   # maximized: stays as large as the screen
+            self.quiet[wid] = now + SETTLE
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": TILE_WIDTH}}}})
 
     def apply(self, wid, now, size=None, offset=(0, 0)):
         """Size a window yami floated and centre it (then moved by offset px right and down)."""
@@ -309,7 +332,7 @@ class Sizer:
             self.wins[wid] = (app, floating)
             self.ws[wid] = w["workspace_id"]
             if before and before[1] and not floating:
-                request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": TILE_WIDTH}}}})
+                self.retile[wid] = now + RETILE_AFTER
             if before and not before[1] and floating:
                 self.poll()   # the mode file may be newer than this loop's look at it
                 if now < self.entering and wid not in self.pending:
@@ -334,7 +357,7 @@ class Sizer:
                 if floating and self.pending.pop(wid, 0) >= now:
                     self.apply(wid, now, offset=self.step_offset(w))
         elif kind == "WindowClosed":
-            for m in (self.wins, self.ws, self.pending, self.quiet, self.center):
+            for m in (self.wins, self.ws, self.pending, self.quiet, self.center, self.retile):
                 m.pop(d["id"], None)
             self.ruled.discard(d["id"])
         elif kind == "WindowLayoutsChanged":
@@ -376,11 +399,14 @@ def main():
                 wait = min(wait, max(0.0, sizer.save_at - time.monotonic()))
             if sizer.refit_at:
                 wait = min(wait, max(0.0, sizer.refit_at - time.monotonic()))
+            if sizer.retile:
+                wait = min(wait, max(0.0, min(sizer.retile.values()) - time.monotonic()))
             ready = select.select([s], [], [], wait)[0]
             if sizer.save and time.monotonic() >= sizer.save_at:
                 sizer.flush()
             if sizer.refit_at and time.monotonic() >= sizer.refit_at:
                 sizer.refit()
+            sizer.retile_due(time.monotonic())
             sizer.poll()
             if not ready:
                 continue
