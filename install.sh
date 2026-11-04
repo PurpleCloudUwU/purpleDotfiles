@@ -69,6 +69,7 @@ config_dirs=(foot yazi nvim bash starship)
 config_files=(
     "niri/user.kdl:$HOME/.config/niri/user.kdl"
     "niri/desk-term-size:$HOME/.local/bin/desk-term-size"
+    "niri/lock-at-login:$HOME/.local/bin/lock-at-login"
     # next to yami's 50-yami-pixel.conf; the folder itself is yami's
     "fontconfig/55-brave-no-pixel-font.conf:$HOME/.config/fontconfig/conf.d/55-brave-no-pixel-font.conf"
 )
@@ -222,6 +223,9 @@ apply_settings() {
     [[ -f ~/.bash_profile ]] || printf '%s\n' '[[ -f ~/.bashrc ]] && . ~/.bashrc' > ~/.bash_profile
     add_line ~/.bash_profile 'export PATH="$HOME/.local/bin:$PATH"'
     add_line ~/.bash_profile 'export EDITOR=nvim VISUAL=nvim'
+    # tty1 logs in on its own (login/autologin.conf) and starts niri, which
+    # locks at once: the yami lock screen is the login screen
+    add_line ~/.bash_profile '[[ -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && exec niri-session'
     # the station line of the old setup goes
     sed -i '\|~/.config/station/shell.bash|d' ~/.bashrc 2>/dev/null || true
     add_line ~/.bashrc '[[ -f ~/.config/bash/shell.bash ]] && . ~/.config/bash/shell.bash'
@@ -262,6 +266,10 @@ apply_settings() {
 enable_services() {
     info "Enabling services: NetworkManager, Bluetooth, TLP"
     sudo systemctl enable NetworkManager.service bluetooth.service tlp.service tlp-pd.service
+    # login screen: autologin on tty1, niri starts locked (see login/)
+    sed "s/USER/$USER/" "$repo/login/autologin.conf" |
+        sudo install -Dm644 /dev/stdin /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    note "tty1 logs in on its own, the yami lock screen asks for the password"
     local s
     for s in iwd systemd-networkd dhcpcd; do
         if systemctl is-enabled --quiet "$s.service" 2>/dev/null; then

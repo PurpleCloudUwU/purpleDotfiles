@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Locks the session as soon as yami-shell answers, so the yami lock screen
+# works as the login screen: tty1 logs in on its own (login/autologin.conf),
+# ~/.bash_profile starts niri there, and niri runs this at startup.
+# yami-shell msg fails until the shell's socket exists, so keep trying.
+until yami-shell msg lock >/dev/null 2>&1; do
+    sleep 0.1
+done
