@@ -62,6 +62,12 @@ Fallback: a window that still opens tiled in desk mode (opened in the
 moment desk mode was switched on, before the rule is written) is sized and
 placed once yami has floated it.
 
+In tiling mode the columns of a workspace follow how many there are: a
+single column is as wide as the screen, two get half each. Only a change of
+the count does this (a window opens, closes, moves to another workspace or
+is put into or out of a column), so a width set by hand stays until then;
+three and more columns keep their widths. A window maximized by hand
+(Mod+F, title bar) is left as it is.
 Started by niri (niri/user.kdl, spawn-sh-at-startup); ends with niri.
 """
 import json
@@ -89,6 +95,8 @@ RETILE_AFTER = 0.3  # s after a window turned tiled before it gets the default w
 RETILE_DESK = 1.0   # the same in desk mode, where it may still turn out maximized (slow apps)
 MAXIMIZED = 0.95    # a tiled window this much of the screen wide counts as maximized
 REFIT_AFTER = 0.6   # s after desk → tiling before the view is scrolled to fit
+FIT_AFTER = 0.1     # s after a window change before the column widths are fitted to the count
+FIT_WIDTH = {1: 100.0, 2: 50.0}   # tiling mode: % column width by the number of columns
 
 STATE = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
 SIZE_FILE = STATE / "desk-term-size.json"
@@ -214,6 +222,9 @@ class Sizer:
         self.geom = {}      # floating windows: id → (window size, position on the screen)
         self.maxed = {}     # desk mode, maximized as floating: id → (size, position) to go back to
         self.unmaxed = set()  # maxed windows that turned tiled on desk → tiling: default width
+        self.cols = self.count_columns(self.windows())   # workspace id → tiled columns
+        self.fitted = set() # columns made as wide as the screen here (not maximized by hand)
+        self.fit_at = None  # when to fit the column widths to the count
         self.save = None    # size to write once the resizing stops
         self.save_at = 0.0
         self.write_rule()
@@ -276,7 +287,56 @@ class Sizer:
                 continue   # maximized: stays as large as the screen
             self.unmaxed.discard(wid)
             self.quiet[wid] = now + SETTLE
-            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": TILE_WIDTH}}}})
+            width = TILE_WIDTH
+            if not self.desk:
+                n = self.count_columns(wins.values()).get(w["workspace_id"], 0)
+                width = FIT_WIDTH.get(n, TILE_WIDTH)
+            if width >= 100:
+                self.fitted.add(wid)
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": width}}}})
+
+    @staticmethod
+    def windows():
+        return request("Windows").get("Ok", {}).get("Windows", [])
+
+    @staticmethod
+    def count_columns(wins):
+        """Workspace id → number of columns in its tiling."""
+        cols = {}
+        for w in wins:
+            pos = (w.get("layout") or {}).get("pos_in_scrolling_layout")
+            if not w["is_floating"] and w.get("workspace_id") is not None and pos:
+                cols.setdefault(w["workspace_id"], set()).add(pos[0])
+        return {ws: len(c) for ws, c in cols.items()}
+
+    def fit_columns(self, now):
+        """Tiling mode: where the number of columns changed, one column gets the
+        whole screen width and two get half each. Windows that just turned tiled
+        are left to retile_due, windows maximized by hand stay maximized."""
+        self.fit_at = None
+        wins = self.windows()
+        cols = self.count_columns(wins)
+        changed = {ws for ws in cols if cols[ws] != self.cols.get(ws)}
+        self.cols = cols
+        if self.desk or not changed:
+            return
+        done = set()   # (workspace, column) already sized
+        for w in wins:
+            ws, wid = w.get("workspace_id"), w["id"]
+            pos = (w.get("layout") or {}).get("pos_in_scrolling_layout")
+            width = FIT_WIDTH.get(cols.get(ws))
+            if ws not in changed or w["is_floating"] or not pos or width is None:
+                continue
+            if (ws, pos[0]) in done or wid in self.retile:
+                continue
+            done.add((ws, pos[0]))
+            if wid not in self.fitted and self.maximized(wid, w["layout"]):
+                continue
+            if width >= 100:
+                self.fitted.add(wid)
+            else:
+                self.fitted.discard(wid)
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": width}}}})
 
     def maximized(self, wid, layout):
         """A tiled window as wide as its screen, and not just a maxed one tiled by desk → tiling."""
@@ -381,6 +441,8 @@ class Sizer:
 
     def event(self, ev, now):
         kind, d = next(iter(ev.items()))
+        if kind in ("WindowsChanged", "WindowOpenedOrChanged", "WindowClosed") and self.fit_at is None:
+            self.fit_at = now + FIT_AFTER
         if kind == "WindowsChanged":
             self.wins = {w["id"]: (w["app_id"], w["is_floating"]) for w in d["windows"]}
             self.ws = {w["id"]: w["workspace_id"] for w in d["windows"]}
@@ -424,6 +486,7 @@ class Sizer:
                 m.pop(d["id"], None)
             self.unmaxed.discard(d["id"])
             self.ruled.discard(d["id"])
+            self.fitted.discard(d["id"])
         elif kind == "WindowLayoutsChanged":
             for wid, layout in d["changes"]:
                 app, floating = self.wins.get(wid, ("", False))
@@ -479,12 +542,16 @@ def main():
                 wait = min(wait, max(0.0, sizer.refit_at - time.monotonic()))
             if sizer.retile:
                 wait = min(wait, max(0.0, min(sizer.retile.values()) - time.monotonic()))
+            if sizer.fit_at:
+                wait = min(wait, max(0.0, sizer.fit_at - time.monotonic()))
             ready = select.select([s], [], [], wait)[0]
             if sizer.save and time.monotonic() >= sizer.save_at:
                 sizer.flush()
             if sizer.refit_at and time.monotonic() >= sizer.refit_at:
                 sizer.refit()
             sizer.retile_due(time.monotonic())
+            if sizer.fit_at and time.monotonic() >= sizer.fit_at:
+                sizer.fit_columns(time.monotonic())
             sizer.poll()
             if not ready:
                 continue
