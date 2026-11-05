@@ -198,8 +198,11 @@ apply_settings() {
     # locks at once: the yami lock screen is the login screen. Only in an
     # interactive shell: niri-session re-runs itself through a login shell,
     # which reads this file again (without the check it loops forever)
-    sed -i '\|^\[\[ -z \$WAYLAND_DISPLAY .* exec niri-session$|d' ~/.bash_profile
-    add_line ~/.bash_profile '[[ $- == *i* && -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && exec niri-session'
+    # Numlock on for the console first: the kernel pushes tty1's LED state
+    # (numlock off) over niri's, so the LED stayed dark although niri's
+    # numlock was on. Older versions of the line go first.
+    sed -i '/exec niri-session/d' ~/.bash_profile
+    add_line ~/.bash_profile '[[ $- == *i* && -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && { setleds -D +num 2>/dev/null; exec niri-session; }'
     # the station line of the old setup goes
     sed -i '\|~/.config/station/shell.bash|d' ~/.bashrc 2>/dev/null || true
     add_line ~/.bashrc '[[ -f ~/.config/bash/shell.bash ]] && . ~/.config/bash/shell.bash'
