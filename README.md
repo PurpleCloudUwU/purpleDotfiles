@@ -1,7 +1,7 @@
 # purpleDotfiles · yami on niri
 
 My ThinkPad T580 rice: Arch Linux, the [niri](https://github.com/YaLTeR/niri)
-compositor and the [yami](https://github.com/Trendorin/yami) desktop, a
+compositor and my fork of the yami desktop (in [`yami/`](yami/)), a
 pixel-art shell written in Rust that draws the bar, launcher, dock,
 notifications, lock screen, widgets and settings itself. No Qt anywhere.
 
@@ -22,9 +22,12 @@ Older setups are git tags: the Hyprland + Quickshell "Mondbasis" rice is
 | `nvim/` | Neovim without plugins: Violet colours (`palette.conf`) and the statusline |
 | `btop/` | System monitor (yami writes its theme) |
 | `fingerprint/` | Fingerprint for sudo and polkit on the T580's sensor (not part of `install.sh`) |
+| `yami/` | The desktop itself: my fork of yami 2.4.3 (MIT), Rust source, built by `install.sh` |
 
-yami itself is not in this repo: `install.sh` builds it from source in
-`~/.local/share/yami/src`, and its updater keeps it current from there.
+yami lives in this repo: `install.sh` builds it from `yami/`, and settings →
+updates (or `yami update`) installs newer `vX.Y.Z` tags of this repo. See
+[`yami/README.md`](yami/README.md).
+
 The interface is English, the keyboard layout German without dead keys.
 
 ## Setup
@@ -38,7 +41,7 @@ git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 ```
 
 The script installs the packages (official repos, plus Departure Mono from
-the AUR via paru), builds the newest yami release and runs
+the AUR via paru), builds yami from `yami/` and runs
 its installer without root (palette ash, pixel font everywhere, packaged
 niri, no login screen), links the configs into `~/.config` (old ones go to
 `~/dotfiles-backup-<date>/`), sets GTK to the yami look and enables
@@ -46,18 +49,9 @@ NetworkManager, Bluetooth and TLP. Then log in on a TTY and run
 `niri-session`. Options: `--copy`, `--no-packages`, `--no-services`,
 `--help`.
 
-Fixes of my own for yami live in `yami/patches/`. `install.sh` puts them
-into yami's source only for the build and takes them out again, so yami's
-updater keeps a clean checkout (settings → updates shows "with local edits").
-A patch that no longer applies is skipped. An update through yami itself
-builds without them, so after `yami update` run `install.sh --no-packages
---no-services` again until the fix is in a yami release:
-
-- `0001-desk-mode-first-window.patch`: in desk mode the first window on an
-  empty desktop opened tiled (the shell toggled it to floating twice)
-- `0002-desk-mode-window-order.patch`: switching tiling → desk floated the
-  windows in the order they were opened, so title bars lay over the windows
-  in front; now in focus order, as the title bars are drawn (needs 0001)
+My fixes are committed in `yami/` directly (see `yami/CHANGELOG.md`): desk
+mode opens the first window floating and floats windows in focus order, and
+the yami-files portal understands `[...]` globs (Brave file dialogs).
 
 `install.sh` also comments `focus-follows-mouse` out of yami's
 `niri/config.kdl`; `desk-term-size` sets it again in tiling mode only (see

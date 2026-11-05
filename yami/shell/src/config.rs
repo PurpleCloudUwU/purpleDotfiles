@@ -1,0 +1,733 @@
+// Настройки шелла: ~/.config/yami-shell.json. Меняются в панели настроек (Mod+S),
+// перетаскиванием виджетов и руками — файл перечитывается на лету.
+
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+pub use yami_px::paths::{config_dir, data_dir, home, state_dir, write_atomic};
+
+pub fn settings_path() -> PathBuf {
+    config_dir().join("yami-shell.json")
+}
+
+/// переезд со старого имени (DARK-4RMY): настройки, состояние и закреплённое в буфере
+pub fn migrate() {
+    let state = std::env::var_os("XDG_STATE_HOME").map(PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home().join(".local/state"));
+    for (old, new) in [
+        (config_dir().join("dark4rmy-shell.json"), settings_path()),
+        (state.join("dark4rmy"), state.join("yami")),
+        (data_dir().join("dark4rmy-clip"), data_dir().join("yami-clip")),
+    ] {
+        if old.exists() && !new.exists() {
+            let _ = std::fs::rename(&old, &new);
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Widget {
+    pub id: u32,
+    /// clock | graph | net | media | cal | note
+    pub kind: String,
+    pub on: bool,
+    pub x: i32,
+    pub y: i32,
+    /// graph: cpu | ram | temp | gpu | swap
+    pub source: String,
+    /// bars | line | blocks | wave | dots
+    pub style: String,
+    /// scroll | rise | flicker | none
+    pub anim: String,
+    /// s | m | l
+    pub size: String,
+    /// accent | bright | ok | warn | text
+    pub color: String,
+    /// подложка-панель или прямо по обоям
+    pub frame: bool,
+    pub label: bool,
+    /// часы: секунды, дата; заметка: текст
+    pub seconds: bool,
+    pub date: bool,
+    pub text: String,
+}
+
+impl Default for Widget {
+    fn default() -> Self {
+        Widget {
+            id: 0,
+            kind: "clock".into(),
+            on: true,
+            x: -1,
+            y: -1,
+            source: "cpu".into(),
+            style: "bars".into(),
+            anim: "scroll".into(),
+            size: "m".into(),
+            color: "accent".into(),
+            frame: true,
+            label: true,
+            seconds: true,
+            date: true,
+            text: String::new(),
+        }
+    }
+}
+
+impl Widget {
+    pub fn new(id: u32, kind: &str) -> Widget {
+        let mut w = Widget { id, kind: kind.into(), ..Default::default() };
+        if kind == "clock" {
+            w.frame = false;
+        }
+        w
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Settings {
+    /// язык интерфейса: "" — по $LANG, "ru", "en"
+    pub lang: String,
+    // цвет: пресет или свой акцент (#rrggbb, пусто — пресет)
+    pub palette: String,
+    pub accent: String,
+    pub tint: f32,
+
+    // вид
+    pub glass: f32,
+    /// яркость панелей: 0 — графит почти чёрный, 1 — заметно светлее
+    pub lift: f32,
+    /// плотность карточек, графиков и полей внутри панелей
+    pub inner: f32,
+    /// затемнение стола под меню и настройками
+    pub dim: f32,
+    pub blur_shell: bool,
+    pub blur_term: bool,
+    pub animations: bool,
+    /// множитель длительности анимаций: 0.5 — быстрее, 2 — медленнее
+    pub anim_speed: f32,
+    /// режим «стол»: все окна плавают, у каждого заголовок как в DE
+    pub stacking: bool,
+    pub titlebars: bool,
+    pub icon_theme: String,
+    /// значки программ пиксельными, в тонах палитры
+    pub icon_pixel: bool,
+    /// свои обои (путь); пусто — пиксельные обои из палитры
+    pub wallpaper: String,
+    /// пикселизация своих обоев: 1 — как есть, дальше клетки крупнее (wall::cell)
+    pub wall_pixel: i32,
+    pub wall_kanji: bool,
+    /// "fill" — заполнить экран (лишнее обрезать), "fit" — вписать целиком, поля цвета фона
+    pub wall_fit: String,
+    /// окраска своих обоев: "" — как есть, "tint" — оттенок акцента, "palette" — тона палитры с дизерингом
+    pub wall_tone: String,
+    /// затемнение обоев к фону темы: 0 — нет, 0.8 — почти фон
+    pub wall_dim: f32,
+    /// акцент (а с ним вся палитра) берётся из своих обоев
+    pub wall_accent: bool,
+
+    // бар: модули по сторонам и их порядок
+    pub bar_left: Vec<String>,
+    pub bar_center: Vec<String>,
+    pub bar_right: Vec<String>,
+    /// gauge | graph | number
+    pub cpu_style: String,
+    pub clock_seconds: bool,
+    pub clock_date: bool,
+    pub task_width: i32,
+    /// разделитель-модуль "sep": dots | line | blocks | gap
+    pub bar_sep: String,
+    /// ширина места под разделитель, px
+    pub bar_sep_w: i32,
+    /// border | accent | dim
+    pub bar_sep_color: String,
+    /// промежуток между модулями, px
+    pub bar_gap: i32,
+    /// от левого и правого края бара до крайних модулей, px
+    pub bar_pad_l: i32,
+    pub bar_pad_r: i32,
+    /// от модулей по бокам до списка окон (и модулей середины), px
+    pub bar_mid: i32,
+    /// между кнопками окон, px
+    pub bar_task_gap: i32,
+    /// версия раскладки бара: 0 — разделители ещё ставились сами по группам (переносим)
+    #[serde(default)]
+    pub bar_v: u32,
+
+    // система
+    pub lock_after: u32,
+    pub screen_off_after: u32,
+    pub dnd: bool,
+    pub notif_timeout: u32,
+
+    // скриншоты: папка ("" — Изображения/Screenshots), куда класть, лупа, таймер
+    pub shot_dir: String,
+    pub shot_copy: bool,
+    pub shot_save: bool,
+    pub shot_loupe: bool,
+    pub shot_notify: bool,
+    pub shot_delay: u32,
+    /// шторка для трансляций (curtain.rs): "blur", "pixels", "wall"; клетка пикселей в px
+    pub curtain_style: String,
+    pub curtain_cell: i32,
+
+    // плавающие окна
+    pub float_media: bool,
+    pub float_pip: bool,
+    /// свои app-id через запятую
+    pub float_apps: String,
+    pub float_w: f32,
+    pub float_h: f32,
+    /// отступы окон (niri gaps/struts, пишутся в yami-fx.kdl): между окнами и от краёв экрана
+    /// (сверху — от бара), px
+    pub win_gap: i32,
+    pub win_left: i32,
+    pub win_right: i32,
+    pub win_top: i32,
+    pub win_bottom: i32,
+
+    // док
+    pub dock: bool,
+    /// bottom | top | left | right
+    pub dock_side: String,
+    /// never | smart | always
+    pub dock_hide: String,
+    pub dock_size: i32,
+    /// анимация значков при наведении: grow | wave | lift | none
+    pub dock_anim: String,
+    /// прыжок значка при запуске
+    pub dock_bounce: bool,
+    pub dock_labels: bool,
+    pub dock_running: bool,
+    pub dock_launcher: bool,
+    pub dock_trash: bool,
+    pub dock_pins: Vec<String>,
+
+    // курсор: yami (пиксельный в палитре) | system
+    pub cursor: String,
+    pub cursor_size: i32,
+    /// UI-шрифт программ (GTK, Qt, kitty, браузер), px по сетке Tiny5: 0 — по экрану, 16 | 24 | 32
+    pub font_size: i32,
+    // шрифты (вкладка «шрифты»): семейства fontconfig, "" — по умолчанию
+    /// шелл: "" — Tiny5 (пиксельный)
+    pub font_shell: String,
+    /// yami-files и yami-view: "" — как у шелла
+    pub font_files: String,
+    pub font_view: String,
+    /// программы (GTK, Qt): "" — Tiny5, "sans" — системный, иначе семейство
+    pub font_ui: String,
+    /// терминал: "" — Monocraft / Terminess, иначе семейство
+    pub font_mono: String,
+    /// кегль для не пиксельных шрифтов программ, pt: 0 — 11
+    pub font_pt: i32,
+    /// браузеры Firefox-семейства: меню ПКМ, списки и подсказки в палитре
+    pub browser_menus: bool,
+    /// и пиксельный шрифт в интерфейсе браузера (не на страницах)
+    pub browser_font: bool,
+
+    // виджеты рабочего стола
+    pub widgets: Vec<Widget>,
+
+    /// клавиши: id из keys::BINDS → сочетание ("" — выключено); чего нет — по умолчанию
+    pub binds: std::collections::BTreeMap<String, String>,
+    /// свои команды на сочетания (spawn-sh)
+    pub custom_binds: Vec<crate::keys::Custom>,
+    /// fastfetch с железом (процессор, видеокарта, память, диск, экран); иначе — короткий
+    pub fetch_full: bool,
+    /// раскладки xkb через запятую («us,ru»); пусто — по языкам системы (keys::auto_layout)
+    pub kb_layout: String,
+    /// переключение раскладок: опция xkb (grp:alt_shift_toggle) или пусто — без сочетания
+    pub kb_switch: String,
+
+    // игры (games.rs): правила игровых окон и игровой режим
+    pub game_fullscreen: bool,
+    pub game_vrr: bool,
+    /// разрывы ради задержки: только на yami-niri
+    pub game_tearing: bool,
+    pub game_cache: bool,
+    pub game_dnd: bool,
+    pub game_profile: bool,
+    /// свои app-id игр: через запятую, `name*` — по началу
+    pub game_apps: String,
+
+    // службы (agents.rs): что из D-Bus делает сам шелл; выключенное отдаётся другим программам
+    /// сервер уведомлений org.freedesktop.Notifications
+    pub agent_notif: bool,
+    /// трей (StatusNotifierWatcher)
+    pub agent_tray: bool,
+    /// окно пароля polkit
+    pub agent_polkit: bool,
+    /// карточек на экране сразу и сколько хранит история
+    pub notif_max: u32,
+    pub notif_history: u32,
+    /// картинки в уведомлениях (значки, превью от программ)
+    pub notif_images: bool,
+    /// уведомления видны в записи и трансляциях (иначе их не видят зрители)
+    pub notif_cast: bool,
+    /// обложки музыки по ссылкам из сети (иначе — только локальные файлы)
+    pub media_art_net: bool,
+    /// свои имена звуковых устройств: имя PipeWire (`pactl list sinks`) → как показывать
+    pub audio_names: std::collections::BTreeMap<String, String>,
+    /// порталы: диалог файлов yami-files и выбор экрана для трансляций (иначе GTK / GNOME)
+    pub portal_files: bool,
+    pub portal_cast: bool,
+
+    // обновления (update.rs)
+    /// проверять сама раз в updateEvery часов (0 — только по кнопке)
+    pub update_check: bool,
+    pub update_every: u32,
+    /// "release" — выпуски (теги vX.Y.Z), "main" — каждый коммит ветки
+    pub update_channel: String,
+    /// подписи выпусков: "auto" — проверять, если в установленной версии есть ключи,
+    /// "require" — неподписанное не ставить, "off" — не проверять
+    pub update_verify: String,
+    /// свой адрес репозитория ("" — откуда ставили; публичный и приватный — один и тот же)
+    pub update_repo: String,
+}
+
+/// группа модуля — только для переноса старых настроек (migrate_seps)
+fn group(m: &str) -> i32 {
+    match m {
+        "launcher" => 0,
+        "workspaces" => 1,
+        "mode" => 2,
+        "tray" => 3,
+        "net" | "netspeed" | "bt" | "kb" | "cpu" | "ram" | "temp" | "bat" | "profile" => 4,
+        "vol" | "media" => 5,
+        "clock" | "notif" | "settings" | "power" => 6,
+        _ => 7,
+    }
+}
+
+pub const ALL_MODULES: &[(&str, &str)] = &[
+    ("launcher", "меню программ"),
+    ("workspaces", "столы"),
+    ("mode", "стол / лента"),
+    ("tasks", "окна"),
+    ("media", "музыка"),
+    ("tray", "трей"),
+    ("net", "сеть"),
+    ("netspeed", "скорость сети"),
+    ("bt", "bluetooth"),
+    ("kb", "раскладка"),
+    ("cpu", "процессор"),
+    ("ram", "память"),
+    ("temp", "температура"),
+    ("vol", "звук"),
+    ("bat", "батарея"),
+    ("profile", "профиль питания"),
+    ("clock", "часы"),
+    ("notif", "уведомления"),
+    ("settings", "настройки"),
+    ("power", "питание"),
+    ("sep", "разделитель"),
+];
+
+/// числа в пикселях, что меняются стрелками в настройках: ключ, от, до, шаг
+pub const NUMS: &[(&str, i32, i32, i32)] = &[
+    ("win_gap", 0, 64, 2),
+    ("win_left", 0, 128, 2),
+    ("win_right", 0, 128, 2),
+    ("win_top", 0, 128, 2),
+    ("win_bottom", 0, 128, 2),
+    ("bar_pad_l", 0, 64, 2),
+    ("bar_pad_r", 0, 64, 2),
+    ("bar_gap", 0, 32, 2),
+    ("bar_sep_w", 2, 32, 2),
+    ("bar_mid", 0, 64, 2),
+    ("bar_task_gap", 0, 16, 2),
+    ("task_width", 60, 400, 10),
+];
+
+impl Default for Settings {
+    fn default() -> Self {
+        let v = |xs: &[&str]| xs.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        Settings {
+            lang: String::new(),
+            palette: "blood".into(),
+            accent: String::new(),
+            tint: 1.0,
+            glass: 0.78,
+            lift: 0.0,
+            inner: 1.0,
+            dim: 0.5,
+            blur_shell: true,
+            blur_term: true,
+            animations: true,
+            anim_speed: 1.0,
+            stacking: false,
+            titlebars: true,
+            icon_theme: String::new(),
+            icon_pixel: true,
+            wallpaper: String::new(),
+            wall_pixel: 1,
+            wall_kanji: true,
+            wall_fit: "fill".into(),
+            wall_tone: String::new(),
+            wall_dim: 0.0,
+            wall_accent: false,
+            bar_left: v(&["launcher", "sep", "workspaces", "sep", "mode"]),
+            bar_center: v(&["tasks"]),
+            bar_right: v(&["tray", "sep", "net", "kb", "cpu", "ram", "bat", "profile", "sep", "vol", "sep", "clock", "sep", "settings", "power"]),
+            cpu_style: "gauge".into(),
+            clock_seconds: false,
+            clock_date: true,
+            task_width: 190,
+            bar_sep: "dots".into(),
+            bar_sep_w: 10,
+            bar_sep_color: "border".into(),
+            bar_gap: 8,
+            bar_pad_l: 6,
+            bar_pad_r: 6,
+            bar_mid: 12,
+            bar_task_gap: 4,
+            bar_v: 1,
+            lock_after: 10,
+            screen_off_after: 15,
+            dnd: false,
+            notif_timeout: 7,
+            shot_dir: String::new(),
+            shot_copy: true,
+            shot_save: true,
+            shot_loupe: true,
+            shot_notify: true,
+            shot_delay: 3,
+            curtain_style: "blur".into(),
+            curtain_cell: 24,
+            float_media: true,
+            float_pip: true,
+            float_apps: String::new(),
+            float_w: 0.62,
+            float_h: 0.78,
+            win_gap: 8,
+            win_left: 8,
+            win_right: 8,
+            win_top: 8,
+            win_bottom: 8,
+            dock: true,
+            dock_side: "bottom".into(),
+            dock_hide: "smart".into(),
+            dock_size: 40,
+            dock_anim: "grow".into(),
+            dock_bounce: true,
+            dock_labels: true,
+            dock_running: true,
+            dock_launcher: true,
+            dock_trash: true,
+            cursor: "yami".into(),
+            cursor_size: 24,
+            font_size: 0,
+            font_shell: String::new(),
+            font_files: String::new(),
+            font_view: String::new(),
+            font_ui: String::new(),
+            font_mono: String::new(),
+            font_pt: 0,
+            browser_menus: true,
+            browser_font: false,
+            dock_pins: ["yami-files", "kitty", "librewolf", "firefox", "chromium", "org.telegram.desktop", "steam", "yami-view"].iter().map(|s| s.to_string()).collect(),
+            widgets: vec![
+                Widget { id: 1, x: 48, y: 72, frame: false, ..Widget::new(1, "clock") },
+            ],
+            binds: Default::default(),
+            custom_binds: vec![],
+            fetch_full: false,
+            kb_layout: String::new(),
+            kb_switch: "grp:alt_shift_toggle".into(),
+            game_fullscreen: true,
+            game_vrr: true,
+            game_tearing: false,
+            game_cache: true,
+            game_dnd: true,
+            game_profile: true,
+            game_apps: String::new(),
+            agent_notif: true,
+            agent_tray: true,
+            agent_polkit: true,
+            notif_max: 4,
+            notif_history: 50,
+            notif_images: true,
+            notif_cast: false,
+            media_art_net: true,
+            audio_names: Default::default(),
+            portal_files: true,
+            portal_cast: true,
+            update_check: true,
+            update_every: 24,
+            update_channel: "release".into(),
+            update_verify: "auto".into(),
+            update_repo: String::new(),
+        }
+    }
+}
+
+impl Settings {
+    pub fn load() -> Settings {
+        let p = settings_path();
+        match std::fs::read_to_string(&p) {
+            Ok(t) => {
+                let mut s = Settings::lenient(&t);
+                s.migrate(&t);
+                s.migrate_seps();
+                // Bibata больше не ставится: свой пиксельный курсор
+                if s.cursor == "bibata" {
+                    s.cursor = "yami".into();
+                }
+                // виджета агента больше нет
+                s.widgets.retain(|w| w.kind != "agent");
+                s
+            }
+            Err(_) => Settings::default(),
+        }
+    }
+
+    /// разбор, прощающий ошибки: ключ с негодным значением берётся по умолчанию, а не весь
+    /// файл (руками правят по одному ключу — одна опечатка не должна сбросить всё)
+    pub fn lenient(text: &str) -> Settings {
+        if let Ok(s) = serde_json::from_str::<Settings>(text) {
+            return s;
+        }
+        let Some(user) = serde_json::from_str::<serde_json::Value>(text).ok().and_then(|v| v.as_object().cloned()) else {
+            eprintln!("yami-shell: {} is not JSON, defaults used", settings_path().display());
+            return Settings::default();
+        };
+        let (bad, _) = Settings::problems(&user);
+        let mut v = serde_json::Map::new();
+        for (k, x) in user {
+            if !bad.contains(&k) {
+                v.insert(k, x);
+            }
+        }
+        for k in &bad {
+            eprintln!("yami-shell: bad value for {k} in the settings, default used");
+        }
+        serde_json::from_value(serde_json::Value::Object(v)).unwrap_or_default()
+    }
+
+    /// ключи файла с негодным значением и неизвестные ключи
+    pub fn problems(user: &serde_json::Map<String, serde_json::Value>) -> (Vec<String>, Vec<String>) {
+        let base = serde_json::to_value(Settings::default()).unwrap_or_default();
+        let known = base.as_object().cloned().unwrap_or_default();
+        let (mut bad, mut unknown) = (vec![], vec![]);
+        for (k, x) in user {
+            if !known.contains_key(k) {
+                unknown.push(k.clone());
+                continue;
+            }
+            let mut one = base.clone();
+            one[k] = x.clone();
+            if serde_json::from_value::<Settings>(one).is_err() {
+                bad.push(k.clone());
+            }
+        }
+        (bad, unknown)
+    }
+
+    /// число в своих пределах (NUMS): в JSON руками можно вписать что угодно
+    pub fn num(&self, k: &str) -> i32 {
+        let v = match k {
+            "bar_pad_l" => self.bar_pad_l,
+            "bar_pad_r" => self.bar_pad_r,
+            "bar_gap" => self.bar_gap,
+            "bar_sep_w" => self.bar_sep_w,
+            "bar_mid" => self.bar_mid,
+            "bar_task_gap" => self.bar_task_gap,
+            "task_width" => self.task_width,
+            "win_gap" => self.win_gap,
+            "win_left" => self.win_left,
+            "win_right" => self.win_right,
+            "win_top" => self.win_top,
+            "win_bottom" => self.win_bottom,
+            _ => 0,
+        };
+        NUMS.iter().find(|n| n.0 == k).map(|n| v.clamp(n.1, n.2)).unwrap_or(v)
+    }
+
+    /// шаг числа стрелкой или колесом: d = ±1 шаг
+    pub fn step_num(&mut self, k: &str, d: i32) {
+        let Some(&(_, lo, hi, step)) = NUMS.iter().find(|n| n.0 == k) else { return };
+        let v = (self.num(k) + d * step).clamp(lo, hi);
+        match k {
+            "bar_pad_l" => self.bar_pad_l = v,
+            "bar_pad_r" => self.bar_pad_r = v,
+            "bar_gap" => self.bar_gap = v,
+            "bar_sep_w" => self.bar_sep_w = v,
+            "bar_mid" => self.bar_mid = v,
+            "bar_task_gap" => self.bar_task_gap = v,
+            "task_width" => self.task_width = v,
+            "win_gap" => self.win_gap = v,
+            "win_left" => self.win_left = v,
+            "win_right" => self.win_right = v,
+            "win_top" => self.win_top = v,
+            "win_bottom" => self.win_bottom = v,
+            _ => {}
+        }
+    }
+
+    /// модули стороны бара: 0 — слева, 1 — по центру, 2 — справа
+    pub fn side_mut(&mut self, i: usize) -> &mut Vec<String> {
+        match i {
+            0 => &mut self.bar_left,
+            1 => &mut self.bar_center,
+            _ => &mut self.bar_right,
+        }
+    }
+
+    /// раньше бар сам ставил разделитель между группами модулей; теперь это модуль "sep"
+    fn migrate_seps(&mut self) {
+        if self.bar_v >= 1 {
+            return;
+        }
+        self.bar_v = 1;
+        if self.bar_left.iter().chain(&self.bar_right).any(|m| m == "sep") {
+            return;
+        }
+        for l in [&mut self.bar_left, &mut self.bar_right] {
+            let mut out: Vec<String> = vec![];
+            for m in l.drain(..) {
+                if out.last().map(|p| group(p) != group(&m)).unwrap_or(false) {
+                    out.push("sep".into());
+                }
+                out.push(m);
+            }
+            *l = out;
+        }
+    }
+
+    /// старый формат настроек: clockOn/clockX… → список виджетов
+    fn migrate(&mut self, raw: &str) {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(raw) else { return };
+        if v.get("widgets").is_some() {
+            return;
+        }
+        let num = |k: &str| v.get(k).and_then(|x| x.as_f64()).map(|x| x as i32);
+        let flag = |k: &str| v.get(k).and_then(|x| x.as_bool());
+        let mut ws = vec![];
+        let mut c = Widget::new(1, "clock");
+        c.on = flag("clockOn").unwrap_or(true);
+        c.x = num("clockX").unwrap_or(48);
+        c.y = num("clockY").unwrap_or(72);
+        ws.push(c);
+        self.widgets = ws;
+        let mut right = vec![];
+        for (m, k) in [("tray", "barTray"), ("net", "barNet"), ("kb", "barKb"), ("cpu", "barCpu"), ("ram", "barRam"), ("vol", "barVol"), ("clock", "barClock")] {
+            if flag(k).unwrap_or(true) {
+                right.push(m.to_string());
+            }
+        }
+        right.push("settings".into());
+        right.push("power".into());
+        self.bar_right = right;
+        if flag("barTasks") == Some(false) {
+            self.bar_center.clear();
+        }
+    }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string_pretty(self).unwrap_or_default() + "\n"
+    }
+
+    pub fn accent_rgb(&self) -> u32 {
+        if let Some(h) = crate::theme::parse_hex(&self.accent) {
+            return h;
+        }
+        crate::theme::PRESETS.iter().find(|p| p.id == self.palette).unwrap_or(&crate::theme::PRESETS[0]).accent
+    }
+
+    pub fn next_widget_id(&self) -> u32 {
+        self.widgets.iter().map(|w| w.id).max().unwrap_or(0) + 1
+    }
+
+    pub fn widget_mut(&mut self, id: u32) -> Option<&mut Widget> {
+        self.widgets.iter_mut().find(|w| w.id == id)
+    }
+
+    /// матовость через niri: размытие под терминалами и панелями шелла
+    /// плавающие окна для просмотра фото и видео (settings → окна)
+    fn float_kdl(&self, l: &mut Vec<String>) {
+        let size = |l: &mut Vec<String>, w: f32, h: f32| {
+            l.push(format!("    default-column-width {{ proportion {:.2}; }}", w));
+            l.push(format!("    default-window-height {{ proportion {:.2}; }}", h));
+        };
+        if self.float_media {
+            l.push("// photo and video viewers open as a floating window, not as a new column".into());
+            l.push("window-rule {".into());
+            l.push("    match app-id=r#\"(?i)(telegram|ayugram|64gram|kotatogram)\"# title=r#\"^(Media viewer|Просмотр медиа|Медиапросмотрщик)$\"#".into()); // i18n-ok
+            for id in ["yami-view", "yami-play", "imv", "feh", "nsxiv", "sxiv", "org\\.gnome\\.Loupe", "org\\.gnome\\.eog", "org\\.kde\\.gwenview", "qimgv", "swayimg", "mpv", "vlc", "org\\.gnome\\.Showtime"] {
+                l.push(format!("    match app-id=r#\"^{id}$\"#"));
+            }
+            l.push("    open-floating true".into());
+            l.push("    open-fullscreen false".into());
+            l.push("    open-focused true".into());
+            size(l, self.float_w, self.float_h);
+            l.push("}".into());
+            l.push(String::new());
+        }
+        if self.float_pip {
+            l.push("window-rule {".into());
+            l.push("    match title=r#\"^(Picture-in-Picture|Картинка в картинке)$\"#".into()); // i18n-ok
+            l.push("    open-floating true".into());
+            l.push("    default-floating-position x=24 y=56 relative-to=\"bottom-right\"".into());
+            l.push("    default-column-width { fixed 480; }".into());
+            l.push("    default-window-height { fixed 270; }".into());
+            l.push("}".into());
+            l.push(String::new());
+        }
+        let extra: Vec<&str> = self.float_apps.split([',', ' ']).map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+        if !extra.is_empty() {
+            l.push("// your own floating apps (settings → windows)".into());
+            l.push("window-rule {".into());
+            for id in extra {
+                l.push(format!("    match app-id=r#\"^{}$\"#", id.replace('"', "").replace('.', "\\.")));
+            }
+            l.push("    open-floating true".into());
+            size(l, self.float_w, self.float_h);
+            l.push("}".into());
+            l.push(String::new());
+        }
+    }
+
+    /// yami-fx.kdl для niri уровня `lvl` (0 — сток, иначе наш форк: allow-tearing; ≥ 4 —
+    /// `show-only-in`; ≥ 5 — `hide-from`); curtain — шторка опущена (без `show-only-in` тогда
+    /// прячутся окна)
+    /// отступы окон: gaps — между окнами и у краёв; struts добирают край до заданного
+    /// (бывают и отрицательными, если край уже промежутка). struts в niri не сливаются между
+    /// файлами: свои в user.kdl заменят эти целиком
+    fn gaps_kdl(&self, l: &mut Vec<String>) {
+        let g = self.num("win_gap");
+        l.push("// window gaps (settings → windows): between windows, and from the screen edges".into());
+        l.push("layout {".into());
+        l.push(format!("    gaps {g}"));
+        l.push("    struts {".into());
+        for (side, k) in [("left", "win_left"), ("right", "win_right"), ("top", "win_top"), ("bottom", "win_bottom")] {
+            l.push(format!("        {side} {}", self.num(k) - g));
+        }
+        l.push("    }".into());
+        l.push("}".into());
+        l.push(String::new());
+    }
+
+    pub fn fx_kdl(&self, lvl: u32, curtain: bool) -> String {
+        let mut l: Vec<String> = vec!["// yami: written by the shell (settings → look, windows, games, services). Do not edit by hand: it is rewritten.".into(), String::new()];
+        self.float_kdl(&mut l);
+        self.gaps_kdl(&mut l);
+        crate::games::kdl(self, lvl > 0, &mut l);
+        crate::curtain::kdl(lvl, curtain, self.notif_cast, &mut l);
+        if !self.blur_term && !self.blur_shell {
+            l.push("blur { off; }".into());
+            return l.join("\n") + "\n";
+        }
+        for s in ["blur {", "    passes 3", "    offset 3", "    noise 0.03", "    saturation 1.2", "}", ""] {
+            l.push(s.into());
+        }
+        if self.blur_term {
+            for s in ["window-rule {", "    match app-id=r#\"^(kitty|foot|Alacritty|org\\.wezfurlong\\.wezterm|com\\.mitchellh\\.ghostty)$\"#", "    background-effect { blur true; }", "}", ""] {
+                l.push(s.into());
+            }
+        }
+        // панели шелла niri размывает по региону, который шелл отдаёт через ext-background-effect:
+        // правило на всю поверхность захватило бы и прозрачные поля под тенью
+        l.join("\n") + "\n"
+    }
+}

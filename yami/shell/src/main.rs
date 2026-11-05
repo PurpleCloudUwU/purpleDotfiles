@@ -1,0 +1,68 @@
+// YAMI // шелл для niri на Rust: бар, лаунчер, буфер, питание, настройки, уведомления,
+// трей, всплывашки (календарь, звук, сеть, bluetooth, система), виджеты рабочего стола,
+// заголовки окон в режиме «стол», блокировка. Рисует сам, пикселями, в shm — без тулкитов.
+//
+//   yami-shell                запустить (так зовёт niri)
+//   yami <команда>            то же, что yami-shell <команда>: справка — `yami help` (cmd.rs)
+
+pub use yami_px::{font, gfx, icons, theme};
+
+mod agents;
+mod app;
+mod auth;
+mod profile;
+mod displays;
+mod screen;
+mod audio;
+mod bar;
+mod cli;
+mod clean;
+mod click;
+mod cmd;
+mod dbus;
+mod doctor;
+mod dock;
+mod fonttab;
+mod games;
+mod i18n;
+mod config;
+mod curtain;
+mod ipc;
+mod keys;
+mod launcher;
+mod lock;
+mod media;
+mod menu;
+mod net;
+mod niri;
+mod notif;
+mod pam;
+mod popups;
+mod power;
+mod settings;
+mod shot;
+mod snap;
+mod sys;
+mod titles;
+mod ui;
+mod update;
+mod wall;
+mod widgets;
+
+fn main() {
+    // большие буферы (обои, скриншоты, обложки) — сразу через mmap и обратно системе при
+    // освобождении: иначе glibc поднимает порог и держит их в куче нитей после каждого декода
+    unsafe {
+        libc::mallopt(libc::M_MMAP_THRESHOLD, 256 << 10);
+        libc::mallopt(libc::M_ARENA_MAX, 2);
+    }
+    let args: Vec<String> = std::env::args().collect();
+    // `yami` (ссылка на этот бинарь) без команды — справка; `yami-shell` без команды — шелл
+    let me = args.first().map(|a| a.rsplit('/').next().unwrap_or(a).to_string()).unwrap_or_default();
+    if args.len() == 1 && me != "yami" {
+        config::migrate();
+        app::run();
+        return;
+    }
+    std::process::exit(cmd::run(&args[1..], &me))
+}

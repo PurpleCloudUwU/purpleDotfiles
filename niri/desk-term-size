@@ -29,7 +29,7 @@ side), so it still looks tiled. Such windows (nearly as tall as the screen)
 get a window size here: terminals the saved one, others 60 % × 70 % of the
 screen; they are centred, each one a little further down and right, so every
 title bar stays visible. Windows that floated before keep their size and
-place. (The order yami floats them in is fixed by yami/patches/0002.)
+place. (The order yami floats them in is fixed in yami/shell/src/niri.rs.)
 
 The other way round (desk → tiling, or Mod+G), niri makes the column as wide
 as the floating window was, so two terminals together were wider than the

@@ -3,7 +3,7 @@
 # notifications, files) for a fresh, minimal Arch Linux on the ThinkPad T580.
 # No Qt anywhere: yami draws everything itself.
 #
-# Installs the programs, builds yami from source (~/.local/share/yami/src),
+# Installs the programs, builds yami from source (yami/ in this repo),
 # links the configs into place and enables the services. Run it as your
 # normal user (not as root); sudo asks for your password where needed:
 #   git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
@@ -23,9 +23,7 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 backup="$HOME/dotfiles-backup-$(date +%Y-%m-%d_%H%M%S)"
 copy=0 packages=1 services=1
 
-# yami: where its updater keeps the source, and the look it starts with
-yami_src="$HOME/.local/share/yami/src"
-yami_url="https://github.com/Trendorin/yami"
+# yami: the fork in yami/ of this repo, and the look it starts with
 yami_opts=(--yes --no-sudo --lang en --palette ash --font pixel --no-fork --no-login --no-count --no-anim)
 
 # Programs from the official repos, grouped by what needs them. yami's own
@@ -146,42 +144,15 @@ drop_old_links() {
     done
 }
 
-# yami from source, the newest release; its installer builds the shell,
-# yami-files, yami-view and yami-play into ~/.local/bin and writes the niri,
-# kitty and fastfetch configs. On later runs it updates and rebuilds.
+# yami from source, the fork in yami/ (my fixes are committed there); its
+# installer builds the shell, yami-files, yami-view and yami-play into
+# ~/.local/bin and writes the niri, kitty and fastfetch configs. Later runs
+# rebuild from the same tree (settings → updates can also do it from a tag).
 install_yami() {
     info "Building and installing yami (a few minutes)"
-    if [[ -d $yami_src/.git ]]; then
-        git -C "$yami_src" fetch -q --tags origin
-    else
-        mkdir -p "$(dirname "$yami_src")"
-        git clone -q --filter=blob:none "$yami_url" "$yami_src"
-    fi
-    local tag
-    tag=$(git -C "$yami_src" tag -l 'v*' --sort=-v:refname | head -n1)
-    [[ -n $tag ]] || die "no yami release found in $yami_src"
-    git -C "$yami_src" -c advice.detachedHead=false checkout -q --detach "$tag"
-    note "yami $tag"
-
-    # Our fixes on top (yami/patches/), in the tree only for the build and
-    # taken out again, so yami's own updater finds a clean checkout. A patch
-    # that does not apply any more (fixed upstream, code moved) is skipped.
-    local p ok=0 applied=()
-    for p in "$repo"/yami/patches/*.patch; do
-        [[ -e $p ]] || continue
-        if git -C "$yami_src" apply --check "$p" 2>/dev/null; then
-            git -C "$yami_src" apply "$p"
-            applied=("$p" "${applied[@]}")
-            note "patch: ${p##*/}"
-        else
-            note "patch skipped, it does not apply to $tag: ${p##*/}"
-        fi
-    done
-    "$yami_src/install.sh" "${yami_opts[@]}" && ok=1
-    for p in "${applied[@]}"; do
-        git -C "$yami_src" apply -R "$p"
-    done
-    ((ok)) || die "the yami installer failed, see ~/.cache/yami/install.log"
+    note "yami $(cat "$repo/yami/VERSION") from $repo/yami"
+    "$repo/yami/install.sh" "${yami_opts[@]}" ||
+        die "the yami installer failed, see ~/.cache/yami/install.log"
 
     # The layout lives in niri/user.kdl (de, nodeadkeys); the same here, so
     # the bar shows DE, and yami-binds.kdl written again with it
