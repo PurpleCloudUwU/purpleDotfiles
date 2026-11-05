@@ -20,12 +20,16 @@ input {
         xkb {
             layout "de"
             variant "nodeadkeys"
+            // The keypad always types digits, whatever the numlock state:
+            // "numlock" below alone did not hold at boot on this setup.
+            // This block replaces yami's whole xkb block (niri does not merge
+            // it), so yami's grp:alt_shift_toggle is off; with one layout it
+            // switches nothing anyway.
+            options "numpad:mac"
         }
         repeat-delay 300
-        // numlock on from the start, so the lock screen (the login screen)
-        // takes numbers from the keypad right away
-        numlock
         repeat-rate 40
+        numlock
     }
     // niri does not merge pointing device sections between files: this one
     // replaces yami's, so its tap and natural-scroll are repeated here
