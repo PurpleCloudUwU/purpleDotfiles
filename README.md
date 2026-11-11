@@ -43,10 +43,11 @@ git clone https://github.com/PurpleCloudUwU/purpleDotfiles ~/purpleDotfiles
 The script installs the packages (official repos, plus Departure Mono from
 the AUR via paru), builds yami from `yami/` and runs
 its installer without root (palette ash, pixel font everywhere, packaged
-niri, no login screen), links the configs into `~/.config` (old ones go to
+niri, without yami's login screen), links the configs into `~/.config` (old ones go to
 `~/dotfiles-backup-<date>/`), sets GTK to the yami look and enables
-NetworkManager, Bluetooth and TLP. Then log in on a TTY and run
-`niri-session`. Options: `--copy`, `--no-packages`, `--no-services`,
+NetworkManager, Bluetooth, TLP and ly as the login screen on tty1. Then
+reboot and log in through ly (left/right on the top line picks the
+session). Options: `--copy`, `--no-packages`, `--no-services`,
 `--help`.
 
 My fixes are committed in `yami/` directly (see `yami/CHANGELOG.md`): desk

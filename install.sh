@@ -33,6 +33,8 @@ pacman_pkgs=(
     # Compositor, X11 apps, portals (yami answers file dialogs and screen
     # sharing itself, gnome and gtk do the rest)
     niri xwayland-satellite xdg-desktop-portal-gnome xdg-desktop-portal-gtk
+    # Login screen (picks the session from /usr/share/wayland-sessions)
+    ly
     # Passwords for apps; polkit asks through the yami window
     gnome-keyring polkit
     # Building yami
@@ -67,7 +69,6 @@ config_dirs=(foot yazi nvim bash starship)
 config_files=(
     "niri/user.kdl:$HOME/.config/niri/user.kdl"
     "niri/desk-term-size:$HOME/.local/bin/desk-term-size"
-    "niri/lock-at-login:$HOME/.local/bin/lock-at-login"
     # next to yami's 50-yami-pixel.conf; the folder itself is yami's
     "fontconfig/55-brave-no-pixel-font.conf:$HOME/.config/fontconfig/conf.d/55-brave-no-pixel-font.conf"
 )
@@ -75,6 +76,7 @@ config_files=(
 old_links=(
     "$HOME/.config/hypr" "$HOME/.config/quickshell" "$HOME/.config/station"
     "$HOME/.config/fastfetch" "$HOME/.local/bin/station"
+    "$HOME/.local/bin/lock-at-login"
 )
 
 info() { printf '\n\033[1;35m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -194,15 +196,9 @@ apply_settings() {
     [[ -f ~/.bash_profile ]] || printf '%s\n' '[[ -f ~/.bashrc ]] && . ~/.bashrc' > ~/.bash_profile
     add_line ~/.bash_profile 'export PATH="$HOME/.local/bin:$PATH"'
     add_line ~/.bash_profile 'export EDITOR=nvim VISUAL=nvim'
-    # tty1 logs in on its own (login/autologin.conf) and starts niri, which
-    # locks at once: the yami lock screen is the login screen. Only in an
-    # interactive shell: niri-session re-runs itself through a login shell,
-    # which reads this file again (without the check it loops forever)
-    # Numlock on for the console first: the kernel pushes tty1's LED state
-    # (numlock off) over niri's, so the LED stayed dark although niri's
-    # numlock was on. Older versions of the line go first.
+    # ly is the login screen now and starts the session; the line that
+    # started niri from tty1 (any version of it) goes
     sed -i '/exec niri-session/d' ~/.bash_profile
-    add_line ~/.bash_profile '[[ $- == *i* && -z $WAYLAND_DISPLAY && $XDG_VTNR == 1 && -z $SSH_TTY ]] && { setleds -D +num 2>/dev/null; exec niri-session; }'
     # the station line of the old setup goes
     sed -i '\|~/.config/station/shell.bash|d' ~/.bashrc 2>/dev/null || true
     add_line ~/.bashrc '[[ -f ~/.config/bash/shell.bash ]] && . ~/.config/bash/shell.bash'
@@ -243,11 +239,16 @@ apply_settings() {
 enable_services() {
     info "Enabling services: NetworkManager, Bluetooth, TLP"
     sudo systemctl enable NetworkManager.service bluetooth.service tlp.service tlp-pd.service
-    # login screen: autologin on tty1, niri starts locked (see login/)
-    sed "s/USER/$USER/" "$repo/login/autologin.conf" |
-        sudo install -Dm644 /dev/stdin /etc/systemd/system/getty@tty1.service.d/autologin.conf
-    touch ~/.hushlogin   # no motd or "Last login" on the tty before niri
-    note "tty1 logs in on its own, the yami lock screen asks for the password"
+    # login screen: ly on tty1 instead of the getty there; the autologin
+    # override of the old setup goes
+    sudo rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
+    sudo rmdir /etc/systemd/system/getty@tty1.service.d 2>/dev/null || true
+    # numlock on before niri starts (the kernel hands tty1's LED state on
+    # to niri, it stayed dark otherwise)
+    sudo sed -i 's/^numlock = .*/numlock = true/' /etc/ly/config.ini
+    sudo systemctl disable getty@tty1.service 2>/dev/null || true
+    sudo systemctl enable ly@tty1.service
+    note "ly on tty1 asks for the password and the session"
     local s
     for s in iwd systemd-networkd dhcpcd; do
         if systemctl is-enabled --quiet "$s.service" 2>/dev/null; then
@@ -281,5 +282,5 @@ apply_settings
 
 info "Done"
 [[ -d $backup ]] && note "your old configs are in $backup"
-note "log in on a TTY and run: niri-session"
+note "reboot: ly asks for the password, left/right on the top line picks the session"
 note "fingerprint (T580 only): ~/purpleDotfiles/fingerprint/setup.sh"
