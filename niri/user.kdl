@@ -45,9 +45,6 @@ input {
 // In desk mode a new terminal opens at the size the last one was resized to
 // (niri/desk-term-size, linked to ~/.local/bin); started again if it crashes
 spawn-sh-at-startup "until desk-term-size; do sleep 1; done"
-// tty1 logs in on its own and starts niri, so lock right away: the yami
-// lock screen is the login screen (niri/lock-at-login, login/autologin.conf)
-spawn-at-startup "lock-at-login"
 
 // ─── keys ──────────────────────────────────────────────────────────────────
 // yami's keys stay as they are (settings → keys, `yami-shell binds list`);
@@ -60,11 +57,12 @@ binds {
     Mod+Shift+C repeat=false { spawn "niri" "msg" "action" "load-config-file"; }
     Mod+Shift+W hotkey-overlay-title="Browser" { spawn-sh "gtk-launch \"$(xdg-settings get default-web-browser)\""; }
     Mod+Shift+M hotkey-overlay-title="Music" { spawn "spotify-launcher"; }
-    // yami's Mod+F (maximize-column) does nothing to a floating window, so in
-    // desk mode it never worked; this one maximizes floating windows too
-    // (to the edges: in tiling mode the column has no gaps around it). Like
-    // the title bar's double click; pressed again it gives the old size back.
-    Mod+F hotkey-overlay-title="Maximize window" { maximize-window-to-edges; }
+    // Maximize with the gaps and the border still around the window; pressed
+    // again it gives the old size back. A tile gets maximize-column. yami's
+    // maximize-column alone does nothing to a floating window (desk mode), so
+    // that one goes through maximize-window-to-edges like the title bar's
+    // double click, and desk-term-size floats it again inside the gaps.
+    Mod+F hotkey-overlay-title="Maximize window" { spawn-sh "if niri msg focused-window | grep -q 'Is floating: yes'; then niri msg action maximize-window-to-edges; else niri msg action maximize-column; fi"; }
 
     Mod+0 { focus-workspace 10; }
     Mod+Shift+0 { move-column-to-workspace 10; }

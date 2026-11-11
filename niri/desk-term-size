@@ -42,7 +42,8 @@ In desk mode a maximized window must not turn tiled, though: niri always
 draws floating windows above tiled ones, so the other windows lay on top
 of it. So it is floated again right away and made as large as the screen
 (below the bar), which keeps it in the floating layer, where focus raises
-it. Maximizing it again (title bar, Mod+F) tiles it once more; that is
+it. It keeps the layout's gaps around it, like a maximized column in tiling
+mode, so its border stays in sight. Maximizing it again (title bar, Mod+F) tiles it once more; that is
 caught the same way and gives it back its old size and place.
 niri keeps the view scrolled as it was for the wider columns, so shortly
 after desk → tiling the focus goes to the last column, the first and back:
@@ -97,6 +98,7 @@ MAXIMIZED = 0.95    # a tiled window this much of the screen wide counts as maxi
 REFIT_AFTER = 0.6   # s after desk → tiling before the view is scrolled to fit
 FIT_AFTER = 0.1     # s after a window change before the column widths are fitted to the count
 FIT_WIDTH = {1: 100.0, 2: 50.0}   # tiling mode: % column width by the number of columns
+NIRI_DIR = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "niri"
 
 STATE = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
 SIZE_FILE = STATE / "desk-term-size.json"
@@ -194,6 +196,19 @@ def output_size(ws_id):
     if not o or not o.get("logical"):
         return None
     return o["logical"]["width"], o["logical"]["height"]
+
+
+def niri_gaps():
+    """The layout's gaps in px (config.kdl, then user.kdl, which wins); niri's IPC does not tell."""
+    gaps = 16.0   # niri's default
+    for name in ("config.kdl", "user.kdl"):
+        try:
+            text = (NIRI_DIR / name).read_text()
+        except OSError:
+            continue
+        for m in re.finditer(r"^\s*gaps\s+([0-9.]+)", text, re.M):
+            gaps = float(m.group(1))
+    return gaps
 
 
 def screen_sized(size):
@@ -358,9 +373,15 @@ class Sizer:
             self.maxed[wid] = self.geom.get(wid)
         request({"Action": {"ToggleWindowFloating": {"id": wid}}})
         if back is False:
+            # the whole working area minus the gaps around it, like a maximized
+            # column in tiling mode, so the border stays in sight (100 % is the
+            # tile with its border, the adjustment then shrinks the window)
+            gap = niri_gaps()
             request({"Action": {"SetWindowWidth": {"id": wid, "change": {"SetProportion": 100.0}}}})
             request({"Action": {"SetWindowHeight": {"id": wid, "change": {"SetProportion": 100.0}}}})
-            request({"Action": {"MoveFloatingWindow": {"id": wid, "x": {"SetFixed": 0.0}, "y": {"SetFixed": 0.0}}}})
+            request({"Action": {"SetWindowWidth": {"id": wid, "change": {"AdjustFixed": int(-2 * gap)}}}})
+            request({"Action": {"SetWindowHeight": {"id": wid, "change": {"AdjustFixed": int(-2 * gap)}}}})
+            request({"Action": {"MoveFloatingWindow": {"id": wid, "x": {"SetFixed": gap}, "y": {"SetFixed": gap}}}})
         else:
             if not back:
                 # old place unknown: the terminal size in the middle
