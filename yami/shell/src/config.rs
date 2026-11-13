@@ -158,6 +158,8 @@ pub struct Settings {
     // система
     pub lock_after: u32,
     pub screen_off_after: u32,
+    /// idle minutes until suspend-then-hibernate (locks first); 0: never
+    pub sleep_after: u32,
     pub dnd: bool,
     pub notif_timeout: u32,
 
@@ -385,6 +387,7 @@ impl Default for Settings {
             bar_v: 1,
             lock_after: 10,
             screen_off_after: 15,
+            sleep_after: 0,
             dnd: false,
             notif_timeout: 7,
             shot_dir: String::new(),

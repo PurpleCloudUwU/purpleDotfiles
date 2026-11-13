@@ -127,6 +127,7 @@ yami-shell binds list | print | write     # keybindings
 | `curtainStyle` | `"blur"` | what stream viewers see while the screen is hidden (Mod+Shift+H), no labels: `blur` the frozen screen blurred, `pixels` in big pixels, `wall` the wallpaper |
 | `curtainCell` | `24` | pixel size of `pixels` |
 | `lockAfter`, `screenOffAfter` | `10`, `15` | idle minutes; 0: never |
+| `sleepAfter` | `0` | idle minutes until `systemctl suspend-then-hibernate` (locks first); 0: never |
 | `dnd`, `notifTimeout` | `false`, `7` | do not disturb; seconds a notification stays |
 
 ### Games

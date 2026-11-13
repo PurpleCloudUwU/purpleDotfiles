@@ -289,7 +289,7 @@ pub struct App {
     pub lock_surfs: Vec<LockSurf>,
     idle: Option<ext_idle_notifier_v1::ExtIdleNotifierV1>,
     idle_notes: Vec<ext_idle_notification_v1::ExtIdleNotificationV1>,
-    idle_cfg: (u32, u32),
+    idle_cfg: (u32, u32, u32),
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     enter_serial: u32,
@@ -453,7 +453,7 @@ pub fn run() {
         lock_surfs: vec![],
         idle,
         idle_notes: vec![],
-        idle_cfg: (0, 0),
+        idle_cfg: (0, 0, 0),
         pointer: None,
         keyboard: None,
         enter_serial: 0,
@@ -1250,7 +1250,7 @@ impl App {
 
     // ── простой: замок и гашение экрана ─────────────────────────────────────
     fn setup_idle(&mut self) {
-        let cfg = (self.st.set.lock_after, self.st.set.screen_off_after);
+        let cfg = (self.st.set.lock_after, self.st.set.screen_off_after, self.st.set.sleep_after);
         if cfg == self.idle_cfg && !self.idle_notes.is_empty() {
             return;
         }
@@ -1264,6 +1264,9 @@ impl App {
         }
         if cfg.1 > 0 {
             self.idle_notes.push(idle.get_idle_notification(cfg.1 * 60_000, &seat, &self.qh, 1));
+        }
+        if cfg.2 > 0 {
+            self.idle_notes.push(idle.get_idle_notification(cfg.2 * 60_000, &seat, &self.qh, 2));
         }
     }
 
@@ -2058,6 +2061,7 @@ pub fn settings_set_f32(s: &mut Settings, key: &str, v: f32) {
         "float_h" => s.float_h = (v * 20.0).round() / 20.0,
         "lock_after" => s.lock_after = v.round() as u32,
         "screen_off_after" => s.screen_off_after = v.round() as u32,
+        "sleep_after" => s.sleep_after = ((v / 5.0).round() * 5.0) as u32,
         "notif_timeout" => s.notif_timeout = v.round().max(2.0) as u32,
         "task_width" => s.task_width = (v / 10.0).round() as i32 * 10,
         "wall_pixel" => s.wall_pixel = v.round().max(1.0) as i32,
@@ -2080,6 +2084,7 @@ pub fn settings_get_f32(s: &Settings, key: &str) -> f32 {
         "float_h" => s.float_h,
         "lock_after" => s.lock_after as f32,
         "screen_off_after" => s.screen_off_after as f32,
+        "sleep_after" => s.sleep_after as f32,
         "notif_timeout" => s.notif_timeout as f32,
         "task_width" => s.task_width as f32,
         "wall_pixel" => s.wall_pixel as f32,
@@ -2357,10 +2362,15 @@ impl Dispatch<ext_idle_notifier_v1::ExtIdleNotifierV1, ()> for App {
 impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, u8> for App {
     fn event(app: &mut Self, _: &ext_idle_notification_v1::ExtIdleNotificationV1, e: ext_idle_notification_v1::Event, kind: &u8, _: &Connection, _: &QueueHandle<Self>) {
         if let ext_idle_notification_v1::Event::Idled = e {
-            if *kind == 0 {
-                app.lock_now();
-            } else {
-                app.st.niri.act(serde_json::json!({"PowerOffMonitors": {}}));
+            match *kind {
+                0 => app.lock_now(),
+                1 => app.st.niri.act(serde_json::json!({"PowerOffMonitors": {}})),
+                _ => {
+                    // lock first so the password is asked on wake; logind turns the suspend
+                    // into hibernation after HibernateDelaySec (sleep.conf)
+                    app.lock_now();
+                    App::sh("sleep 0.6; systemctl suspend-then-hibernate || systemctl suspend");
+                }
             }
         }
     }

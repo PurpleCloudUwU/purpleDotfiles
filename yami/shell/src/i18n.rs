@@ -329,6 +329,7 @@ const PAIRS: &[(&str, &str)] = &[
     ("простой", "idle"),
     ("заблокировать через", "lock after"),
     ("погасить экран через", "screen off after"),
+    ("уснуть через", "sleep after"),
     ("никогда", "never"),
     ("только срочные; остальное — в истории (клик по часам)", "urgent only; the rest goes to history (click the clock)"),
     ("сколько висит уведомление", "notification timeout"),

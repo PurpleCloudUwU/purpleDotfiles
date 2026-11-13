@@ -10,6 +10,7 @@ subjects when that section is empty).
 - desk mode: the first window on an empty desktop opens floating (it was toggled twice and ended tiled); switching tiling → desk floats the windows in focus order, so title bars match the stacking
 - yami-files portal: glob filters understand `[...]` classes (Brave/Chromium file dialogs were empty)
 - removed: the install counter, the SDDM login theme (Qt), the upstream release tooling and signing key
+- settings → system: «sleep after» (`sleepAfter`, idle minutes, 0: never) locks and runs `systemctl suspend-then-hibernate`
 
 ## 2.4.3
 
