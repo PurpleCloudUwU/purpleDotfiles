@@ -2,7 +2,7 @@
 
 The pixel desktop shell for [niri](https://github.com/YaLTeR/niri) that runs my
 ThinkPad T580: bar, launcher, dock, notifications, lock screen, widgets and
-settings, plus the file manager (yami-files), image viewer (yami-view) and video
+settings, plus the file manager (yami-files), image viewer (yami-view), audio device settings (yami-audio) and video
 player (yami-play). Written in Rust, no Qt.
 
 This is a fork of yami 2.4.3 (MIT, see `LICENSE`), kept inside
@@ -17,7 +17,7 @@ committed here directly; `CHANGELOG.md` lists them.
 ./install.sh --yes --no-sudo --lang en --palette ash --font pixel --no-fork --no-login --no-count --no-anim
 ```
 
-It builds the four programs into `~/.local/bin` (build cache `~/.cache/yami/target`)
+It builds the five programs into `~/.local/bin` (build cache `~/.cache/yami/target`)
 and writes the niri, kitty and fastfetch configs. `./install.sh --update` rebuilds
 from this tree and keeps every setting. `./install.sh --help` lists all options.
 
@@ -36,7 +36,7 @@ Tags are installed unsigned until `keys/allowed_signers` holds a key.
 
 | Folder | What |
 |---|---|
-| `shell/` | Cargo workspace: `src` (yami-shell), `files`, `view`, `play`, `px` (shared drawing) |
+| `shell/` | Cargo workspace: `src` (yami-shell), `files`, `view`, `play`, `audio`, `px` (shared drawing) |
 | `config/` | niri, kitty, fontconfig, portal and desktop-file templates the installer writes |
 | `fork/` | yami-niri, a patched niri (not used here: the packaged niri runs) |
 | `tools/` | theme generator, GTK theme, checks |

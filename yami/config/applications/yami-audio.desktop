@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Audio devices
+Name[ru]=Аудиоустройства
+GenericName=Audio Settings
+GenericName[ru]=Настройки звука
+Comment=Bluetooth codec and bitrate, bit depth and sample rate of audio outputs (yami shell)
+Comment[ru]=Кодек и битрейт Bluetooth, разрядность и частота выходов звука (шелл yami)
+Exec=yami-audio
+Icon=audio-card
+Terminal=false
+Categories=Settings;AudioVideo;Audio;HardwareSettings;
+Keywords=sound;codec;ldac;aptx;bluetooth;dac;bitrate;samplerate;pipewire;
+StartupWMClass=yami-audio

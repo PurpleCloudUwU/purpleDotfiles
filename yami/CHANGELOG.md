@@ -6,6 +6,9 @@ subjects when that section is empty).
 
 ## Unreleased
 
+## 2.5.0
+
+- New app `yami-audio` (launcher: «Audio devices»): Bluetooth codec (SBC, SBC-XQ, AAC, aptX, aptX HD, LDAC… whatever the device offers), bitrate (LDAC 330/660/990 kbps or ABR, AAC CBR/VBR) and the BT sample rate; bit depth, sample rate and channels of USB DACs and other ALSA outputs, limited to what the hardware reports. Settings in `~/.config/yami-audio.json`, applied as `~/.config/wireplumber/wireplumber.conf.d/90-yami-audio.conf` (WirePlumber restarts); `yami-audio list` and `yami-audio apply` in the terminal
 - purpleDotfiles fork of yami 2.4.3: the source lives in `yami/` of github.com/PurpleCloudUwU/purpleDotfiles, settings → about and updates, the installer and `yami update` point there
 - desk mode: the first window on an empty desktop opens floating (it was toggled twice and ended tiled); switching tiling → desk floats the windows in focus order, so title bars match the stacking
 - yami-files portal: glob filters understand `[...]` classes (Brave/Chromium file dialogs were empty)
