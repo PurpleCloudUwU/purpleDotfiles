@@ -80,7 +80,7 @@ impl App {
                     self.settings_changed();
                 }
                 ("sys", RMB) => self.open_sysmon(),
-                ("profile", RMB) => self.prof_step(1),
+                ("profile", RMB) | ("bat", RMB) => self.prof_step(1),
                 _ => self.open_popup(k, &out, ax),
             },
             // ── лаунчер и питание ───────────────────────────────────────────
@@ -234,7 +234,7 @@ impl App {
                 self.st.niri.act(if up { serde_json::json!({"FocusWorkspaceUp": {}}) } else { serde_json::json!({"FocusWorkspaceDown": {}}) });
             }
             Act::DockItem(i) => self.dock_wheel(i, up),
-            Act::Popup("profile") | Act::Prof(_) => self.prof_step(if up { -1 } else { 1 }),
+            Act::Popup("profile") | Act::Popup("bat") | Act::Prof(_) => self.prof_step(if up { -1 } else { 1 }),
             Act::ScreenSel(_) => self.screen_wheel(up),
             Act::Kb => self.st.niri.act(serde_json::json!({"SwitchLayout": {"layout": if up { "Prev" } else { "Next" }}})),
             Act::CalMonth(_) | Act::Popup("cal") => {

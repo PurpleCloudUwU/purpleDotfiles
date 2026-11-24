@@ -26,6 +26,7 @@ pub fn size(kind: &str, st: &State) -> (i32, i32) {
         }
         "bt" => (380, 44 + 40 + if st.bt.msg.is_empty() { 0 } else { 24 } + if st.bt.powered { st.bt.devices.len().clamp(1, 8) as i32 * 34 } else { 30 } + 50),
         "sys" => (440, 44 + 4 * 74 + 40 + 50),
+        "bat" => (340, 44 + 56 + 18 + 26 * st.sys.bat.map(|b| (b.watts > 0.0) as i32 + if b.ncells > 1 { b.ncells as i32 } else { 0 }).unwrap_or(0) + 4 + 40 + if st.prof.present { 36 * 3 + if st.prof.degraded.is_empty() { 0 } else { 26 } } else { 60 } + 10),
         "profile" => (340, 44 + if st.sys.bat.is_some() { 40 } else { 0 } + if st.prof.present { 36 * 3 + if st.prof.degraded.is_empty() { 0 } else { 26 } } else { 60 } + 30),
         _ => (300, 200),
     }
@@ -46,6 +47,7 @@ pub fn draw(ui: &mut Ui, st: &State, w: i32, h: i32) {
         "bt" => bt(ui, st, body),
         "sys" => sys(ui, st, body),
         "profile" => profile(ui, st, body),
+        "bat" => bat(ui, st, body),
         _ => {}
     }
 }
@@ -286,6 +288,61 @@ fn bt(ui: &mut Ui, st: &State, b: R) {
     ui.button(R::new(b.x, b.bottom() - 28, b.w, 28), "менеджер устройств", "gear", Tone::Plain, false, true, Act::BtManager);
 }
 
+// ── battery ─────────────────────────────────────────────────────────────────
+fn hm(m: u32) -> String {
+    if m >= 60 { crate::tf!("{} ч {} мин", "{} h {} min", m / 60, m % 60) } else { crate::tf!("{} мин", "{} min", m) }
+}
+
+fn bat(ui: &mut Ui, st: &State, b: R) {
+    let t = ui.t;
+    let Some(bat) = st.sys.bat else {
+        ui.text_in(PX, R::new(b.x, b.y, b.w, 20), "батарея не найдена", t.text_faint);
+        return;
+    };
+    let state = if bat.charging { "заряжается" } else if bat.plugged { "от сети" } else { "от батареи" };
+    let low = bat.pct <= 15 && !bat.charging && !bat.plugged;
+    let col = if low { t.ember } else if bat.charging || bat.plugged { t.ok } else { t.red };
+    let mut y = head(ui, b, if bat.charging { "bolt" } else { "gauge" }, "батарея", state);
+    // big percentage on the left, time left on the right
+    let face = font::px(32);
+    ui.text(face, b.x, y - 2, &format!("{}%", bat.pct), if low { t.ember } else { t.text });
+    let (big, small) = match bat.mins {
+        Some(m) => (hm(m), if bat.charging { "до полной" } else { "осталось" }),
+        None if bat.plugged => (crate::i18n::tr(if bat.pct >= 99 { "полная" } else { "держит заряд" }).to_string(), ""),
+        None => (crate::i18n::tr("считаю…").to_string(), if bat.charging { "до полной" } else { "осталось" }),
+    };
+    ui.text_right(PX, R::new(b.x, y, b.w, 20), &big, t.text);
+    if !small.is_empty() {
+        ui.text_right(PX, R::new(b.x, y + 20, b.w, 20), small, t.text_faint);
+    }
+    y += 50;
+    // charge gauge across the popup
+    ui.cv.fill(R::new(b.x, y, b.w, 6), t.surface_hi.lerp(t.border, 0.45));
+    ui.cv.fill(R::new(b.x, y, (b.w as f32 * bat.pct as f32 / 100.0).round() as i32, 6), col);
+    y += 18;
+    let mut row = |ui: &mut Ui, k: &str, v: &str| {
+        ui.text_in(PX, R::new(b.x, y, b.w, 20), k, t.text_dim);
+        ui.text_right(PX, R::new(b.x, y, b.w, 20), v, t.text);
+        y += 26;
+    };
+    if bat.watts > 0.0 {
+        row(ui, if bat.charging { "заряд" } else { "расход" }, &format!("{:.1} W", bat.watts));
+    }
+    if bat.ncells > 1 {
+        for i in 0..bat.ncells as usize {
+            row(ui, &crate::tf!("батарея {}", "battery {}", i + 1), &format!("{}%", bat.cells[i]));
+        }
+    }
+    // power profiles live here too: the bar may not carry a profile module
+    y += 4;
+    ui.cv.fill(R::new(b.x, y, b.w, 1), t.border);
+    let w = ui.text_in(PX, R::new(b.x, y + 10, b.w, 20), "профиль питания", t.text_dim);
+    if st.prof.present {
+        ui.text_in(PX, R::new(b.x + w + 10, y + 10, b.w - w - 10, 20), crate::profile::label(&st.prof.active), t.text_faint);
+    }
+    prof_list(ui, st, b, y + 40);
+}
+
 // ── профиль питания ─────────────────────────────────────────────────────────
 fn profile(ui: &mut Ui, st: &State, b: R) {
     let t = ui.t;
@@ -304,6 +361,13 @@ fn profile(ui: &mut Ui, st: &State, b: R) {
         }
         y += 40;
     }
+    prof_list(ui, st, b, y);
+}
+
+/// the three power profile buttons (shared by the profile and battery popups)
+fn prof_list(ui: &mut Ui, st: &State, b: R, mut y: i32) {
+    let t = ui.t;
+    let p = &st.prof;
     if !p.present {
         ui.wrap(PX, R::new(b.x, y, b.w, 60), "power-profiles-daemon не запущен: установи его и включи (systemctl enable --now power-profiles-daemon)", t.text_faint, 3);
         return;

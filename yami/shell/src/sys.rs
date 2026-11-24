@@ -92,12 +92,18 @@ pub struct Bat {
     /// от сети, но не заряжается: полная или держит порог (Full, Not charging)
     pub plugged: bool,
     pub mins: Option<u32>,
+    /// current draw in watts (0 when unknown or idle)
+    pub watts: f32,
+    /// charge of each battery (the T580 has an internal and a removable one)
+    pub cells: [u8; 4],
+    pub ncells: u8,
 }
 
 /// заряд батарей системы (не мышек и наушников: у них scope=Device); несколько — по энергии
 fn read_bat() -> Option<Bat> {
     let (mut now, mut full, mut rate, mut any) = (0.0f64, 0.0f64, 0.0f64, false);
     let (mut charging, mut plugged, mut discharging) = (false, false, false);
+    let (mut watts, mut cells, mut ncells) = (0.0f64, [0u8; 4], 0usize);
     for e in fs::read_dir("/sys/class/power_supply").ok()?.flatten() {
         let p = e.path();
         let rd = |k: &str| fs::read_to_string(p.join(k)).map(|s| s.trim().to_string()).unwrap_or_default();
@@ -108,7 +114,10 @@ fn read_bat() -> Option<Bat> {
         let (n, f) = match (num("energy_now").or(num("charge_now")), num("energy_full").or(num("charge_full"))) {
             (Some(n), Some(f)) if f > 0.0 => {
                 // мощность в тех же единицах, что запас: µW к µWh, µA к µAh
-                rate += if num("energy_now").is_some() { num("power_now") } else { num("current_now") }.unwrap_or(0.0).abs();
+                let r = if num("energy_now").is_some() { num("power_now") } else { num("current_now") }.unwrap_or(0.0).abs();
+                rate += r;
+                // µW directly, or µA × µV
+                watts += if num("energy_now").is_some() { r / 1e6 } else { r * num("voltage_now").unwrap_or(0.0) / 1e12 };
                 (n, f)
             }
             _ => match num("capacity") {
@@ -119,6 +128,10 @@ fn read_bat() -> Option<Bat> {
         now += n;
         full += f;
         any = true;
+        if ncells < cells.len() {
+            cells[ncells] = (n / f * 100.0).round().clamp(0.0, 100.0) as u8;
+            ncells += 1;
+        }
         match rd("status").as_str() {
             "Charging" => charging = true,
             "Discharging" => discharging = true,
@@ -133,7 +146,7 @@ fn read_bat() -> Option<Bat> {
     let plugged = plugged && !discharging && !charging;
     let left = if charging { full - now } else { now };
     let mins = (rate > 0.0 && (charging || discharging)).then(|| (left / rate * 60.0).round() as u32).filter(|m| *m > 0 && *m < 100 * 60);
-    Some(Bat { pct: ((now / full.max(1e-9)) * 100.0).round().clamp(0.0, 100.0) as u8, charging, plugged, mins })
+    Some(Bat { pct: ((now / full.max(1e-9)) * 100.0).round().clamp(0.0, 100.0) as u8, charging, plugged, mins, watts: if charging || discharging { watts as f32 } else { 0.0 }, cells, ncells: ncells as u8 })
 }
 
 fn find_temp() -> Option<String> {

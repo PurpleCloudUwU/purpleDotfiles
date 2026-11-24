@@ -86,6 +86,10 @@ impl App {
             self.st.prof = p;
             self.dirty(&SKind::Bar);
             self.dirty(&SKind::Popup);
+            // the daemon showing up or going away changes the popup height
+            if self.st.popup.is_some() {
+                self.resize_popup();
+            }
         }
     }
 

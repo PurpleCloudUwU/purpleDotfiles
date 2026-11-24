@@ -36,6 +36,7 @@ const TARGETS: &[&str] = &[
     "popup:bt",
     "popup:sys",
     "popup:profile",
+    "popup:bat",
     "menu:widget",
     "widget:clock",
     "widget:graph",
@@ -214,7 +215,7 @@ fn shoot(st: &mut State, res: &mut Res, target: &str, path: &Path) {
             crate::power::SIZE
         }
         "popup" => {
-            if arg == "profile" {
+            if arg == "profile" || arg == "bat" {
                 st.prof = crate::profile::Prof { present: true, active: "performance".into(), list: vec!["power-saver".into(), "balanced".into(), "performance".into()], degraded: String::new() };
             }
             if arg == "net" || arg == "wifi" {
@@ -223,7 +224,7 @@ fn shoot(st: &mut State, res: &mut Res, target: &str, path: &Path) {
             if arg == "bt" {
                 mock_bt(st);
             }
-            let k = ["cal", "sound", "net", "bt", "sys", "profile"].into_iter().find(|k| *k == arg).unwrap_or(if arg == "wifi" { "net" } else { "cal" });
+            let k = ["cal", "sound", "net", "bt", "sys", "profile", "bat"].into_iter().find(|k| *k == arg).unwrap_or(if arg == "wifi" { "net" } else { "cal" });
             st.popup = Some(Popup { kind: k });
             crate::popups::size(k, st)
         }
@@ -449,7 +450,7 @@ fn mock_sys(s: &mut crate::sys::Sys) {
     }
     (s.cpu, s.mem, s.mem_used, s.mem_total, s.swap, s.temp, s.gpu_temp, s.disk) = (0.32, 0.41, 6.6, 16.0, 0.0, 48.0, 41.0, 0.37);
     s.iface = "wlan0".into();
-    s.bat = Some(crate::sys::Bat { pct: 73, charging: true, plugged: false, mins: Some(48) });
+    s.bat = Some(crate::sys::Bat { pct: 73, charging: true, plugged: false, mins: Some(48), watts: 21.4, cells: [80, 66, 0, 0], ncells: 2 });
     s.ip = "192.0.2.10".into();
     (s.rx, s.tx) = (6.1e5, 1.2e5);
 }

@@ -256,7 +256,7 @@ fn module(ui: &mut Ui, st: &State, out: &str, m: &str, x: i32, measure: bool) ->
             let body = if low { t.ember } else if hov { WHITE } else { t.text_dim };
             ui.cv.battery(x + bw, cy - 7, 2, bat.pct as f32 / 100.0, body, col, t.surface_hi.lerp(t.border, 0.45));
             ui.text_in(PX, R::new(x + bw + 28, 0, w, H - 1), &txt, if low { t.ember } else if hov { t.text } else { t.text_dim });
-            ui.zone(r, Act::Popup("profile"), Cur::Pointer);
+            ui.zone(r, Act::Popup("bat"), Cur::Pointer);
             w
         }
         "kb" => {

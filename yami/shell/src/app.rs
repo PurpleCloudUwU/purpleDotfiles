@@ -1110,7 +1110,7 @@ impl App {
                 self.update_tick();
             }
             // профиль могли сменить снаружи (powerprofilesctl, другой апплет)
-            if self.st.started.elapsed().as_secs() % 15 == 0 && self.bar_has("profile") {
+            if self.st.started.elapsed().as_secs() % 15 == 0 && (self.bar_has("profile") || self.bar_has("bat")) {
                 crate::profile::refresh(None, self.tx.clone());
             }
         }
@@ -1468,6 +1468,7 @@ impl App {
                     "net" => "net",
                     "bt" => "bt",
                     "profile" => "profile",
+                    "bat" => "bat",
                     _ => "sys",
                 };
                 let out = self.focus_out();
@@ -1602,7 +1603,7 @@ impl App {
         match kind {
             "net" => net::refresh_wifi(self.tx.clone()),
             "bt" => net::refresh_bt(self.tx.clone()),
-            "profile" => crate::profile::refresh(None, self.tx.clone()),
+            "profile" | "bat" => crate::profile::refresh(None, self.tx.clone()),
             "cal" => self.st.cal_month = 0,
             _ => {}
         }
